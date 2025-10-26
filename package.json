@@ -1,0 +1,23 @@
+{
+  "name": "nostr-chat",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-test-module-mocks --import tsx --test **/*.test.ts"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@nostr/tools": "npm:@jsr/nostr__tools@^2.10.4",
+    "@std/fmt": "npm:@jsr/std__fmt@^1.0.5",
+    "terminal-kit": "^3.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/terminal-kit": "^2.5.7",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

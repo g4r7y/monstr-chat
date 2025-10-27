@@ -10,7 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@nostr/tools": "npm:@jsr/nostr__tools@^2.10.4",
+    "@nostr/tools": "npm:@jsr/nostr__tools@^2.17.1",
     "@std/fmt": "npm:@jsr/std__fmt@^1.0.5",
     "terminal-kit": "^3.1.2"
   },

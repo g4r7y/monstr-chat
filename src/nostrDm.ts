@@ -1,9 +1,11 @@
 
 import { npubEncode } from "@nostr/tools/nip19"
 import { wrapEvent, unwrapEvent } from "@nostr/tools/nip17"
-import { Relay } from "@nostr/tools/relay"
+import { Relay, Subscription } from "@nostr/tools/relay"
 import { NostrEvent } from "@nostr/tools"
 import { ChatMessage } from "./chatModel.js"
+
+let subscription: Subscription
 
 
 // NIP17 
@@ -36,7 +38,7 @@ const receiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : Pr
     const plainEvent = await unwrapEvent(event, nsec)
     let createdDate = new Date(0)
     createdDate.setUTCSeconds(plainEvent.created_at)
-    // todo should we use local time for received messages too? in case the event times are out of synch with sent times?
+    // TODO should we use local time for received messages too? in case the event times are out of synch with sent times?
     let msg = {
       sender: npubEncode(plainEvent.pubkey),
       receiver: npubEncode(npub), //self
@@ -45,7 +47,7 @@ const receiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : Pr
       id: plainEvent.id,
       state: 'rx'
     }
-    console.log('received DM', JSON.stringify(msg))
+    // console.log('received DM', JSON.stringify(msg))
     return msg
   } catch(err) {
     console.log('Failed to decrypt nip17 message', err)
@@ -54,19 +56,18 @@ const receiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : Pr
 }
 
 const subscribeToIncomingDms = async (npub: string, nsec: Uint8Array, relay: Relay, onMessage: (msg: ChatMessage)=>void) => {
-  relay.subscribe([
+  if (subscription) {
+    subscription.close()
+  }
+
+  subscription = relay.subscribe([
     {
-      kinds: [1059, 10002], //nip17 giftwrapped; nip65 relay
+      kinds: [1059], //nip17 giftwrapped
       '#p': [npub],
     },
   ], {
+    id: 'incoming-dm-sub-id', // always use fixed sub id
     async onevent (event) {
-      if (event.kind === 10002) {
-        console.log('Received nip65 relay message', event)
-      }
-      if (event.kind === 4) {
-        console.log('Received nip4 message. Ignoring as not supported')
-      }
       if (event.kind === 1059) { // possible giftwrapped NIP17 DM
         const msg = await receiveDm(npub, nsec, event)
         if (msg) {
@@ -77,36 +78,5 @@ const subscribeToIncomingDms = async (npub: string, nsec: Uint8Array, relay: Rel
   })
 }
 
-const subscribeToRelayListMetadata = async (npubList: string[], relay: Relay, onMessage: (relayMessage: any)=>void ) => {
-  relay.subscribe([
-    {
-      kinds: [10002],
-      '#p': npubList,
-    },
-  ], {
-    async onevent (event) {
-      if (event.kind === 10002) {
-        console.log('Received nip65 relay message', event)
-      }
-    }
-  })
-}
 
-// const publishEvent = async (relay, nsec) => {
-//   const createdTimestamp = Date.now()
-
-//   let eventTemplate = {
-//     kind: 1,
-//     created_at: Math.floor(createdTimestamp / 1000),
-//     tags: [],
-//     content: 'hello nostr world',
-//   }
-
-//   // this assigns the pubkey, calculates the event id and signs the event in a single step
-//   const signedEvent = finalizeEvent(eventTemplate, nsec)
-//   await relay.publish(signedEvent)
-//   console.log('published event')
-// }
-
-
-export { sendDm, subscribeToIncomingDms, subscribeToRelayListMetadata }
+export { sendDm, subscribeToIncomingDms }

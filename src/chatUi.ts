@@ -364,13 +364,13 @@ class ChatUi {
        return 
     }
 
-
     currentSettings.inboxRelays = newInboxRelays
-    currentSettings.generalRelays = newGeneralRelays
-    
-    // TODO Republish our NIP65 to discovery relays
-
+    currentSettings.generalRelays = newGeneralRelays    
     this.#chatModel.setSettings(currentSettings)
+
+    // send out updated nip65
+    this.#chatController.broadcastRelayList()
+    
     this.#view.pop()
   }
 

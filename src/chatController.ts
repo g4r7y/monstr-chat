@@ -89,13 +89,8 @@ class ChatController {
     }
     await sleep(100)
 
-    // publish our inbox relays (i.e. so other people know how to send message to us)
-    for (let i = 0; i < this.#connectedGeneralRelays.length; i++) {
-      const relay = this.#connectedGeneralRelays[i]
-      console.log(`Publishing our inbox relaylist to relay: ${relay.url}`)
-      const inboxRelayList = this.#model.settings.inboxRelays
-      await publishRelayListMetadata(this.#npub, this.#nsec, relay, inboxRelayList)
-    }
+    this.broadcastRelayList()
+  
 
     const connError = this.#connectedInboxRelays.length === 0 || this.#connectedGeneralRelays.length === 0
     if (connError) {
@@ -114,6 +109,14 @@ class ChatController {
     if (sentMsg) {
       await this.#model.setMessage(sentMsg.id, sentMsg)
     }
+  }
+
+  // Broadcast our inbox relay list to the general discovery relays so that other people know how to send message to us
+  async broadcastRelayList() {
+    //todo catch errors?
+    await publishRelayListMetadata(this.#npub, this.#nsec, 
+      this.#model.settings.generalRelays, 
+      this.#model.settings.inboxRelays)
   }
 
   getPubKeyString() : string {

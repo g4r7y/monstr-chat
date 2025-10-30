@@ -4,18 +4,18 @@ const { terminal, Rect, ScreenBuffer } = tk
 
 
 export async function showPrompt(question: string, defaultResponse: string = '', minLength: number = 0): Promise<string | null> {
-    terminal(question)
-    const response = await terminal.inputField({ minLength, maxLength: 512, cancelable: true, default: defaultResponse }).promise
-    return response === undefined ? null : response
-  }
+  terminal(question)
+  const response = await terminal.inputField({ minLength, maxLength: 512, cancelable: true, default: defaultResponse }).promise
+  return response === undefined ? null : response
+}
   
   
 export async function showYesNoPrompt(question: string): Promise<boolean> {
-    terminal(question + ' [Y|n] ')
-    const response = await terminal.yesOrNo( { yes: ['y', 'ENTER'] , no: ['n'] }).promise
-    terminal('\n')
-    return response==true
-  }
+  terminal(question + ' [Y|n] ')
+  const response = await terminal.yesOrNo( { yes: ['y', 'ENTER'] , no: ['n'] }).promise
+  terminal('\n')
+  return response==true
+}
 
 
 /**

@@ -1,7 +1,7 @@
 
-import { generateSecretKey, getPublicKey } from '@nostr/tools'
+import { generateSecretKey, getPublicKey, Event } from '@nostr/tools'
 
-import { nsecEncode, npubEncode, decode, neventEncode } from '@nostr/tools/nip19'
+import { nsecEncode, npubEncode, decode } from '@nostr/tools/nip19'
 import { Relay } from '@nostr/tools/relay'
 
 import { red, green, yellow } from '@std/fmt/colors'
@@ -9,8 +9,10 @@ import { red, green, yellow } from '@std/fmt/colors'
 import { subscribeToIncomingDms, sendDm } from './nostrDm.js'
 import { publishRelayListMetadata, subscribeToRelayListMetadata } from './nostrRelayMetadata.js'
 import ChatUi from './chatUi.js'
-import { ChatModel, ChatMessage } from './chatModel.js'
+import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
+import { stringIsValidNpub } from './validation.js'
+
 
 class ChatController {
   #npub: string
@@ -70,10 +72,13 @@ class ChatController {
     
     // subscribe to receive relaylist metadata for all of our contacts from general relays
     for (let i = 0; i < this.#connectedGeneralRelays.length; i++) {
+      const npubs = this.#model.getContactList()
+        .map(c => c.npub)
+        .filter(npub => stringIsValidNpub(npub))
+        .map(npub => decode(npub).data as string)
       console.log(`Subscribing to relay metadata from relay: ${this.#connectedGeneralRelays[i].url}`)
-      //TODO add all contact npubs
-      await subscribeToRelayListMetadata([this.#npub], this.#connectedGeneralRelays[i], 
-        (ev: any) => this.#onRelaylistMetadata(ev))
+      await subscribeToRelayListMetadata(npubs, this.#connectedGeneralRelays[i], 
+        (ev: Event) => this.#onRelaylistMetadata(ev))
     }
     
     // wait
@@ -102,10 +107,10 @@ class ChatController {
     this.#connectedInboxRelays.forEach(relay => relay.close())
   }
 
-  async sendDm(recipientNpub: string, text: string) {
-    const recipientPubKey = decode(recipientNpub).data as string
-    // TODO connect to and use recipient's inbox relays (not our inbox relay!)
-    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, this.#connectedInboxRelays[0], text)
+  async sendDm(recipient: ChatContact, text: string) {
+    const recipientPubKey = decode(recipient.npub).data as string
+
+    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, recipient.relays, text)
     if (sentMsg) {
       await this.#model.setMessage(sentMsg.id, sentMsg)
     }
@@ -142,12 +147,20 @@ class ChatController {
     }
   }
 
-  #onRelaylistMetadata(ev: any) {
-    console.log(`received relaylist for: ${ev.pubkey} relays: ${ev.tags.map((t:string) => t[1])}`, JSON.stringify(ev))
-    // TODO: 
-    // update contact(s) with their inbox relays
-    // use these when sending to contact
-    // if dupes use latest
+  #onRelaylistMetadata(ev: Event) {
+    const contact = this.#model.getContactByNpub(npubEncode(ev.pubkey))
+    if (contact) {
+      const relays: string[] = ev.tags
+        .filter((tag :string[]) => tag.length==3 && tag[0]==='r' && tag[2]==='read')
+        .map((tag: string[]) => tag[1])
+      
+      console.log(`Updating relaylist for contact: ${contact.name}`) 
+      contact.relays = relays
+      this.#model.setContact(contact)
+      // TODO: 
+      // check contact's relay updated date - only update contact if event time is newer (in case there are dupes on different relays
+    }
+
   }
 
 }

@@ -1,4 +1,4 @@
-import { stringIsAValidUrl } from './validation.js'
+import { stringIsAValidUrl, stringIsValidNpub } from './validation.js'
 import { test } from 'node:test'
 import assert from 'node:assert'
 
@@ -31,7 +31,38 @@ test('url validation', () => {
 
   for(let t of tests) {
     let isValid = t.protocols ? stringIsAValidUrl(t.text, t.protocols) :  stringIsAValidUrl(t.text)
-    assert.deepEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}` )
+    assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}` )
+  }
+
+})
+
+test('npub validation', () => {
+  const tests = [
+    {
+      text: 'npub1gl95sqflrhgnvtvfjnnzzsnmcmdq2vg5txwpqvttafunx9ztl0ns88chl8',
+      expected: true
+    },
+    {
+      text: '1gl95sqflrhgnvtvfjnnzzsnmcmdq2vg5txwpqvttafunx9ztl0ns88chl8',
+      expected: false
+    },
+    {
+      text: 'npubdq2vg5txwpqvttafunx9ztl0ns88chl8',
+      expected: false
+    },
+    {
+      text: 'nsec1gl95sqflrhgnvtvfjnnzzsnmcmdq2vg5txwpqvttafunx9ztl0ns88chl8',
+      expected: false
+    },
+    {
+      text: '9999999999999',
+      expected: false
+    },
+  ]
+
+  for(let t of tests) {
+    let isValid = stringIsValidNpub(t.text)
+    assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
   }
 
 })

@@ -16,6 +16,7 @@ mock.module('./localStore.ts', { namedExports:
 })
 
 describe('model', async () => {
+  // lazy load ChatModel so that its mocked dependencies are setup first
   let ChatModel: new()=>any
   before( async() => {
     ({ ChatModel } = await import('./chatModel.js'))
@@ -143,9 +144,9 @@ describe('model', async () => {
 
     const contacts = model.getContactList()
     assert.equal(contacts.length, 3)
-    assert.deepEqual(contacts[0], { name: 'Freddy', npub: 'npub456'})
-    assert.deepEqual(contacts[1], { name: 'Jane', npub: 'npub789'})
-    assert.deepEqual(contacts[2], { name: 'Rod', npub: 'npub123'})
+    assert.deepEqual(contacts[0], { name: 'Rod', npub: 'npub123'})
+    assert.deepEqual(contacts[1], { name: 'Freddy', npub: 'npub456'})
+    assert.deepEqual(contacts[2], { name: 'Jane', npub: 'npub789'})
 
     const foundContact = model.getContactByName('Freddy')
     assert.deepEqual(foundContact, { name: 'Freddy', npub: 'npub456'})
@@ -208,8 +209,8 @@ describe('model', async () => {
     let model = new ChatModel()
 
     // add a contact
-    const c: ChatContact = { name: 'Fred', npub: 'npub456', }
-    await model.setContact(c.name, c.npub)
+    const c: ChatContact = { name: 'Fred', npub: 'npub456', relays: [] }
+    await model.setContact(c)
     assert.equal(model.getContactList().length, 1)
     assert.deepEqual(model.getContactList()[0], c)
 
@@ -241,13 +242,13 @@ describe('model', async () => {
 
     // edit cotact
     c.name = 'Bob'
-    await model.setContact(c.name, c.npub)
+    await model.setContact(c)
     assert.equal(model.getContactList().length, 1)
     assert.deepEqual(model.getContactList()[0], c)
     
     // add another contact
-    const c2: ChatContact = { name: 'Pip', npub: 'npub789' }
-    await model.setContact(c2.name, c2.npub)
+    const c2: ChatContact = { name: 'Pip', npub: 'npub789', relays: []}
+    await model.setContact(c2)
     assert.equal(model.getContactList().length, 2)
     assert.deepEqual(model.getContactList()[0], c)
     assert.deepEqual(model.getContactList()[1], c2)

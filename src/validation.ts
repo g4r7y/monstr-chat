@@ -1,4 +1,5 @@
 import { URL } from 'url'
+import { decode } from '@nostr/tools/nip19'
 
 const stringIsAValidUrl = (str: string, protocols: string[] = []) : boolean => {
     try {
@@ -12,4 +13,13 @@ const stringIsAValidUrl = (str: string, protocols: string[] = []) : boolean => {
     }
 }
 
-export { stringIsAValidUrl }
+const stringIsValidNpub = (npub: string) : boolean => {
+    try {
+        const decoded = decode(npub)
+        return decoded.type === 'npub'
+    } catch (error) {
+        return false
+    }
+}
+
+export { stringIsAValidUrl, stringIsValidNpub }

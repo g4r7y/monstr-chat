@@ -3,17 +3,22 @@ import { npubEncode } from "@nostr/tools/nip19"
 import { wrapEvent, unwrapEvent } from "@nostr/tools/nip17"
 import { Relay, Subscription } from "@nostr/tools/relay"
 import { NostrEvent } from "@nostr/tools"
+import { SimplePool } from "@nostr/tools/pool"
 import { ChatMessage } from "./chatModel.js"
+
 
 let subscription: Subscription
 
 
 // NIP17 
-const sendDm = async (npub: string, nsec: Uint8Array, recipientPubKey: string, relay: Relay, text: string) : Promise<ChatMessage | null> => {
+const sendDm = async (npub: string, nsec: Uint8Array, recipientPubKey: string, relays: string[], text: string) : Promise<ChatMessage | null> => {
   try {
-    const recipient = { publicKey: recipientPubKey } //todo optional relay?
+    let pool = new SimplePool()
+    const recipient = { publicKey: recipientPubKey }
     const event = await wrapEvent(nsec, recipient, text)
-    await relay.publish(event)
+    await Promise.any(pool.publish(relays, event))
+
+    // Return a local copy of the sent message
     // time from the NIP17 wrapped event is deliberately wrong. so use local time instead.
     let createdDate = new Date()
     let sentMessage : ChatMessage = {
@@ -55,6 +60,7 @@ const receiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : Pr
   }
 }
 
+// TODO change to take list of relays and use pool instead of using relay directly
 const subscribeToIncomingDms = async (npub: string, nsec: Uint8Array, relay: Relay, onMessage: (msg: ChatMessage)=>void) => {
   if (subscription) {
     subscription.close()

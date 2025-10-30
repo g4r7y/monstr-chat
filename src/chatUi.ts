@@ -1,7 +1,7 @@
 import tk from 'terminal-kit'
 import ChatController from './chatController.js'
 import { ChatContact, ChatMessage, ChatModel, ChatSettings } from './chatModel.js'
-import { stringIsAValidUrl } from './validation.js'
+import { stringIsAValidUrl, stringIsValidNpub } from './validation.js'
 import { wrapText, truncateText } from './textUtils.js'
 import { showPrompt, showYesNoPrompt, showDialog, showMenu, showHorizontalMenu, startScrollPane, stopScrollPane } from './terminalUi.js'
 
@@ -27,7 +27,6 @@ class ChatUi {
     terminal.bgBlue('Main Menu\n')
     const mainMenu = new Map()
     mainMenu.set('Messages', () => this.#view.push('inbox'))
-    mainMenu.set('Send', () => this.#view.push('send'))
     mainMenu.set('Contacts',  () => this.#view.push('contacts'))
     mainMenu.set('Settings',  () => this.#view.push('settings'))
     mainMenu.set('Quit', () => this.#view.pop())
@@ -112,9 +111,8 @@ class ChatUi {
   
   async #viewConversation() {
     const contactNpub = this.#viewContext
-    const title = this.#chatModel.getContactByNpub(contactNpub) ?
-    `Conversation with ${this.#chatModel.getContactByNpub(contactNpub)!.name}` 
-    : 'Conversation'
+    const knownContact = this.#chatModel.getContactByNpub(contactNpub)
+    const title = `Conversation with ${knownContact?.name ?? 'new contact'}` 
     terminal.clear()
     terminal.bgBlue(`${title}\n`)
     terminal('\n')
@@ -130,11 +128,11 @@ class ChatUi {
         terminal.eraseDisplayBelow()
         const menu = new Map()
         menu.set('Back',  () => { this.#view.pop() })
-        menu.set('Send Message', () => state = 'send' )
-        if (this.#chatModel.getContactByNpub(contactNpub)) {
+        if (knownContact) {
+          menu.set('Send Message', () => state = 'send' )
           menu.set('View Contact', () => { this.#view.push('viewContact')})
         } else {
-          menu.set('Add to Contacts', () => { this.#view.push('editContact')})
+          menu.set('Add New Contact', () => { this.#view.push('editContact')})
         }
         menu.set('Delete Conversation', () => state = 'delete')
         state = 'exit' // default, may be overridden by menu choice
@@ -156,6 +154,7 @@ class ChatUi {
       if (state == 'send') {
         terminal.moveTo(0, 1 + terminal.height - 6)
         terminal.eraseDisplayBelow()
+
         // TODO - doesn't handle the prompt growing more than the footerHeight as it
         // scrolls the entire terminal up. Just limit the size of the prompt to the available footer space?
         const msgToSend = await showPrompt('Send message: ', draftMessage)
@@ -164,8 +163,8 @@ class ChatUi {
           state = 'submenu'
         } else {
           // send message and remain in send state
-          // todo validation, make sure it's not empty, valid npub etc etc
-          await this.#chatController.sendDm(contactNpub, msgToSend)
+          // TODO validation, make sure it's not empty, valid npub etc etc, contact has relay(s) to send to
+          await this.#chatController.sendDm(knownContact!, msgToSend)
           draftMessage = ''
         } 
       }
@@ -177,17 +176,15 @@ class ChatUi {
   async #contactsMenu() {
     terminal.clear()
     terminal.bgBlue('Contacts\n')
-    console.log('contacts')
     const menu = new Map()
     menu.set('Back',  () => this.#view.pop())
     menu.set('Add New Contact', () => this.#view.push('addContact'))
     
-    console.log('contacts2')
-    console.log(JSON.stringify(this.#chatModel))
-    const contacts = this.#chatModel.getContactList()
-    contacts.forEach((c: ChatContact) => {
-      menu.set(c.name, () => { this.#view.push('viewContact'); this.#viewContext = c.npub })
-    })
+    this.#chatModel.getContactList()
+      .sort((a: ChatContact, b: ChatContact) => a.name.localeCompare(b.name))
+      .forEach((c: ChatContact) => {
+        menu.set(c.name, () => { this.#view.push('viewContact'); this.#viewContext = c.npub })
+      })
     await showMenu(menu)
   }
   
@@ -196,10 +193,12 @@ class ChatUi {
     terminal.bgBlue('View Contact\n\n')
     const contactNpub = this.#viewContext
     const currentContact = this.#chatModel.getContactByNpub(contactNpub)
-    terminal.yellow('Name: ')
+    terminal.yellow('Name:   ')
     terminal.white(`${currentContact?.name}\n`)
-    terminal.yellow('Npub: ')
+    terminal.yellow('Npub:   ')
     terminal.white(`${currentContact?.npub}\n`)
+    terminal.yellow('Relays: ')
+    terminal.white(`${currentContact?.relays?.join(" ") ?? 'unknown'}\n`)
     terminal('\n')
     
     const menu = new Map()
@@ -214,12 +213,13 @@ class ChatUi {
   }
 
   async #editContact(addNewContact=false) {
-    let npub = addNewContact ? '' : this.#viewContext
-    let name = ''
-    if (npub && this.#chatModel.getContactByNpub(npub)) {
-      name = this.#chatModel.getContactByNpub(npub)!.name
-    }
-    let origName = name
+    let contact: ChatContact = { name: '', npub: '',  relays: []}
+    if (!addNewContact) {
+      let npub = this.#viewContext
+      contact = this.#chatModel.getContactByNpub(npub) ?? contact
+    } 
+
+    let origName = contact.name
     let editing = true
     while (editing) {
       terminal.clear()
@@ -227,31 +227,35 @@ class ChatUi {
       result = addNewContact ?
         await showDialog('Add contact', 
           ['Contact name', 'Contact npub'],
-          [ name, npub ]) :
+          [ contact.name, contact.npub ]) :
         await showDialog('Edit contact', 
           ['Contact name'],
-          [ name ])
+          [ contact.name ])
       editing = false
       if (result) {
         if (addNewContact) {
-          [name, npub] = result
+          const [name, npub] = result;
+          contact = { ...contact, name, npub };
         } else {
-           [name] = result
+          const [name] = result;
+          contact = { ...contact, name };
         }
 
-        let isDuplicate = this.#chatModel.getContactByName(name) !== null
+        let isDuplicate = this.#chatModel.getContactByName(contact.name) !== null
 
-        if (name == '') {
+        if (contact.name == '') {
           editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
-        } else if (npub == '') { // TODO validate
+        } else if (contact.npub == '') {
           editing = await showYesNoPrompt('Contact npub cannot be empty. Continue editing?')
-        } else if (name !== origName && isDuplicate) {
+        } else if (!stringIsValidNpub(contact.npub)) {
+          editing = await showYesNoPrompt('Contact npub is not valid. Continue editing?')
+        } else if (contact.name !== origName && isDuplicate) {
           editing = await showYesNoPrompt('Contact already exists with this name. Continue editing?')
-        } else if (addNewContact && this.#chatModel.getContactByNpub(npub)) {
+        } else if (addNewContact && this.#chatModel.getContactByNpub(contact.npub)) {
           editing = await showYesNoPrompt('Contact already exists with this npub. Continue editing?')
         } else {
           // valid, so write the contact
-          this.#chatModel.setContact(name, npub)
+          this.#chatModel.setContact(contact)
         }
       }
     }
@@ -271,27 +275,6 @@ class ChatUi {
       // need to pop twice, to exit the contacts view also
       this.#view.pop()
     }
-    this.#view.pop()
-  }
-  
-  async #sendMessage() {
-    terminal.clear()
-    let result = await showDialog(
-      'Send DM', 
-      [
-        'Recipient',
-        'Message',
-      ],
-      []
-    )
-    if (result) {
-      const [recipient, text] = result
-      const contact = this.#chatModel.getContactByName(recipient)
-      const recipientNpub = contact ? contact.npub : recipient
-      // todo validation - not empty, valid npub etc etc
-      await this.#chatController.sendDm(recipientNpub, text)
-    }
-    
     this.#view.pop()
   }
   
@@ -385,7 +368,8 @@ class ChatUi {
     currentSettings.inboxRelays = newInboxRelays
     currentSettings.generalRelays = newGeneralRelays
     
-    // TODO Publish NIP65 to discovery relays
+    // TODO Republish our NIP65 to discovery relays
+
     this.#chatModel.setSettings(currentSettings)
     this.#view.pop()
   }
@@ -436,7 +420,6 @@ class ChatUi {
         'main':               this.#mainMenu,
         'inbox':              this.#viewInbox,
         'viewConversation':   this.#viewConversation,
-        'send':               this.#sendMessage,
         'contacts':           this.#contactsMenu,
         'addContact':         this.#addContact,
         'editContact':        this.#editContact,
@@ -459,8 +442,7 @@ class ChatUi {
 
   newMessage(msg: any) {
     if (this.#view[this.#view.length-1] == 'viewConversation') {
-      // todo - only update if contact is related to conversation
-      // stopScrollPane()
+      // TODO - only update view if contact is related to current conversation
       terminal.saveCursor()
       this.#updateConversationView()
       terminal.restoreCursor()

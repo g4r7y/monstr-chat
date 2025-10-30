@@ -19,7 +19,8 @@ const defaultSettings : ChatSettings = {
 
 export type ChatContact = {
   name: string,
-  npub: string
+  npub: string,
+  relays: string[]
 }
 
 export type ChatMessage = {
@@ -102,8 +103,7 @@ export class ChatModel {
   }
   
   getContactList(): ChatContact[] {
-    const contacts = Array.from(this.#contacts.values())
-    return contacts.sort((a: ChatContact, b: ChatContact) => a.name.localeCompare(b.name))
+    return Array.from(this.#contacts.values())
   }
 
   getContactByNpub(contactNpub : string): ChatContact | null {
@@ -146,8 +146,8 @@ export class ChatModel {
     await this.#syncMessagesToLocalStore()
   }
 
-  async setContact(name: string, npub: string) {
-    this.#contacts.set(npub, {name,npub})
+  async setContact(contact: ChatContact) {
+    this.#contacts.set(contact.npub, contact)
     await this.#syncAppDataToLocalStore()
   }
 

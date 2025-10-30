@@ -1,5 +1,5 @@
 import { Relay, Subscription } from "@nostr/tools/relay"
-import { finalizeEvent } from "@nostr/tools"
+import { Event, finalizeEvent } from "@nostr/tools"
 
 let subscription : Subscription
 
@@ -30,7 +30,7 @@ const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, relay: R
 }
 
 
-const subscribeToRelayListMetadata = async (npubList: string[], relay: Relay, onEvent: (event: any)=>void ) => {
+const subscribeToRelayListMetadata = async (npubList: string[], relay: Relay, onEvent: (event: Event)=>void ) => {
   if (subscription) {
     subscription.close()
   }
@@ -42,7 +42,7 @@ const subscribeToRelayListMetadata = async (npubList: string[], relay: Relay, on
     },
   ], {
     id: 'relaylist-metadata-sub-id',  // always use fixed sub id
-    async onevent (event) {
+    async onevent (event: any) {
       if (event.kind === 10002) {
         onEvent(event)
       }

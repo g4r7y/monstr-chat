@@ -14,6 +14,11 @@ This will compile the ts code and output to the dist folder.
 
 ```node dist/main.js```
 
+### Requires:
+
+node 22
+
+if using older node version (without native websocket support) then you need to install ws and call useWebSocketImplementatio() from nostr-tools
 
 ### Use local nostr server:
 

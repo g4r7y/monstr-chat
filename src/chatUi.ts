@@ -132,7 +132,7 @@ class ChatUi {
           menu.set('Send Message', () => state = 'send' )
           menu.set('View Contact', () => { this.#view.push('viewContact')})
         } else {
-          menu.set('Add New Contact', () => { this.#view.push('editContact')})
+          menu.set('Add New Contact', () => { this.#view.push('addContact')})
         }
         menu.set('Delete Conversation', () => state = 'delete')
         state = 'exit' // default, may be overridden by menu choice
@@ -213,9 +213,9 @@ class ChatUi {
   }
 
   async #editContact(addNewContact=false) {
-    let contact: ChatContact = { name: '', npub: '',  relays: [], relaysUpdatedAt: null}
+    let npub = this.#viewContext ?? ''
+    let contact: ChatContact = { name: '', npub,  relays: [], relaysUpdatedAt: null}
     if (!addNewContact) {
-      let npub = this.#viewContext
       contact = this.#chatModel.getContactByNpub(npub) ?? contact
     } 
 
@@ -256,6 +256,11 @@ class ChatUi {
         } else {
           // valid, so write the contact
           this.#chatModel.setContact(contact)
+
+          // if new contact, update subscription so we can get contact's relaylist
+          if (addNewContact) {
+            this.#chatController.subscribeToRelayLists()
+          }   
         }
       }
     }

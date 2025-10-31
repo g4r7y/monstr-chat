@@ -213,7 +213,7 @@ class ChatUi {
   }
 
   async #editContact(addNewContact=false) {
-    let contact: ChatContact = { name: '', npub: '',  relays: []}
+    let contact: ChatContact = { name: '', npub: '',  relays: [], relaysUpdatedAt: null}
     if (!addNewContact) {
       let npub = this.#viewContext
       contact = this.#chatModel.getContactByNpub(npub) ?? contact

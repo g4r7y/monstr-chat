@@ -1,7 +1,7 @@
 import { readAppData, writeAppData, readMessages, writeMessages } from './localStore.js'
 
 export type ChatSettings = {
-  inboxRelays: string[]
+  inboxRelays: string[],
   generalRelays: string[]
 }
 
@@ -20,15 +20,16 @@ const defaultSettings : ChatSettings = {
 export type ChatContact = {
   name: string,
   npub: string,
-  relays: string[]
+  relays: string[],
+  relaysUpdatedAt: number | null
 }
 
 export type ChatMessage = {
   id: string,
   time: Date,
   text: string,
-  sender: string
-  receiver: string
+  sender: string,
+  receiver: string,
   state: string // tx or rx
 }
 

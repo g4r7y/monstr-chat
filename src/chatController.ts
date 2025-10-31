@@ -150,20 +150,24 @@ class ChatController {
     }
   }
 
+  // Callback for NIP65 relay list change for a subscribed npub.
+  // Checks if we have a corresponding contact and updates its relaylist.
+  // Only do this if created_at time is newer than last update as we will get duplicate events
+  // from multiple relay.
   #onRelaylistMetadata(ev: Event) {
+    console.log('onRelaylistMetadata')
     const contact = this.#model.getContactByNpub(npubEncode(ev.pubkey))
-    if (contact) {
+    // update contact if event time is newer (in case there are duplicate events from several relays)
+    if (contact && (!contact.relaysUpdatedAt || contact.relaysUpdatedAt < ev.created_at)) {
       const relays: string[] = ev.tags
         .filter((tag :string[]) => tag.length==3 && tag[0]==='r' && tag[2]==='read')
         .map((tag: string[]) => tag[1])
       
-      console.log(`Updating relaylist for contact: ${contact.name}`) 
       contact.relays = relays
+      contact.relaysUpdatedAt = ev.created_at
+      console.log(`Updating relaylist for contact: ${contact.name}`) 
       this.#model.setContact(contact)
-      // TODO: 
-      // check contact's relay updated date - only update contact if event time is newer (in case there are dupes on different relays
     }
-
   }
 
 }

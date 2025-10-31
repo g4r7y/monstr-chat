@@ -209,7 +209,7 @@ describe('model', async () => {
     let model = new ChatModel()
 
     // add a contact
-    const c: ChatContact = { name: 'Fred', npub: 'npub456', relays: [] }
+    const c: ChatContact = { name: 'Fred', npub: 'npub456', relays: [], relaysUpdatedAt: null }
     await model.setContact(c)
     assert.equal(model.getContactList().length, 1)
     assert.deepEqual(model.getContactList()[0], c)
@@ -247,7 +247,7 @@ describe('model', async () => {
     assert.deepEqual(model.getContactList()[0], c)
     
     // add another contact
-    const c2: ChatContact = { name: 'Pip', npub: 'npub789', relays: []}
+    const c2: ChatContact = { name: 'Pip', npub: 'npub789', relays: [], relaysUpdatedAt: null}
     await model.setContact(c2)
     assert.equal(model.getContactList().length, 2)
     assert.deepEqual(model.getContactList()[0], c)

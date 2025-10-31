@@ -1,8 +1,8 @@
-import { Relay, Subscription } from "@nostr/tools/relay"
+import { Relay } from "@nostr/tools/relay"
 import { Event, finalizeEvent, SimplePool } from "@nostr/tools"
+import { SubCloser } from "@nostr/tools/abstract-pool"
 
-let subscription : Subscription
-
+let subCloser : SubCloser
 
 const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, relays: string[], inboxRelayList: string[]) => {
 
@@ -30,25 +30,27 @@ const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, relays: 
   await Promise.any(pool.publish(relays, signedEvent))
 }
 
-const subscribeToRelayListMetadata = async (npubList: string[], relay: Relay, onEvent: (event: Event)=>void ) => {
-  // TODO use pool
-  if (subscription) {
-    subscription.close()
+const subscribeToRelayListMetadata = async (npubList: string[], relays: string[], onEvent: (event: Event)=>void ) => {
+  if (subCloser) {
+    subCloser.close()
   }
 
-  subscription = relay.subscribe([
+  let pool = new SimplePool()
+
+  subCloser = pool.subscribe(
+    relays, 
     {
       kinds: [10002],
       authors: npubList,
     },
-  ], {
-    id: 'relaylist-metadata-sub-id',  // always use fixed sub id
-    async onevent (event: any) {
-      if (event.kind === 10002) {
-        onEvent(event)
+    {
+      id: 'relaylist-metadata-sub-id',  // always use fixed sub id
+      async onevent (event: any) {
+        if (event.kind === 10002) {
+          onEvent(event)
+        }
       }
-    }
-  })
+    })
 }
 
 

@@ -70,16 +70,7 @@ class ChatController {
       
     }
     
-    // subscribe to receive relaylist metadata for all of our contacts from general relays
-    for (let i = 0; i < this.#connectedGeneralRelays.length; i++) {
-      const npubs = this.#model.getContactList()
-        .map(c => c.npub)
-        .filter(npub => stringIsValidNpub(npub))
-        .map(npub => decode(npub).data as string)
-      console.log(`Subscribing to relay metadata from relay: ${this.#connectedGeneralRelays[i].url}`)
-      await subscribeToRelayListMetadata(npubs, this.#connectedGeneralRelays[i], 
-        (ev: Event) => this.#onRelaylistMetadata(ev))
-    }
+    this.subscribeToRelayLists()
     
     // wait
     const sleep = (ms: number) => {
@@ -109,6 +100,18 @@ class ChatController {
     if (sentMsg) {
       await this.#model.setMessage(sentMsg.id, sentMsg)
     }
+  }
+
+  // Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
+  // Subscription is applied to the general (discovery) relays
+  async subscribeToRelayLists() {
+    const npubs = this.#model.getContactList()
+      .map(c => c.npub)
+      .filter(npub => stringIsValidNpub(npub))
+      .map(npub => decode(npub).data as string)
+    console.log(`Subscribing to relay metadata for contacts: ${this.#model.getContactList().map(c=>c.name)}`)
+    await subscribeToRelayListMetadata(npubs, this.#model.settings.generalRelays, 
+      (ev: Event) => this.#onRelaylistMetadata(ev))
   }
 
   // Broadcast our inbox relay list to the general discovery relays so that other people know how to send message to us
@@ -142,7 +145,7 @@ class ChatController {
     return connectedRelays
   }
     
-  
+  // Callback for incoming DM subscription.
   #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
       this.#model.setMessage(msg.id, msg) //todo async?
@@ -150,7 +153,8 @@ class ChatController {
     }
   }
 
-  // Callback for NIP65 relay list change for a subscribed npub.
+  // Callback for NIP65 relay list subscription.
+  // Called whenever a subscribed npubs's relaylist changes.
   // Checks if we have a corresponding contact and updates its relaylist.
   // Only do this if created_at time is newer than last update as we will get duplicate events
   // from multiple relay.

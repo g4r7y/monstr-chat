@@ -259,7 +259,7 @@ class ChatUi {
 
           // if new contact, update subscription so we can get contact's relaylist
           if (addNewContact) {
-            this.#chatController.subscribeToRelayLists()
+            this.#chatController.subscribeToContactRelayMetadata()
           }   
         }
       }
@@ -373,8 +373,10 @@ class ChatUi {
     currentSettings.generalRelays = newGeneralRelays    
     this.#chatModel.setSettings(currentSettings)
 
-    // send out updated nip65
+    // send out updated nip65, potentially to updated general relays 
     this.#chatController.broadcastRelayList()
+    // resubscribe to inbox relays, in case they changed
+    this.#chatController.subscribeToIncomingDms()
     
     this.#view.pop()
   }

@@ -6,7 +6,8 @@ import { Relay } from '@nostr/tools/relay'
 
 import { red, green, yellow } from '@std/fmt/colors'
 
-import { subscribeToIncomingDms, sendDm } from './nostrDm.js'
+import { sendDm } from './nostrSendDm.js'
+import { receiveDms } from './nostrReceiveDm.js'
 import { publishRelayListMetadata, subscribeToRelayListMetadata } from './nostrRelayMetadata.js'
 import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
@@ -55,32 +56,17 @@ class ChatController {
     
     await this.#model.load()
     
-    
     console.log(`Connecting to inbox relays`)
     this.#connectedInboxRelays = await this.#connectToRelays(this.#model.settings.inboxRelays)
     console.log(`Connecting to discovery relays`)
     this.#connectedGeneralRelays = await this.#connectToRelays(this.#model.settings.generalRelays)
     
     
-    // subscribe to receive DMs from inbox relays
-    for (let i = 0; i < this.#connectedInboxRelays.length; i++) {
-      console.log(`Subscribing to incoming DMs from relay: ${this.#connectedInboxRelays[i].url}`)
-      await subscribeToIncomingDms(this.#npub, this.#nsec, this.#connectedInboxRelays[i], 
-        (msg: ChatMessage) => this.#onIncoming(msg))
-      
-    }
-    
-    this.subscribeToRelayLists()
-    
-    // wait
-    const sleep = (ms: number) => {
-      return new Promise(resolve => {
-        setTimeout(resolve, ms)
-      })
-    }
-    await sleep(100)
+    await this.subscribeToIncomingDms()
 
-    this.broadcastRelayList()
+    await this.subscribeToContactRelayMetadata()
+
+    await this.broadcastRelayList()
   
 
     const connError = this.#connectedInboxRelays.length === 0 || this.#connectedGeneralRelays.length === 0
@@ -93,6 +79,7 @@ class ChatController {
     this.#connectedInboxRelays.forEach(relay => relay.close())
   }
 
+
   async sendDm(recipient: ChatContact, text: string) {
     const recipientPubKey = decode(recipient.npub).data as string
 
@@ -102,9 +89,15 @@ class ChatController {
     }
   }
 
+  async subscribeToIncomingDms() {
+    // subscribe to receive DMs from inbox relays
+    await receiveDms(this.#npub, this.#nsec, this.#model.settings.inboxRelays, 
+      (msg: ChatMessage) => this.#onIncoming(msg))
+  }
+
   // Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
-  // Subscription is applied to the general (discovery) relays
-  async subscribeToRelayLists() {
+  // General (discovery) relays are used for the subscription
+  async subscribeToContactRelayMetadata() {
     const npubs = this.#model.getContactList()
       .map(c => c.npub)
       .filter(npub => stringIsValidNpub(npub))

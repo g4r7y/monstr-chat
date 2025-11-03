@@ -2,7 +2,6 @@
 import { generateSecretKey, getPublicKey, Event } from '@nostr/tools'
 
 import { nsecEncode, npubEncode, decode } from '@nostr/tools/nip19'
-import { Relay } from '@nostr/tools/relay'
 
 import { red, green, yellow } from '@std/fmt/colors'
 
@@ -13,6 +12,8 @@ import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
 import { stringIsValidNpub } from './validation.js'
+import { SimplePool } from '@nostr/tools'
+import { normalizeURL } from '@nostr/tools/utils'
 
 
 class ChatController {
@@ -20,8 +21,7 @@ class ChatController {
   #nsec: Uint8Array
   #model: ChatModel
   #ui: ChatUi
-  #connectedInboxRelays : Relay[]
-  #connectedGeneralRelays : Relay[]
+  #pool: SimplePool
 
   constructor() {
     this.#npub = ''
@@ -29,11 +29,11 @@ class ChatController {
 
     this.#model = new ChatModel()
     this.#ui = new ChatUi(this, this.#model)
-    this.#connectedInboxRelays = []
-    this.#connectedGeneralRelays = []
+    
+    const poolOptions = { enablePing: true, enableReconnect: true }
+    this.#pool = new SimplePool(poolOptions)
   }
 
-  
   async run() {
     // try and read key from store
     let nsecStr = await readKey()
@@ -53,66 +53,78 @@ class ChatController {
     this.#npub = getPublicKey(this.#nsec)
     
     console.log(yellow('npub: ' + npubEncode(this.#npub)))
-    
+
+  
     await this.#model.load()
     
-    console.log(`Connecting to inbox relays`)
-    this.#connectedInboxRelays = await this.#connectToRelays(this.#model.settings.inboxRelays)
-    console.log(`Connecting to discovery relays`)
-    this.#connectedGeneralRelays = await this.#connectToRelays(this.#model.settings.generalRelays)
-    
-    
-    await this.subscribeToIncomingDms()
+    let startupError = false
 
-    await this.subscribeToContactRelayMetadata()
+    try {
+      await this.subscribeToIncomingDms()
+      await this.subscribeToContactRelayMetadata()
+      await this.broadcastRelayList()
+    } catch (err) {
+      startupError = true
+    }
 
-    await this.broadcastRelayList()
-  
-
-    const connError = this.#connectedInboxRelays.length === 0 || this.#connectedGeneralRelays.length === 0
-    if (connError) {
+    const connError = (this.checkConnectedRelays(this.#model.settings.generalRelays).length === 0) ||
+                      (this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0)
+    if (startupError || connError) {
       await this.#ui.go('offline')
     } else {
       await this.#ui.go()
     }
-    
-    this.#connectedInboxRelays.forEach(relay => relay.close())
+
+    this.#pool.destroy()
   }
 
-
+  // Send DM using the recipient's inbox relay(s)
   async sendDm(recipient: ChatContact, text: string) {
     const recipientPubKey = decode(recipient.npub).data as string
 
-    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, recipient.relays, text)
-    if (sentMsg) {
-      await this.#model.setMessage(sentMsg.id, sentMsg)
-    }
+    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, this.#pool, recipient.relays, text)
+    await this.#model.setMessage(sentMsg.id, sentMsg)
   }
 
+  // Subscribe/re-subscribe to receive DMs from inbox relays
   async subscribeToIncomingDms() {
-    // subscribe to receive DMs from inbox relays
-    await receiveDms(this.#npub, this.#nsec, this.#model.settings.inboxRelays, 
+    await receiveDms(this.#npub, this.#nsec, 
+      this.#pool, this.#model.settings.inboxRelays, 
       (msg: ChatMessage) => this.#onIncoming(msg))
   }
 
   // Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
-  // General (discovery) relays are used for the subscription
+  // General (aka discovery) relays are used for the subscription
   async subscribeToContactRelayMetadata() {
     const npubs = this.#model.getContactList()
       .map(c => c.npub)
       .filter(npub => stringIsValidNpub(npub))
       .map(npub => decode(npub).data as string)
     console.log(`Subscribing to relay metadata for contacts: ${this.#model.getContactList().map(c=>c.name)}`)
-    await subscribeToRelayListMetadata(npubs, this.#model.settings.generalRelays, 
+    await subscribeToRelayListMetadata(npubs, this.#pool, this.#model.settings.generalRelays, 
       (ev: Event) => this.#onRelaylistMetadata(ev))
   }
 
   // Broadcast our inbox relay list to the general discovery relays so that other people know how to send message to us
   async broadcastRelayList() {
-    //todo catch errors?
-    await publishRelayListMetadata(this.#npub, this.#nsec, 
-      this.#model.settings.generalRelays, 
+    await publishRelayListMetadata(this.#npub, this.#nsec,
+      this.#pool, this.#model.settings.generalRelays, 
       this.#model.settings.inboxRelays)
+  }
+
+  // Checks that the specified relay URLs are connected.
+  // @param  relayUrls Subset of relays in the pool that we want to check
+  // @return List of relay urls that are in the pool and connected
+  checkConnectedRelays(relayUrls: string[]) : string[] {
+    const allRelays = this.#pool.listConnectionStatus()
+    let result : string[] = []
+    relayUrls.forEach(r => {
+      const url = normalizeURL(r)
+      if (allRelays.has(url) && allRelays.get(url)===true) { 
+        result.push(r)
+      }
+    })
+    return result
   }
 
   getPubKeyString() : string {
@@ -123,21 +135,8 @@ class ChatController {
     return nsecEncode(this.#nsec)
   }
 
-  async #connectToRelays(relayUrls: string[]) : Promise<Relay[]> {
-    let connectedRelays = []
-    for (let relayUrl of relayUrls) {
-      try {
-        const relay = await Relay.connect(relayUrl)
-        connectedRelays.push(relay)
-        console.log(`connected to ${relay.url}`)
-      
-      } catch (err) {
-        console.log(`Failed to connect to relay ${relayUrl}. Error: ${err}`)
-      }
-    }
-    return connectedRelays
-  }
-    
+
+  
   // Callback for incoming DM subscription.
   #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {

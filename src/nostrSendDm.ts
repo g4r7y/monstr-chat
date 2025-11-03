@@ -5,9 +5,8 @@ import { ChatMessage } from "./chatModel.js"
 
 
 // NIP17 
-const sendDm = async (npub: string, nsec: Uint8Array, recipientPubKey: string, relays: string[], text: string) : Promise<ChatMessage | null> => {
+const sendDm = async (npub: string, nsec: Uint8Array, recipientPubKey: string, pool: SimplePool, relays: string[], text: string) : Promise<ChatMessage> => {
   try {
-    let pool = new SimplePool()
     const recipient = { publicKey: recipientPubKey }
     const event = await wrapEvent(nsec, recipient, text)
     await Promise.any(pool.publish(relays, event))
@@ -27,7 +26,7 @@ const sendDm = async (npub: string, nsec: Uint8Array, recipientPubKey: string, r
     return sentMessage
   } catch(err) {
     console.log('Failed to send nip17 message', err)
-    return null
+    throw new Error('Failed to send nip17 message')
   }
 }
 

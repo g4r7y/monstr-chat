@@ -140,16 +140,16 @@ class ChatUi {
       }
 
       if (state == 'delete') {
-          terminal('\n')
-          const yes = await showYesNoPrompt('Delete all messages in this conversation?')
-          if (yes) {
-            // TODO await delete convo
-            this.#view.pop()
-            state = 'exit'
-          } else {
-            state = 'submenu'
-          }
+        terminal('\n')
+        const yes = await showYesNoPrompt('Delete all messages in this conversation?')
+        if (yes) {
+          // TODO await delete convo
+          this.#view.pop()
+          state = 'exit'
+        } else {
+          state = 'submenu'
         }
+      }
                      
       if (state == 'send') {
         terminal.moveTo(0, 1 + terminal.height - 6)
@@ -164,8 +164,20 @@ class ChatUi {
         } else {
           // send message and remain in send state
           // TODO validation, make sure it's not empty, valid npub etc etc, contact has relay(s) to send to
-          await this.#chatController.sendDm(knownContact!, msgToSend)
-          draftMessage = ''
+          try {
+            await this.#chatController.sendDm(knownContact!, msgToSend)
+            draftMessage = ''
+          } catch (err) {
+            // send error
+            terminal('\n')
+            const yes = await showYesNoPrompt('Send failed. Try again?')
+            if (!yes) {
+              state = 'submenu'
+              draftMessage = ''
+            } else {
+              draftMessage = msgToSend
+            }
+          }
         } 
       }
       stopScrollPane()
@@ -390,8 +402,15 @@ class ChatUi {
     if (relays.length == 0) {
       terminal.white('[None]')
     }
+    
+    let connectedRelays = this.#chatController.checkConnectedRelays(relays)
     for (let relay of relays) {
-      terminal.white(`${relay}\n`)
+      if (connectedRelays.includes(relay)) {
+        terminal.green('✓')
+      } else {
+        terminal.red('X')
+      }
+      terminal.white(`  ${relay}\n`)
     }
 
     terminal.yellow('\nDiscovery relays:\n')
@@ -402,8 +421,14 @@ class ChatUi {
     if (relays.length == 0) {
       terminal.white('[None]')
     }
+    connectedRelays = this.#chatController.checkConnectedRelays(relays)
     for (let relay of relays) {
-      terminal.white(`${relay}\n`)
+      if (connectedRelays.includes(relay)) {
+        terminal.green('✓')
+      } else {
+        terminal.red('X')
+      }
+      terminal.white(`  ${relay}\n`)
     }
 
     const menu = new Map()

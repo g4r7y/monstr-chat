@@ -30,12 +30,11 @@ const onReceiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : 
   }
 }
 
-const receiveDms = async (npub: string, nsec: Uint8Array, relays: string[], onMessage: (msg: ChatMessage)=>void) => {
+const receiveDms = async (npub: string, nsec: Uint8Array, pool: SimplePool, relays: string[], onMessage: (msg: ChatMessage)=>void) => {
   if (subCloser) {
     subCloser.close()
   }
 
-  let pool = new SimplePool()
   subCloser = pool.subscribe(
     relays,
     {

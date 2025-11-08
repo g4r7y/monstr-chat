@@ -1,9 +1,12 @@
 {
-  "name": "nostr-chat",
+  "name": "monstr-chat",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --experimental-test-module-mocks --import tsx --test **/*.test.ts"
+    "test": "npx tsc --noemit && node --experimental-test-module-mocks --import tsx --test **/*.test.ts"
+  },
+  "bin": {
+    "your-cli-name": "./dist/main.js"
   },
   "type": "module",
   "author": "",

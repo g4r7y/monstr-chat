@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import ChatController from "./chatController.js"
 import tk from 'terminal-kit'
 const { terminal } = tk

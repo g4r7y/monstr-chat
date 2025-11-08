@@ -1,7 +1,6 @@
 import { test } from 'node:test'
-import { wrapText } from './textUtils.js'
 import assert from 'node:assert'
-import { wrapEvent } from '@nostr/tools/nip59'
+import { wrapText } from './textUtils.js'
 
 test('word wrap', () => {
   const tests = [

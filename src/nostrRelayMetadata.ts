@@ -1,4 +1,3 @@
-import { Relay } from "@nostr/tools/relay"
 import { Event, finalizeEvent, SimplePool } from "@nostr/tools"
 import { SubCloser } from "@nostr/tools/abstract-pool"
 
@@ -34,7 +33,7 @@ const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, pool: Si
   }
 }
 
-const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool, relays: string[], onEvent: (event: Event)=>void ) => {
+const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>void ) => {
   if (subCloser) {
     subCloser.close()
   }
@@ -47,9 +46,9 @@ const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool
       },
       {
         id: 'relaylist-metadata-sub-id',  // always use fixed sub id
-        async onevent (event: any) {
+        onevent (event: any) {
           if (event.kind === 10002) {
-            onEvent(event)
+            callback(event)
           }
         }
       })
@@ -59,5 +58,33 @@ const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool
   }
 }
 
+const getRelayListMetadata = async (npub: string, pool: SimplePool, relays: string[]) : Promise<Event | undefined> => {
+  try {
+    const events = await pool.querySync(
+      relays, 
+      {
+        kinds: [10002],
+        authors: [npub],
+      },
+    )
+    if (events) {
+      // TODO may be different events from different relays so take the latest
+      return events[0]
+    }
+    return undefined
 
-export { publishRelayListMetadata, subscribeToRelayListMetadata }
+  } catch (err) {
+    console.log('Failed to get nip65 relay list metadata for npub', err)
+    throw new Error('Failed to get nip65')
+  }
+}
+
+const extractReadRelaysFromNip65 = (ev: Event) : string[] => {
+  const relays: string[] = ev.tags
+    .filter((tag :string[]) => tag[0]==='r')
+    .filter((tag :string[]) => tag.length==2 || tag[2]==='read')
+    .map((tag: string[]) => tag[1])
+  return relays
+}
+
+export { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata, extractReadRelaysFromNip65 }

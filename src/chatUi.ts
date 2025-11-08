@@ -28,6 +28,7 @@ class ChatUi {
     const mainMenu = new Map()
     mainMenu.set('Messages', () => this.#view.push('inbox'))
     mainMenu.set('Contacts',  () => this.#view.push('contacts'))
+    mainMenu.set('New Message', () => this.#view.push('newMessage'))
     mainMenu.set('Settings',  () => this.#view.push('settings'))
     mainMenu.set('Quit', () => this.#view.pop())
     await showMenu(mainMenu)
@@ -128,8 +129,8 @@ class ChatUi {
         terminal.eraseDisplayBelow()
         const menu = new Map()
         menu.set('Back',  () => { this.#view.pop() })
+        menu.set('Send Message', () => state = 'send' )
         if (knownContact) {
-          menu.set('Send Message', () => state = 'send' )
           menu.set('View Contact', () => { this.#view.push('viewContact')})
         } else {
           menu.set('Add New Contact', () => { this.#view.push('addContact')})
@@ -163,15 +164,17 @@ class ChatUi {
           state = 'submenu'
         } else {
           // send message and remain in send state
-          // TODO validation, make sure it's not empty, valid npub etc etc, contact has relay(s) to send to
           try {
-            await this.#chatController.sendDm(knownContact!, msgToSend)
+            if (knownContact) {
+              await this.#chatController.sendDm(knownContact!, msgToSend)
+            } else {
+              await this.#chatController.sendDmToUnknown(contactNpub, msgToSend)
+            }
             draftMessage = ''
           } catch (err) {
-            // send error
-            terminal('\n')
-            const yes = await showYesNoPrompt('Send failed. Try again?')
-            if (!yes) {
+            
+            const continueEditing = await this.#handleSendError(err)
+            if (!continueEditing) {
               state = 'submenu'
               draftMessage = ''
             } else {
@@ -184,13 +187,59 @@ class ChatUi {
     }
   }
   
+  async #newMessage() {
+    let editing = true
+    let recipient = ''
+    let text = ''
+    while (editing) {
+      terminal.clear()
+      let result = await showDialog(
+        'Send DM', 
+        [
+          'Recipient',
+          'Message',
+        ],
+        [ recipient, text ]
+      )
+      editing = false
+      if (result) {
+        [recipient, text] = result
+        const contact = this.#chatModel.getContactByName(recipient)
+          if (!contact && !stringIsValidNpub(recipient)) {
+          editing = await showYesNoPrompt('Contact npub is not valid. Continue editing?')
+          continue
+        } 
+
+        try {
+          if (contact) {
+            await this.#chatController.sendDm(contact, text)
+          } else {
+            await this.#chatController.sendDmToUnknown(recipient, text)
+          }
+        } catch (err) {
+          editing = await this.#handleSendError(err)
+        }
+      }
+    }
+    
+    this.#view.pop()
+  }
+
+  async #handleSendError(err: any ) : Promise<boolean> {
+    const sendError = (err instanceof Error && err.message === 'NoRelay') ? 
+        'Send failed, cannot find the recipient\'s inbox relay on any discovery relays'
+        : 'Send failed' 
+    terminal('\n')
+    return await showYesNoPrompt(`${sendError}. Try again?`)
+  }
+  
 
   async #contactsMenu() {
     terminal.clear()
     terminal.bgBlue('Contacts\n')
     const menu = new Map()
     menu.set('Back',  () => this.#view.pop())
-    menu.set('Add New Contact', () => this.#view.push('addContact'))
+    menu.set('Add New Contact', () => { this.#view.push('addContact'); this.#viewContext = '' })
     
     this.#chatModel.getContactList()
       .sort((a: ChatContact, b: ChatContact) => a.name.localeCompare(b.name))
@@ -267,7 +316,7 @@ class ChatUi {
           editing = await showYesNoPrompt('Contact already exists with this npub. Continue editing?')
         } else {
           // valid, so write the contact
-          this.#chatModel.setContact(contact)
+          await this.#chatModel.setContact(contact)
 
           // if new contact, update subscription so we can get contact's relaylist
           if (addNewContact) {
@@ -294,6 +343,7 @@ class ChatUi {
     }
     this.#view.pop()
   }
+
   
   async #settings() {
     terminal.clear()
@@ -383,10 +433,12 @@ class ChatUi {
 
     currentSettings.inboxRelays = newInboxRelays
     currentSettings.generalRelays = newGeneralRelays    
-    this.#chatModel.setSettings(currentSettings)
+    await this.#chatModel.setSettings(currentSettings)
 
     // send out updated nip65, potentially to updated general relays 
     this.#chatController.broadcastRelayList()
+    //TODO catch error in case couldn't send to any relays
+
     // resubscribe to inbox relays, in case they changed
     this.#chatController.subscribeToIncomingDms()
     
@@ -452,6 +504,7 @@ class ChatUi {
         'main':               this.#mainMenu,
         'inbox':              this.#viewInbox,
         'viewConversation':   this.#viewConversation,
+        'newMessage':         this.#newMessage,
         'contacts':           this.#contactsMenu,
         'addContact':         this.#addContact,
         'editContact':        this.#editContact,

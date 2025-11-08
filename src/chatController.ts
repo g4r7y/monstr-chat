@@ -7,7 +7,7 @@ import { red, green, yellow } from '@std/fmt/colors'
 
 import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
-import { publishRelayListMetadata, subscribeToRelayListMetadata } from './nostrRelayMetadata.js'
+import { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
@@ -82,7 +82,33 @@ class ChatController {
   async sendDm(recipient: ChatContact, text: string) {
     const recipientPubKey = decode(recipient.npub).data as string
 
+    if (!recipient?.relays?.length) {
+      console.log(`Cannot send, contact ${recipient.npub} desn't have relay defined`)
+      // TODO try the unknown path?
+      throw new Error('NoRelay')
+    }
+
     const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, this.#pool, recipient.relays, text)
+    await this.#model.setMessage(sentMsg.id, sentMsg)
+  }
+
+  // Send DM to an unknown contact.
+  // First tries to fetch the recipient's relay(s) from NIP65, 
+  // then sends DM using the recipient's inbox relay(s).
+  // Throws if no read relays can be found.
+  async sendDmToUnknown(recipientNpub: string, text: string) {
+    const recipientPubKey = decode(recipientNpub).data as string
+    
+    const event = await getRelayListMetadata(recipientPubKey, this.#pool, this.#model.settings.generalRelays)
+    if (!event) {
+      throw new Error('NoRelay');
+    }
+    const recipientRelays = extractReadRelaysFromNip65(event)
+    console.log('recipeint relays', recipientRelays)
+    if (!recipientRelays?.length) {
+      throw new Error('NoRelay')
+    }
+    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, this.#pool, recipientRelays, text)
     await this.#model.setMessage(sentMsg.id, sentMsg)
   }
 
@@ -101,11 +127,14 @@ class ChatController {
       .filter(npub => stringIsValidNpub(npub))
       .map(npub => decode(npub).data as string)
     console.log(`Subscribing to relay metadata for contacts: ${this.#model.getContactList().map(c=>c.name)}`)
-    await subscribeToRelayListMetadata(npubs, this.#pool, this.#model.settings.generalRelays, 
-      (ev: Event) => this.#onRelaylistMetadata(ev))
+    await subscribeToRelayListMetadata(npubs, this.#pool, 
+      this.#model.settings.generalRelays, 
+      async (ev: Event) => this.#onRelaylistMetadata(ev)
+    )
   }
 
   // Broadcast our inbox relay list to the general discovery relays so that other people know how to send message to us
+  // Throws if cannot broadcast to any relays
   async broadcastRelayList() {
     await publishRelayListMetadata(this.#npub, this.#nsec,
       this.#pool, this.#model.settings.generalRelays, 
@@ -140,7 +169,7 @@ class ChatController {
   // Callback for incoming DM subscription.
   #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
-      this.#model.setMessage(msg.id, msg) //todo async?
+      this.#model.setMessage(msg.id, msg) //todo async
       this.#ui.newMessage(msg)
     }
   }
@@ -162,7 +191,7 @@ class ChatController {
       contact.relays = relays
       contact.relaysUpdatedAt = ev.created_at
       console.log(`Updating relaylist for contact: ${contact.name}`) 
-      this.#model.setContact(contact)
+      this.#model.setContact(contact) // TODO async
     }
   }
 

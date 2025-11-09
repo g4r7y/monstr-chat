@@ -37,9 +37,9 @@ class ChatUi {
   async #offlinePrompt() {
     terminal.clear()
     terminal.bgBlue('Offline\n\n')
-    terminal('Could not connect to relay server. Check your network connection.\nAlternatively, there could be a problem with the relay server.\nYou can check your current relay servers in Settings.\n\n')
-    const cont = await showYesNoPrompt('Continue in offline mode?')
-    if (cont) {
+    terminal('Could not connect to one or more relays. Check your network connection.\nAlternatively, there could be a problem with the relay server.\nYou can check your current relay servers in Settings.\n\n')
+    const proceed = await showYesNoPrompt('Continue in offline mode?')
+    if (proceed) {
       this.#view.pop()
     } else {
       this.#view = []
@@ -113,9 +113,10 @@ class ChatUi {
   async #viewConversation() {
     const contactNpub = this.#viewContext
     const knownContact = this.#chatModel.getContactByNpub(contactNpub)
-    const title = `Conversation with ${knownContact?.name ?? 'new contact'}` 
+    const contactLabel = knownContact?.name ?? 'Unknown'
     terminal.clear()
-    terminal.bgBlue(`${title}\n`)
+    terminal.bgBlue('Conversation with ')
+    terminal.bgBlue.brightYellow(`${contactLabel}\n`)
     terminal('\n')
     
     let state = 'submenu'
@@ -133,7 +134,7 @@ class ChatUi {
         if (knownContact) {
           menu.set('View Contact', () => { this.#view.push('viewContact')})
         } else {
-          menu.set('Add New Contact', () => { this.#view.push('addContact')})
+          menu.set('Add To Contacts', () => { this.#view.push('addContact')})
         }
         menu.set('Delete Conversation', () => state = 'delete')
         state = 'exit' // default, may be overridden by menu choice
@@ -193,8 +194,8 @@ class ChatUi {
     let text = ''
     while (editing) {
       terminal.clear()
+      terminal.bgBlue('Send Message\n\n')
       let result = await showDialog(
-        'Send DM', 
         [
           'Recipient',
           'Message',
@@ -274,7 +275,8 @@ class ChatUi {
   }
 
   async #editContact(addNewContact=false) {
-    let npub = this.#viewContext ?? ''
+    const npubAlreadyProvided : boolean = !!this.#viewContext
+    let npub = npubAlreadyProvided ? this.#viewContext : ''
     let contact: ChatContact = { name: '', npub,  relays: [], relaysUpdatedAt: null}
     if (!addNewContact) {
       contact = this.#chatModel.getContactByNpub(npub) ?? contact
@@ -284,22 +286,26 @@ class ChatUi {
     let editing = true
     while (editing) {
       terminal.clear()
-      let result 
-      result = addNewContact ?
-        await showDialog('Add contact', 
-          ['Contact name', 'Contact npub'],
-          [ contact.name, contact.npub ]) :
-        await showDialog('Edit contact', 
+      let result
+      terminal.bgBlue(`${addNewContact ? 'Add Contact' : 'Edit Contact'}\n\n`)
+      if (npubAlreadyProvided) {
+        terminal(`Contact npub: ${contact.npub}\n`)
+        result = await showDialog(
           ['Contact name'],
           [ contact.name ])
+      } else {
+        result = await showDialog( 
+          ['Contact npub', 'Contact name'],
+          [ contact.npub, contact.name ])
+      }
       editing = false
       if (result) {
-        if (addNewContact) {
-          const [name, npub] = result;
-          contact = { ...contact, name, npub };
-        } else {
+        if (npubAlreadyProvided) {
           const [name] = result;
           contact = { ...contact, name };
+        } else {
+          const [npub, name] = result;
+          contact = { ...contact, name, npub };
         }
 
         let isDuplicate = this.#chatModel.getContactByName(contact.name) !== null
@@ -436,11 +442,19 @@ class ChatUi {
     await this.#chatModel.setSettings(currentSettings)
 
     // send out updated nip65, potentially to updated general relays 
-    this.#chatController.broadcastRelayList()
-    //TODO catch error in case couldn't send to any relays
+    try {
+      await this.#chatController.broadcastRelayList()
+    } catch (err) {
+      terminal('\n')
+      const continueEditing = await showYesNoPrompt('Could not connect to discovery relays to broadcast your relay settings. Edit relays again?')
+      if (!continueEditing) {
+        this.#view.pop()
+      }
+      return
+    }
 
     // resubscribe to inbox relays, in case they changed
-    this.#chatController.subscribeToIncomingDms()
+    await this.#chatController.subscribeToIncomingDms()
     
     this.#view.pop()
   }
@@ -485,10 +499,10 @@ class ChatUi {
 
     const menu = new Map()
     menu.set('Back',  () => this.#view.pop())
+    menu.set('Refresh', () => {})
     menu.set('Edit', () => this.#view.push('editRelays'))
 
     await showMenu(menu)
-
   }
   
 
@@ -543,7 +557,7 @@ class ChatUi {
 
   #getDisplayableMessageContact(npub: string): string {
     const contact = this.#chatModel.getContactByNpub(npub)
-    return contact ? contact.name : `${npub.slice(4, 8)}..${npub.slice(-4)}`
+    return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`
   }
 }
 

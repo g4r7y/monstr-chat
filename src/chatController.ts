@@ -62,13 +62,24 @@ class ChatController {
     try {
       await this.subscribeToIncomingDms()
       await this.subscribeToContactRelayMetadata()
+
+      // will throw and give startupError if can't connect to any general relays
       await this.broadcastRelayList()
     } catch (err) {
+      console.log(`Startup error: ${err}`)
       startupError = true
     }
+    
+    const onTimer = async (milliseconds: number) => {
+      return new Promise((r) => {
+        setTimeout( () => { r(true) }, milliseconds)
+      })
+    }
+    await onTimer(1000)
 
-    const connError = (this.checkConnectedRelays(this.#model.settings.generalRelays).length === 0) ||
-                      (this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0)
+    // additional check in case all inbox relays are bad
+    const connError = (this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0)
+
     if (startupError || connError) {
       await this.#ui.go('offline')
     } else {

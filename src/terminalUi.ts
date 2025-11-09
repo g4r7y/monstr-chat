@@ -52,8 +52,7 @@ export async function showHorizontalMenu(menuChoices: Map<string, ()=>void>) {
   }
 }
 
-export async function showDialog(title: string, questions: string[], defaultAnswers: string[]): Promise<string[] | null> {
-  terminal.bgBlue(`${title}\n\n`)
+export async function showDialog(questions: string[], defaultAnswers: string[]): Promise<string[] | null> {
   // first print all questions and default answers in greyed out colour
   terminal.saveCursor()
   for(let q=0; q<questions.length; q++) {

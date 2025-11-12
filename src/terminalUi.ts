@@ -17,6 +17,12 @@ export async function showYesNoPrompt(question: string): Promise<boolean> {
   return response==true
 }
 
+export async function pressToContinue(question: string): Promise<void> {
+  terminal(`${question}`)
+  await terminal.singleLineMenu(['OK'],
+    { selectedStyle: terminal.inverse } ).promise
+}
+
 
 /**
  * Shows a menu, awaits user selection and executes selected menu action.

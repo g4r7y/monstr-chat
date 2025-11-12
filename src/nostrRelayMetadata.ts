@@ -33,7 +33,7 @@ const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, pool: Si
   }
 }
 
-const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>void ) => {
+const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>Promise<void> ) => {
   if (subCloser) {
     subCloser.close()
   }
@@ -46,9 +46,9 @@ const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool
       },
       {
         id: 'relaylist-metadata-sub-id',  // always use fixed sub id
-        onevent (event: any) {
+        async onevent (event: any) {
           if (event.kind === 10002) {
-            callback(event)
+            await callback(event)
           }
         }
       })

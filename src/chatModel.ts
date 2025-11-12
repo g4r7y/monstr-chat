@@ -3,18 +3,24 @@ import { readAppData, writeAppData, readMessages, writeMessages } from './localS
 export type ChatSettings = {
   inboxRelays: string[],
   generalRelays: string[]
+  relaysUpdatedAt: number | null
 }
 
 const defaultSettings : ChatSettings = {
   inboxRelays: [
     'ws://localhost:8008',
-    // 'wss://relay.0xchat.com' 
+    'wss://relay.damus.io',
   ],
   generalRelays: [
     'ws://localhost:8008',
-    // 'wss://relay.0xchat.com', 
-    // 'wss://nostr.lol'
-  ]
+    'wss://nostr.wine',
+    'wss://nostr.band',
+    'wss://relay.snort.social',
+    'wss://relay.damus.io',
+    'wss://relay.0xchat.com', 
+  ],
+  relaysUpdatedAt: null
+
 }
 
 export type ChatContact = {

@@ -1,9 +1,9 @@
 import tk from 'terminal-kit'
 import ChatController from './chatController.js'
 import { ChatContact, ChatMessage, ChatModel, ChatSettings } from './chatModel.js'
-import { stringIsAValidUrl, stringIsValidNpub } from './validation.js'
+import { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec } from './validation.js'
 import { wrapText, truncateText } from './textUtils.js'
-import { showPrompt, showYesNoPrompt, showDialog, showMenu, showHorizontalMenu, startScrollPane, stopScrollPane } from './terminalUi.js'
+import { showPrompt, showYesNoPrompt, showDialog, showMenu, showHorizontalMenu, startScrollPane, stopScrollPane, pressToContinue } from './terminalUi.js'
 
 const { terminal } = tk
 
@@ -24,7 +24,7 @@ class ChatUi {
   
   async #mainMenu() {
     terminal.clear()
-    terminal.bgBlue('Main Menu\n')
+    terminal.bgGreen('Monstr Chat\n')
     const mainMenu = new Map()
     mainMenu.set('Messages', () => this.#view.push('inbox'))
     mainMenu.set('Contacts',  () => this.#view.push('contacts'))
@@ -34,13 +34,103 @@ class ChatUi {
     await showMenu(mainMenu)
   }
   
+  async #firstLaunch() {
+    terminal.clear()
+    terminal.bgGreen('Monstr Chat\n\n')
+    terminal.green( 'Welcome to Monstr Chat!\n\n')
+    terminal.yellow('[Messaging On Nostr]\n\n')
+    terminal('To get started all you need is your own Nostr key.\n\n' +
+      'This is an identifier which is unique to you and allows you to securely send and receive encrypted messages.\n' +
+      'No need to sign up for an account, or give out your phone number or email address.\n' +
+      'Your Nostr key will also work with any other app that is built on Nostr.\n\n' +
+      'You can create your own key now or, if you already have a Nostr key, you can choose to restore it.\n')
+      let option = ''
+      const menu1 = new Map()
+      menu1.set('Create new key', () => option='create')
+      menu1.set('Restore existing key',  () =>  option='restore')
+      await showMenu(menu1)
+      
+    if (option==='create') {
+      const mnemonic = await this.#chatController.createNewKey()
+      terminal.clear()
+      terminal.bgGreen('Monstr Chat\n\n')
+      terminal.green('Welcome to Monstr Chat!\n\n')
+      terminal.yellow('Your new Nostr key has been created!\n\n')
+      terminal('You now have a public Nostr key (npub) and a secret Nostr key (nsec).\n' + 
+        'Your keys are saved in the Monstr Chat settings.\n' +
+        'It is important to keep your nsec key safe and never share it with anybody else.\n' +
+        'Your npub key can be shared with others so that they can send messages to you and read your messages.\n\n')
+      terminal('Your public Nostr key is: \n')
+      terminal.yellow(`${this.#chatController.getNpub()}.\n\n`)
+      await pressToContinue('Continue?')
+
+      terminal.clear()
+      terminal.bgGreen.brightWhite('Monstr Chat\n\n')
+      terminal.green('Welcome to Monstr Chat!\n\n')
+      terminal.yellow('Save your recovery phrase!\n\n')
+      terminal('A 12 word recovery phrase has been generated for you.\n' + 
+        'You will need this in future if you ever need to restore your Nostr key.\n' +
+        'Keep this in a safe place and do not share it with anybody.\n' + 
+        'After you press ok, you will never be able to see it again.\n\n' +
+        'Your memorable recovery phrase is:\n')
+      terminal.yellow(`${mnemonic}\n\n`)
+
+      await pressToContinue('Ready to start?')
+      terminal.red('\n')
+      await pressToContinue(`Have you written down your recovery phrase? You won't be able to see it again!`)
+      this.#view.pop()
+      return
+    }
+    
+    if (option==='restore') {
+      terminal.clear()
+      terminal.bgGreen('Monstr Chat\n\n')
+      terminal.green('Welcome to Monstr Chat!\n\n')
+      terminal.yellow('Restore your key\n\n')
+      terminal('There are two ways to restore your key.\n') 
+      terminal('You can use your Nostr secret key (nsec).\n' +
+        'It starts with \'nsec\' and is 63 characters long.\n' +
+        'Or you can use your memorable recovery phrase.\n'+
+        'This is the 12 word phrase that you hopefully stored safely when you created your key.\n')
+      terminal('How would you like to restore your key?\n')
+      const menu2 = new Map()
+      menu2.set('I have my nsec private key', () => option='restoreNsec')
+      menu2.set('I have my recovery phrase',  () =>  option='restoreBip39')
+      await showMenu(menu2)
+    }
+
+    if (option === 'restoreNsec') {
+      let editing = true
+      let currentText = 'nsec'
+      terminal('\n')
+      while(editing) {
+        let nsec = await showPrompt('Enter your private key: ', currentText)
+        editing = false
+        if (nsec !== null) {
+          if (!stringIsValidNsec(nsec)) {
+            editing = await showYesNoPrompt('\nPrivate nsec key is not valid. Continue editing?')
+            terminal.move(0,-2)
+            terminal.eraseDisplayBelow()
+            currentText = nsec
+          } else {
+            await this.#chatController.resetKey(nsec)
+          }
+        }
+      }
+    }
+
+    //TODO bip39 restore
+    
+    this.#view.pop()
+  }
+  
   async #offlinePrompt() {
     terminal.clear()
-    terminal.bgBlue('Offline\n\n')
+    terminal.bgGreen('Offline\n\n')
     terminal('Could not connect to one or more relays. Check your network connection.\nAlternatively, there could be a problem with the relay server.\nYou can check your current relay servers in Settings.\n\n')
-    const proceed = await showYesNoPrompt('Continue in offline mode?')
+    const proceed = await showYesNoPrompt('Continue?')
     if (proceed) {
-      this.#view.pop()
+      this.#view = ['main']
     } else {
       this.#view = []
     }
@@ -48,7 +138,7 @@ class ChatUi {
   
   async #viewInbox() {
     terminal.clear()
-    terminal.bgBlue('Messages\n')
+    terminal.bgGreen('Messages\n')
     
     const menu = new Map()
     menu.set('Back', () => this.#view.pop())
@@ -115,8 +205,8 @@ class ChatUi {
     const knownContact = this.#chatModel.getContactByNpub(contactNpub)
     const contactLabel = knownContact?.name ?? 'Unknown'
     terminal.clear()
-    terminal.bgBlue('Conversation with ')
-    terminal.bgBlue.brightYellow(`${contactLabel}\n`)
+    terminal.bgGreen('Conversation with ')
+    terminal.bgGreen.brightYellow(`${contactLabel}\n`)
     terminal('\n')
     
     let state = 'submenu'
@@ -167,7 +257,7 @@ class ChatUi {
           // send message and remain in send state
           try {
             if (knownContact) {
-              await this.#chatController.sendDm(knownContact!, msgToSend)
+              await this.#chatController.sendDmToContact(knownContact, msgToSend)
             } else {
               await this.#chatController.sendDmToUnknown(contactNpub, msgToSend)
             }
@@ -194,7 +284,7 @@ class ChatUi {
     let text = ''
     while (editing) {
       terminal.clear()
-      terminal.bgBlue('Send Message\n\n')
+      terminal.bgGreen('Send Message\n\n')
       let result = await showDialog(
         [
           'Recipient',
@@ -213,7 +303,7 @@ class ChatUi {
 
         try {
           if (contact) {
-            await this.#chatController.sendDm(contact, text)
+            await this.#chatController.sendDmToContact(contact, text)
           } else {
             await this.#chatController.sendDmToUnknown(recipient, text)
           }
@@ -237,7 +327,7 @@ class ChatUi {
 
   async #contactsMenu() {
     terminal.clear()
-    terminal.bgBlue('Contacts\n')
+    terminal.bgGreen('Contacts\n')
     const menu = new Map()
     menu.set('Back',  () => this.#view.pop())
     menu.set('Add New Contact', () => { this.#view.push('addContact'); this.#viewContext = '' })
@@ -252,7 +342,7 @@ class ChatUi {
   
   async #viewContact() {
     terminal.clear()
-    terminal.bgBlue('View Contact\n\n')
+    terminal.bgGreen('View Contact\n\n')
     const contactNpub = this.#viewContext
     const currentContact = this.#chatModel.getContactByNpub(contactNpub)
     terminal.yellow('Name:   ')
@@ -287,7 +377,7 @@ class ChatUi {
     while (editing) {
       terminal.clear()
       let result
-      terminal.bgBlue(`${addNewContact ? 'Add Contact' : 'Edit Contact'}\n\n`)
+      terminal.bgGreen(`${addNewContact ? 'Add Contact' : 'Edit Contact'}\n\n`)
       if (npubAlreadyProvided) {
         terminal(`Contact npub: ${contact.npub}\n`)
         result = await showDialog(
@@ -326,7 +416,7 @@ class ChatUi {
 
           // if new contact, update subscription so we can get contact's relaylist
           if (addNewContact) {
-            this.#chatController.subscribeToContactRelayMetadata()
+            await this.#chatController.subscribeToRelayMetadata()
           }   
         }
       }
@@ -353,7 +443,7 @@ class ChatUi {
   
   async #settings() {
     terminal.clear()
-    terminal.bgBlue('Settings\n')
+    terminal.bgGreen('Settings\n')
     const settingsMenu = new Map()
     settingsMenu.set('Back',  () => this.#view.pop())
     settingsMenu.set('Relays', () => this.#view.push('settingsRelays'))
@@ -363,11 +453,11 @@ class ChatUi {
   
   async #settingsKeys() {
     terminal.clear()
-    terminal.bgBlue('Keys\n\n')
+    terminal.bgGreen('Keys\n\n')
     terminal.yellow('Public key: ')
-    terminal.white(this.#chatController.getPubKeyString() + '\n')
+    terminal.white(this.#chatController.getNpub() + '\n')
     terminal.yellow('Secret key: ')
-    terminal.gray(this.#chatController.getSecretKeyString() + '\n')
+    terminal.gray(this.#chatController.getNsec() + '\n')
 
     const menu = new Map()
     menu.set('Back', () => this.#view.pop())
@@ -376,7 +466,7 @@ class ChatUi {
 
   async #editRelays() {
     terminal.clear()
-    terminal.bgBlue('Edit Relays\n\n')
+    terminal.bgGreen('Edit Relays\n\n')
 
     const editRelayList = async (relays: string[]) : Promise<string[] | null> => {
       let results = []
@@ -385,7 +475,7 @@ class ChatUi {
         let isValid = false
         while (!isValid) {
           terminal.saveCursor()
-          const prefix = 'ws://'
+          const prefix = 'wss://'
           let relayUrl = prefix
           if (i<relays.length) {
             relayUrl = relays[i]
@@ -437,6 +527,8 @@ class ChatUi {
        return 
     }
 
+    const updateTimestampUtc = Date.now()
+    currentSettings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000),
     currentSettings.inboxRelays = newInboxRelays
     currentSettings.generalRelays = newGeneralRelays    
     await this.#chatModel.setSettings(currentSettings)
@@ -461,9 +553,9 @@ class ChatUi {
 
   async #settingsRelays() {
     terminal.clear()
-    terminal.bgBlue('Relays\n\n')
-    terminal.yellow('Incoming message relays:\n')
-    terminal.grey('These relays are used to receive your incoming messages.\nIt is recommended to have up to 3 of these.\n')
+    terminal.bgGreen('Relays\n\n')
+    terminal.yellow('Incoming message relays:\n\n')
+    terminal.white('These relays are used to receive your incoming messages.\nIt is recommended to have up to 3 of these.\n\n')
     let relays = this.#chatModel.settings.inboxRelays
     if (relays.length == 0) {
       terminal.white('[None]')
@@ -472,17 +564,15 @@ class ChatUi {
     let connectedRelays = this.#chatController.checkConnectedRelays(relays)
     for (let relay of relays) {
       if (connectedRelays.includes(relay)) {
-        terminal.green('✓')
+        terminal.brightGreen('✓')
       } else {
-        terminal.red('X')
+        terminal.brightRed('X')
       }
-      terminal.white(`  ${relay}\n`)
+      terminal.brightWhite(`  ${relay}\n`)
     }
 
-    terminal.yellow('\nDiscovery relays:\n')
-    terminal.grey('These relays are used to broadcast your relay information so that your contacts know how to send messages to you.\n')
-    terminal.grey('They are also used to discover relay information for each of your contacts so that you can send messages to them.\n')
-    terminal.grey('It is recommended to use several popular nostr relays.\n')
+    terminal.yellow('\nDiscovery relays:\n\n')
+    terminal.white('These relays are used to broadcast your relay information so that your contacts know how to send messages to you.\nThey are also used to discover relay information for each of your contacts so that you can send messages to them.\nIt is recommended to use several popular nostr relays.\n\n')
     relays = this.#chatModel.settings.generalRelays
     if (relays.length == 0) {
       terminal.white('[None]')
@@ -490,11 +580,11 @@ class ChatUi {
     connectedRelays = this.#chatController.checkConnectedRelays(relays)
     for (let relay of relays) {
       if (connectedRelays.includes(relay)) {
-        terminal.green('✓')
+        terminal.brightGreen('✓')
       } else {
-        terminal.red('X')
+        terminal.brightRed('X')
       }
-      terminal.white(`  ${relay}\n`)
+      terminal.brightWhite(`  ${relay}\n`)
     }
 
     const menu = new Map()
@@ -507,13 +597,15 @@ class ChatUi {
   
 
   async go(initialView='') {
-    if (initialView == 'offline') {
-      this.#view = [ 'main', initialView ]
-    } else {
+    if (initialView == '') {
       this.#view = ['main']
+    } else {
+      this.#view = [ initialView ]
     }
     while (this.#view.length > 0) {
       const views: Record<string, ()=>Promise<any>> = {
+        'firstLaunch':        this.#firstLaunch,
+        'showKeyMnemonic':    this.#showKeyMnemonic,
         'offline':            this.#offlinePrompt,
         'main':               this.#mainMenu,
         'inbox':              this.#viewInbox,

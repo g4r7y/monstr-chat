@@ -1,9 +1,8 @@
 
-import { generateSecretKey, getPublicKey, Event } from '@nostr/tools'
+import { getPublicKey, Event } from '@nostr/tools'
 
 import { nsecEncode, npubEncode, decode } from '@nostr/tools/nip19'
-
-import { red, green, yellow } from '@std/fmt/colors'
+import { generateSeedWords, accountFromSeedWords } from '@nostr/tools/nip06'
 
 import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
@@ -17,15 +16,15 @@ import { normalizeURL } from '@nostr/tools/utils'
 
 
 class ChatController {
-  #npub: string
-  #nsec: Uint8Array
+  #pubKey: string
+  #privateKey: Uint8Array
   #model: ChatModel
   #ui: ChatUi
   #pool: SimplePool
 
   constructor() {
-    this.#npub = ''
-    this.#nsec = new Uint8Array()
+    this.#pubKey = ''
+    this.#privateKey = new Uint8Array()
 
     this.#model = new ChatModel()
     this.#ui = new ChatUi(this, this.#model)
@@ -35,49 +34,51 @@ class ChatController {
   }
 
   async run() {
+    // load settings, contacts, messages
+    await this.#model.load()
+
     // try and read key from store
     let nsecStr = await readKey()
     if (nsecStr) {
       const decoded = decode(nsecStr)
       if (decoded.type === 'nsec' && decoded.data) {
-        this.#nsec = decoded.data as Uint8Array
+        this.#privateKey = decoded.data as Uint8Array
+        this.#pubKey = getPublicKey(this.#privateKey)
       }
     }
 
-    if (this.#nsec.length == 0) {
-      console.log('No existing key. Generating a new private key...')
-      this.#nsec = generateSecretKey()
-      await writeKey(nsecEncode(this.#nsec ))
+    let firstLaunch = false
+
+    if (this.#privateKey.length == 0) {
+      // no existing key
+      firstLaunch = true
+      await this.#ui.go('firstLaunch')
+      if (this.#privateKey.length == 0) {
+        // still no key, so just exit
+        return
+      }
     }
     
-    this.#npub = getPublicKey(this.#nsec)
-    
-    console.log(yellow('npub: ' + npubEncode(this.#npub)))
-
-  
-    await this.#model.load()
     
     let startupError = false
 
     try {
       await this.subscribeToIncomingDms()
-      await this.subscribeToContactRelayMetadata()
-
-      // will throw and give startupError if can't connect to any general relays
-      await this.broadcastRelayList()
+      await this.subscribeToRelayMetadata()
     } catch (err) {
       console.log(`Startup error: ${err}`)
       startupError = true
     }
     
+    // allow tim for inbox relays to start
     const onTimer = async (milliseconds: number) => {
       return new Promise((r) => {
         setTimeout( () => { r(true) }, milliseconds)
       })
     }
-    await onTimer(1000)
+    await onTimer(500)
 
-    // additional check in case all inbox relays are bad
+    // check in case all inbox relays are bad
     const connError = (this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0)
 
     if (startupError || connError) {
@@ -90,16 +91,16 @@ class ChatController {
   }
 
   // Send DM using the recipient's inbox relay(s)
-  async sendDm(recipient: ChatContact, text: string) {
+  async sendDmToContact(recipient: ChatContact, text: string) {
     const recipientPubKey = decode(recipient.npub).data as string
 
     if (!recipient?.relays?.length) {
-      console.log(`Cannot send, contact ${recipient.npub} desn't have relay defined`)
-      // TODO try the unknown path?
+      console.log(`Cannot send, contact ${recipient.npub} doesn't have relay defined`)
+      // TODO try sendDmToUnknown
       throw new Error('NoRelay')
     }
 
-    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, this.#pool, recipient.relays, text)
+    const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipient.relays, text)
     await this.#model.setMessage(sentMsg.id, sentMsg)
   }
 
@@ -119,35 +120,41 @@ class ChatController {
     if (!recipientRelays?.length) {
       throw new Error('NoRelay')
     }
-    const sentMsg = await sendDm(this.#npub, this.#nsec, recipientPubKey, this.#pool, recipientRelays, text)
+    const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipientRelays, text)
     await this.#model.setMessage(sentMsg.id, sentMsg)
   }
 
   // Subscribe/re-subscribe to receive DMs from inbox relays
   async subscribeToIncomingDms() {
-    await receiveDms(this.#npub, this.#nsec, 
+    await receiveDms(this.#pubKey, this.#privateKey, 
       this.#pool, this.#model.settings.inboxRelays, 
-      (msg: ChatMessage) => this.#onIncoming(msg))
+      async (msg: ChatMessage) => await this.#onIncoming(msg))
   }
 
   // Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
+  // Also include our own npub in case relayslist is changed by another client.
   // General (aka discovery) relays are used for the subscription
-  async subscribeToContactRelayMetadata() {
-    const npubs = this.#model.getContactList()
+  async subscribeToRelayMetadata() {
+    // subscribing for all of our contacts
+    let npubs = this.#model.getContactList()
       .map(c => c.npub)
       .filter(npub => stringIsValidNpub(npub))
       .map(npub => decode(npub).data as string)
+      
+    // subscribe for self too
+    npubs.push(this.#pubKey)
+
     console.log(`Subscribing to relay metadata for contacts: ${this.#model.getContactList().map(c=>c.name)}`)
     await subscribeToRelayListMetadata(npubs, this.#pool, 
       this.#model.settings.generalRelays, 
-      async (ev: Event) => this.#onRelaylistMetadata(ev)
+      async (ev: Event) => await this.#onRelaylistMetadata(ev)
     )
   }
 
   // Broadcast our inbox relay list to the general discovery relays so that other people know how to send message to us
   // Throws if cannot broadcast to any relays
   async broadcastRelayList() {
-    await publishRelayListMetadata(this.#npub, this.#nsec,
+    await publishRelayListMetadata(this.#pubKey, this.#privateKey,
       this.#pool, this.#model.settings.generalRelays, 
       this.#model.settings.inboxRelays)
   }
@@ -167,20 +174,44 @@ class ChatController {
     return result
   }
 
-  getPubKeyString() : string {
-    return npubEncode(this.#npub)
+  getNpub() : string {
+    return npubEncode(this.#pubKey)
   }
 
-  getSecretKeyString() : string {
-    return nsecEncode(this.#nsec)
+  getNsec() : string {
+    return nsecEncode(this.#privateKey)
+  }
+
+  // Create new key, 
+  // @return string: bip39 word list
+  async createNewKey() : Promise<string> {
+    const words = generateSeedWords()
+    let { publicKey, privateKey } = accountFromSeedWords(words)
+    this.#privateKey = privateKey
+    this.#pubKey = publicKey
+    await writeKey(nsecEncode(this.#privateKey ))
+
+    // now that we have a new key we should broadcast its default relaylist
+    await this.broadcastRelayList()
+
+    return words
+  }
+
+  // Reset key from nsec
+  async resetKey(nsec: string) {
+    this.#privateKey = decode(nsec).data as Uint8Array
+    this.#pubKey = getPublicKey(this.#privateKey)
+    await writeKey(nsecEncode(this.#privateKey ))
+
+    // don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
   }
 
 
   
   // Callback for incoming DM subscription.
-  #onIncoming(msg: ChatMessage) {
+  async #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
-      this.#model.setMessage(msg.id, msg) //todo async
+      await this.#model.setMessage(msg.id, msg)
       this.#ui.newMessage(msg)
     }
   }
@@ -190,19 +221,26 @@ class ChatController {
   // Checks if we have a corresponding contact and updates its relaylist.
   // Only do this if created_at time is newer than last update as we will get duplicate events
   // from multiple relay.
-  #onRelaylistMetadata(ev: Event) {
-    console.log('onRelaylistMetadata')
-    const contact = this.#model.getContactByNpub(npubEncode(ev.pubkey))
+  async #onRelaylistMetadata(ev: Event) {
+    const npub = npubEncode(ev.pubkey)
+    const contact = this.#model.getContactByNpub(npub)
     // update contact if event time is newer (in case there are duplicate events from several relays)
     if (contact && (!contact.relaysUpdatedAt || contact.relaysUpdatedAt < ev.created_at)) {
-      const relays: string[] = ev.tags
-        .filter((tag :string[]) => tag.length==3 && tag[0]==='r' && tag[2]==='read')
-        .map((tag: string[]) => tag[1])
-      
-      contact.relays = relays
+      contact.relays = extractReadRelaysFromNip65(ev)
       contact.relaysUpdatedAt = ev.created_at
       console.log(`Updating relaylist for contact: ${contact.name}`) 
-      this.#model.setContact(contact) // TODO async
+      await this.#model.setContact(contact)
+    }
+    // update local settings if event time is newer
+    if (ev.pubkey === this.#pubKey) {
+      console.log(`Received relaylist for self`, ev.created_at, this.#model.settings.relaysUpdatedAt) 
+      if (!this.#model.settings.relaysUpdatedAt || this.#model.settings.relaysUpdatedAt < ev.created_at) { 
+        console.log(`Updating relaylist for self`) 
+        const currentSettings = this.#model.settings
+        // TODO only update if changed
+        currentSettings.inboxRelays = extractReadRelaysFromNip65(ev)
+        await this.#model.setSettings(currentSettings)
+      }
     }
   }
 

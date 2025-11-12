@@ -22,4 +22,14 @@ const stringIsValidNpub = (npub: string) : boolean => {
     }
 }
 
-export { stringIsAValidUrl, stringIsValidNpub }
+const stringIsValidNsec = (nsec: string) : boolean => {
+    try {
+        const decoded = decode(nsec)
+        return decoded.type === 'nsec'
+    } catch (error) {
+        return false
+    }
+}
+
+
+export { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec }

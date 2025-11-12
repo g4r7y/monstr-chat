@@ -30,7 +30,7 @@ const onReceiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : 
   }
 }
 
-const receiveDms = async (npub: string, nsec: Uint8Array, pool: SimplePool, relays: string[], onMessage: (msg: ChatMessage)=>void) => {
+const receiveDms = async (npub: string, nsec: Uint8Array, pool: SimplePool, relays: string[], onMessage: (msg: ChatMessage)=>Promise<void>) => {
   if (subCloser) {
     subCloser.close()
   }
@@ -47,7 +47,7 @@ const receiveDms = async (npub: string, nsec: Uint8Array, pool: SimplePool, rela
         if (event.kind === 1059) { // possible giftwrapped NIP17 DM
           const msg = await onReceiveDm(npub, nsec, event)
           if (msg) {
-            onMessage(msg)
+            await onMessage(msg)
           }
         }
       }

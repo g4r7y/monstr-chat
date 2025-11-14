@@ -95,13 +95,12 @@ class ChatController {
     const recipientPubKey = decode(recipient.npub).data as string
 
     if (!recipient?.relays?.length) {
-      console.log(`Cannot send, contact ${recipient.npub} doesn't have relay defined`)
-      // TODO try sendDmToUnknown
-      throw new Error('NoRelay')
+      console.log(`Send: contact ${recipient.npub} doesn't have relay defined, trying again with relaylist fetch`)
+      await this.sendDmToUnknown(recipient.npub, text)
+    } else {
+      const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipient.relays, text)
+      await this.#model.setMessage(sentMsg.id, sentMsg)
     }
-
-    const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipient.relays, text)
-    await this.#model.setMessage(sentMsg.id, sentMsg)
   }
 
   // Send DM to an unknown contact.
@@ -112,12 +111,15 @@ class ChatController {
     const recipientPubKey = decode(recipientNpub).data as string
     
     const event = await getRelayListMetadata(recipientPubKey, this.#pool, this.#model.settings.generalRelays)
+
     if (!event) {
-      throw new Error('NoRelay');
+      console.log(`Send: can't find NIP65 relaylist for ${recipientNpub}`)
+      throw new Error('NoRelay')
     }
+
     const recipientRelays = extractReadRelaysFromNip65(event)
-    console.log('recipeint relays', recipientRelays)
     if (!recipientRelays?.length) {
+       console.log(`Send: relaylist for ${recipientNpub} is missing or empty`)
       throw new Error('NoRelay')
     }
     const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipientRelays, text)

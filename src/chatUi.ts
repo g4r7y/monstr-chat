@@ -119,7 +119,9 @@ class ChatUi {
       }
     }
 
-    //TODO bip39 restore
+    if (option === 'restoreBip39') {
+      //TODO bip39 restore
+    }
     
     this.#view.pop()
   }
@@ -201,9 +203,9 @@ class ChatUi {
   }
   
   async #viewConversation() {
+    const strangerLabel = 'Unknown'
     const contactNpub = this.#viewContext
-    const knownContact = this.#chatModel.getContactByNpub(contactNpub)
-    const contactLabel = knownContact?.name ?? 'Unknown'
+    const contactLabel = this.#chatModel.getContactByNpub(contactNpub)?.name ?? 'Unknown'
     terminal.clear()
     terminal.bgGreen('Conversation with ')
     terminal.bgGreen.brightYellow(`${contactLabel}\n`)
@@ -212,7 +214,6 @@ class ChatUi {
     let state = 'submenu'
     let draftMessage = ''
     while (state != 'exit') {
-
       this.#updateConversationView()  
 
       if (state == 'submenu') {
@@ -221,10 +222,10 @@ class ChatUi {
         const menu = new Map()
         menu.set('Back',  () => { this.#view.pop() })
         menu.set('Send Message', () => state = 'send' )
-        if (knownContact) {
-          menu.set('View Contact', () => { this.#view.push('viewContact')})
-        } else {
+        if (contactLabel === strangerLabel) {
           menu.set('Add To Contacts', () => { this.#view.push('addContact')})
+        } else {
+          menu.set('View Contact', () => { this.#view.push('viewContact')})
         }
         menu.set('Delete Conversation', () => state = 'delete')
         state = 'exit' // default, may be overridden by menu choice
@@ -256,8 +257,9 @@ class ChatUi {
         } else {
           // send message and remain in send state
           try {
-            if (knownContact) {
-              await this.#chatController.sendDmToContact(knownContact, msgToSend)
+            const contact = this.#chatModel.getContactByNpub(contactNpub)
+            if (contact) {
+              await this.#chatController.sendDmToContact(contact, msgToSend)
             } else {
               await this.#chatController.sendDmToUnknown(contactNpub, msgToSend)
             }
@@ -424,10 +426,6 @@ class ChatUi {
     this.#view.pop()
   }
   
-  async #addContact() {
-    await this.#editContact(true)
-  }
-  
   async #deleteContact() {
     let npub = this.#viewContext
     let name = this.#chatModel.getContactByNpub(npub)!.name
@@ -464,7 +462,7 @@ class ChatUi {
     await showMenu(menu)
   }
 
-  async #editRelays() {
+  async #editRelays(relayType: string) {
     terminal.clear()
     terminal.bgGreen('Edit Relays\n\n')
 
@@ -513,40 +511,47 @@ class ChatUi {
 
     const currentSettings = this.#chatModel.settings
 
-    terminal.yellow('Incoming message relays:\n')
-    const newInboxRelays = await editRelayList(currentSettings.inboxRelays)
-    if (newInboxRelays==null) {
-      this.#view.pop()
-      return
+    if (relayType === 'inbox') {
+      terminal.yellow('Incoming message relays:\n\n')
+      const newInboxRelays = await editRelayList(currentSettings.inboxRelays)
+      if (newInboxRelays==null) {
+        this.#view.pop()
+        return
+      }
+      const updateTimestampUtc = Date.now()
+      currentSettings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000),
+      currentSettings.inboxRelays = newInboxRelays
+    } 
+    else if (relayType === 'general') {
+      terminal.yellow('\nDiscovery relays:\n\n')
+      const newGeneralRelays = await editRelayList(currentSettings.generalRelays)
+      if (newGeneralRelays==null) {
+        this.#view.pop()
+        return 
+      }
+      currentSettings.generalRelays = newGeneralRelays   
+    } else {
+      throw new Error('Bad relay type')
     }
 
-    terminal.yellow('\nDiscovery relays:\n')
-    const newGeneralRelays = await editRelayList(currentSettings.generalRelays)
-    if (newGeneralRelays==null) {
-       this.#view.pop()
-       return 
-    }
-
-    const updateTimestampUtc = Date.now()
-    currentSettings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000),
-    currentSettings.inboxRelays = newInboxRelays
-    currentSettings.generalRelays = newGeneralRelays    
     await this.#chatModel.setSettings(currentSettings)
 
-    // send out updated nip65, potentially to updated general relays 
+    // send out updated nip65, whether changing inbox or general relays
     try {
       await this.#chatController.broadcastRelayList()
     } catch (err) {
       terminal('\n')
-      const continueEditing = await showYesNoPrompt('Could not connect to discovery relays to broadcast your relay settings. Edit relays again?')
+      const continueEditing = await showYesNoPrompt('Could not connect to discovery relays to broadcast your relay settings. Try again?')
       if (!continueEditing) {
         this.#view.pop()
       }
       return
     }
 
-    // resubscribe to inbox relays, in case they changed
-    await this.#chatController.subscribeToIncomingDms()
+    if (relayType === 'inbox') {
+      // resubscribe to inbox relays
+      await this.#chatController.subscribeToIncomingDms()
+    }
     
     this.#view.pop()
   }
@@ -590,7 +595,8 @@ class ChatUi {
     const menu = new Map()
     menu.set('Back',  () => this.#view.pop())
     menu.set('Refresh', () => {})
-    menu.set('Edit', () => this.#view.push('editRelays'))
+    menu.set('Edit Incoming Relays', () => { this.#view.push('editInboxRelays')} )
+    menu.set('Edit Discovery Relays', () => { this.#view.push('editGeneralRelays') })
 
     await showMenu(menu)
   }
@@ -605,21 +611,21 @@ class ChatUi {
     while (this.#view.length > 0) {
       const views: Record<string, ()=>Promise<any>> = {
         'firstLaunch':        this.#firstLaunch,
-        'showKeyMnemonic':    this.#showKeyMnemonic,
         'offline':            this.#offlinePrompt,
         'main':               this.#mainMenu,
         'inbox':              this.#viewInbox,
         'viewConversation':   this.#viewConversation,
         'newMessage':         this.#newMessage,
         'contacts':           this.#contactsMenu,
-        'addContact':         this.#addContact,
+        'addContact':         async () => this.#editContact(true),
         'editContact':        this.#editContact,
         'viewContact':        this.#viewContact,
         'deleteContact':      this.#deleteContact,
         'settings':           this.#settings,
         'settingsKeys':       this.#settingsKeys,
         'settingsRelays':     this.#settingsRelays,
-        'editRelays':         this.#editRelays,
+        'editInboxRelays':    async () => this.#editRelays('inbox'),
+        'editGeneralRelays':  async () => this.#editRelays('general'),
       }
       
       const current = this.#view[this.#view.length-1]

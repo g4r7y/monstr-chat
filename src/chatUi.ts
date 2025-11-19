@@ -1,7 +1,7 @@
 import tk from 'terminal-kit'
 import ChatController from './chatController.js'
-import { ChatContact, ChatMessage, ChatModel, ChatSettings } from './chatModel.js'
-import { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec } from './validation.js'
+import { ChatContact, ChatMessage, ChatModel } from './chatModel.js'
+import { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec, stringIsValidNostrAddress } from './validation.js'
 import { wrapText, truncateText } from './textUtils.js'
 import { showPrompt, showYesNoPrompt, showDialog, showMenu, showHorizontalMenu, startScrollPane, stopScrollPane, pressToContinue } from './terminalUi.js'
 
@@ -341,17 +341,19 @@ class ChatUi {
       })
     await showMenu(menu)
   }
-  
+
   async #viewContact() {
     terminal.clear()
     terminal.bgGreen('View Contact\n\n')
     const contactNpub = this.#viewContext
     const currentContact = this.#chatModel.getContactByNpub(contactNpub)
-    terminal.yellow('Name:   ')
+    terminal.yellow('Name:          ')
     terminal.white(`${currentContact?.name}\n`)
-    terminal.yellow('Npub:   ')
+    terminal.yellow('Nostr address: ')
+    terminal.white(`${currentContact?.nip05 ?? 'none'}\n`)
+    terminal.yellow('Npub:          ')
     terminal.white(`${currentContact?.npub}\n`)
-    terminal.yellow('Relays: ')
+    terminal.yellow('Relays:        ')
     terminal.white(`${currentContact?.relays?.join(" ") ?? 'unknown'}\n`)
     terminal('\n')
     
@@ -366,70 +368,161 @@ class ChatUi {
     await showMenu(menu)
   }
 
-  async #editContact(addNewContact=false) {
-    const npubAlreadyProvided : boolean = !!this.#viewContext
-    let npub = npubAlreadyProvided ? this.#viewContext : ''
-    let contact: ChatContact = { name: '', npub,  relays: [], relaysUpdatedAt: null}
-    if (!addNewContact) {
-      contact = this.#chatModel.getContactByNpub(npub) ?? contact
-    } 
+  
+  async #addContact() {
+    let npub = this.#viewContext ?? ''
+    let nip05 = null
+
+    let state = npub ? 'add' : 'find'
+    while (state) {
+      terminal.clear()
+      terminal.bgGreen('Add Contact\n\n')
+
+      if (state == 'find') {
+        terminal('You can search for a user by their Nostr address.\n')
+        terminal('This should look something like: name@domain.com.\n')
+        terminal('Or you can enter their npub key if you have it.\n\n')
+
+        const response = await showPrompt('Find user: ')
+        terminal('\n\n')
+        if (!response) {
+          break
+        }
+
+        if (stringIsValidNpub(response)) {
+          npub = response
+          // TODO lookup nip05 event from relays
+          state = 'add'
+        }
+        else if (stringIsValidNostrAddress(response)) {
+          nip05 = response
+          const foundNpub = await this.#chatController.lookupNip05Address(nip05)
+          if (foundNpub === null) {
+            const resp = await showYesNoPrompt('Nostr address not found. Try again?')
+            if (!resp) {
+              break
+            }
+          } else {
+            terminal('Found:\n\n')
+            npub = foundNpub
+            state = 'add'
+          }
+        } else {
+          const resp = await showYesNoPrompt('Not a valid Nostr address or npub. Try again?')
+          if (!resp) {
+            break
+          }
+        }
+      }
+      
+      if (state == 'add') {
+        const contact = this.#chatModel.getContactByNpub(npub)
+
+        if (contact) {
+          terminal('Contact name:  ')
+          terminal.yellow(`${contact.name}\n`)
+        }
+        if (nip05) {
+          terminal('Nostr address: ') 
+          terminal.yellow(`${nip05}\n`)
+        }
+        terminal('Npub: ') 
+        terminal.yellow(`${npub}\n\n`)
+        
+        if (contact) {
+          terminal('User is already in your contacts.\n\n') 
+          if (nip05 && nip05 !== contact.nip05) {
+            const updatedContact: ChatContact = { ...contact, nip05 }
+            await this.#chatModel.setContact(updatedContact)
+          }
+          const resp = await showYesNoPrompt(`Search again?`)
+          if (!resp) {
+            break
+          }
+          state = 'find'
+          continue
+        }
+        
+        // Proceed to add as a new contact
+        const resp = await showYesNoPrompt('Add to contacts?')
+        if (!resp) {
+          break
+        }
+        terminal('\n')
+        let contactName = await showPrompt('Enter a name for this contact: ')
+        if (!contactName) {
+          const resp = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
+          if (!resp) {
+            break
+          }
+        } else if (this.#chatModel.getContactByName(contactName) !== null) {
+          const resp = await showYesNoPrompt('Another contact already exists with this name. Continue editing?')
+          if (!resp) {
+            break
+          }
+        } else {
+          // valid, so write the contact
+          const contact: ChatContact = { name: contactName, npub, nip05, relays: [], relaysUpdatedAt: null }
+          await this.#chatModel.setContact(contact)
+          
+          // new contact, so update subscription so we can get contact's relaylist
+          await this.#chatController.subscribeToRelayMetadata()
+          break
+        }
+      }
+    }
+    this.#view.pop()  
+  }
+  
+  async #editContact() {
+    let npub = this.#viewContext
+    let contact = this.#chatModel.getContactByNpub(npub)
+    if (!contact) {
+      this.#view.pop()
+      return
+    }
 
     let origName = contact.name
+    let defaultName = contact.name
     let editing = true
     while (editing) {
       terminal.clear()
-      let result
-      terminal.bgGreen(`${addNewContact ? 'Add Contact' : 'Edit Contact'}\n\n`)
-      if (npubAlreadyProvided) {
-        terminal(`Contact npub: ${contact.npub}\n`)
-        result = await showDialog(
-          ['Contact name'],
-          [ contact.name ])
+      terminal.bgGreen('Edit Contact\n\n')
+
+      terminal.white('Npub:         ')
+      terminal.yellow(`${contact.npub}\n\n`)
+      
+      let name = await showPrompt('Contact name: ', defaultName)
+      terminal('\n')
+      
+      if (name === null) {
+        editing = false
+        // exit
+      } else if (name === '') {
+        editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
+      } else if (name !== origName && this.#chatModel.getContactByName(name) !== null) {
+        editing = await showYesNoPrompt('Another contact already exists with this name. Continue editing?')
+        defaultName = name
       } else {
-        result = await showDialog( 
-          ['Contact npub', 'Contact name'],
-          [ contact.npub, contact.name ])
-      }
-      editing = false
-      if (result) {
-        if (npubAlreadyProvided) {
-          const [name] = result;
-          contact = { ...contact, name };
-        } else {
-          const [npub, name] = result;
-          contact = { ...contact, name, npub };
-        }
-
-        let isDuplicate = this.#chatModel.getContactByName(contact.name) !== null
-
-        if (contact.name == '') {
-          editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
-        } else if (contact.npub == '') {
-          editing = await showYesNoPrompt('Contact npub cannot be empty. Continue editing?')
-        } else if (!stringIsValidNpub(contact.npub)) {
-          editing = await showYesNoPrompt('Contact npub is not valid. Continue editing?')
-        } else if (contact.name !== origName && isDuplicate) {
-          editing = await showYesNoPrompt('Contact already exists with this name. Continue editing?')
-        } else if (addNewContact && this.#chatModel.getContactByNpub(contact.npub)) {
-          editing = await showYesNoPrompt('Contact already exists with this npub. Continue editing?')
-        } else {
-          // valid, so write the contact
-          await this.#chatModel.setContact(contact)
-
-          // if new contact, update subscription so we can get contact's relaylist
-          if (addNewContact) {
-            await this.#chatController.subscribeToRelayMetadata()
-          }   
-        }
+        // valid, so write the contact
+        contact = { ...contact, name };
+        await this.#chatModel.setContact(contact)
+        editing = false
       }
     }
     this.#view.pop()
   }
-  
+
   async #deleteContact() {
     let npub = this.#viewContext
-    let name = this.#chatModel.getContactByNpub(npub)!.name
-    let confirmed = await showYesNoPrompt(`Delete ${name}. Are you sure?`)
+    let contact = this.#chatModel.getContactByNpub(npub)
+    if (!contact) {
+      this.#view.pop()
+      return
+    }
+
+    terminal('\n')
+    let confirmed = await showYesNoPrompt(`Delete ${contact.name}. Are you sure?`)
     if (confirmed) {
       await this.#chatModel.deleteContact(npub)
       // need to pop twice, to exit the contacts view also
@@ -444,10 +537,61 @@ class ChatUi {
     terminal.bgGreen('Settings\n')
     const settingsMenu = new Map()
     settingsMenu.set('Back',  () => this.#view.pop())
+    settingsMenu.set('Profile', () => this.#view.push('settingsProfile'))
     settingsMenu.set('Relays', () => this.#view.push('settingsRelays'))
     settingsMenu.set('Keys', () => this.#view.push('settingsKeys'))
     await showMenu(settingsMenu)
   }
+
+  async #settingsProfile() {
+    terminal.clear()
+    terminal.bgGreen('Profile\n\n')
+
+    terminal.yellow('Your Nostr address: ')
+    let profileAddress = this.#chatModel.settings.profileAddress ?? 'none'
+    terminal.white(profileAddress)
+    const npub = await this.#chatController.lookupNip05Address(profileAddress)
+    if (npub && npub === this.#chatController.getNpub()) {
+      terminal.brightGreen(' ✔')
+    } else {
+      terminal.brightRed(' ✘')
+    }
+    terminal('\n')
+    let editing = false
+    const menu = new Map()
+    menu.set('Back',  () => this.#view.pop())
+    menu.set('Edit', () => editing = true)
+    await showMenu(menu)
+
+    let currentText = ''
+    while (editing) {
+      terminal.clear()
+      terminal.bgGreen('Profile\n\n')
+      let nip05 = await showPrompt('Enter your Nostr address: ',  currentText)
+      terminal('\n\n')
+      if (!nip05) {
+        editing = false
+      } else {
+        if (!stringIsValidNostrAddress(nip05)) {
+          editing = await showYesNoPrompt('Invalid Nostr address. It should look something like: name@domain.com. Continue editing?')
+        } else {
+          const npub = await this.#chatController.lookupNip05Address(nip05)
+          if (npub === null) {
+            editing = await showYesNoPrompt('Nostr address not found. Continue editing?')
+          } else if (npub !== this.#chatController.getNpub()) {
+            editing = await showYesNoPrompt('Nostr address found but it does not match your key. Continue editing?')
+          } else {
+            await pressToContinue('Your Nostr profile address has been confirmed')
+            const settings = this.#chatModel.settings
+            settings.profileAddress = nip05
+            await this.#chatModel.setSettings(settings)
+            editing = false
+          }
+        }
+      }
+    }
+  }
+
   
   async #settingsKeys() {
     terminal.clear()
@@ -569,9 +713,9 @@ class ChatUi {
     let connectedRelays = this.#chatController.checkConnectedRelays(relays)
     for (let relay of relays) {
       if (connectedRelays.includes(relay)) {
-        terminal.brightGreen('✓')
+        terminal.brightGreen('✔')
       } else {
-        terminal.brightRed('X')
+        terminal.brightRed('✘')
       }
       terminal.brightWhite(`  ${relay}\n`)
     }
@@ -585,9 +729,9 @@ class ChatUi {
     connectedRelays = this.#chatController.checkConnectedRelays(relays)
     for (let relay of relays) {
       if (connectedRelays.includes(relay)) {
-        terminal.brightGreen('✓')
+        terminal.brightGreen('✔')
       } else {
-        terminal.brightRed('X')
+        terminal.brightRed('✘')
       }
       terminal.brightWhite(`  ${relay}\n`)
     }
@@ -617,11 +761,12 @@ class ChatUi {
         'viewConversation':   this.#viewConversation,
         'newMessage':         this.#newMessage,
         'contacts':           this.#contactsMenu,
-        'addContact':         async () => this.#editContact(true),
+        'addContact':         this.#addContact,
         'editContact':        this.#editContact,
         'viewContact':        this.#viewContact,
         'deleteContact':      this.#deleteContact,
         'settings':           this.#settings,
+        'settingsProfile':    this.#settingsProfile,
         'settingsKeys':       this.#settingsKeys,
         'settingsRelays':     this.#settingsRelays,
         'editInboxRelays':    async () => this.#editRelays('inbox'),

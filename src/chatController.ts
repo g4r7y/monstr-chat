@@ -3,6 +3,7 @@ import { getPublicKey, Event } from '@nostr/tools'
 
 import { nsecEncode, npubEncode, decode } from '@nostr/tools/nip19'
 import { generateSeedWords, accountFromSeedWords } from '@nostr/tools/nip06'
+import { queryProfile } from '@nostr/tools/nip05'
 
 import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
@@ -206,6 +207,12 @@ class ChatController {
     await writeKey(nsecEncode(this.#privateKey ))
 
     // don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
+  }
+
+  async lookupNip05Address(nip05: string) : Promise<string | null> {
+    const profile =  await queryProfile(nip05)
+    const npub = profile ? npubEncode(profile.pubkey) : null
+    return npub
   }
 
 

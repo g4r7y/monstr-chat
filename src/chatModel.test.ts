@@ -28,8 +28,20 @@ describe('model', async () => {
     let model = new ChatModel()
     await model.load()
     const defaultSettings = {
-      inboxRelays: ['ws://localhost:8008'],
-      generalRelays: ['ws://localhost:8008']
+      generalRelays: [      
+        'ws://localhost:8008',
+        'wss://nostr.wine',
+        'wss://nostr.band',
+        'wss://relay.snort.social',
+        'wss://relay.damus.io',
+        'wss://relay.0xchat.com',
+      ],
+      inboxRelays: [      
+        'ws://localhost:8008',
+        'wss://relay.damus.io',
+      ],
+      relaysUpdatedAt: null, 
+      profileAddress: null 
     }
     assert.deepEqual(model.settings, defaultSettings)
     assert.equal(model.getMessageList().length, 0)
@@ -209,7 +221,7 @@ describe('model', async () => {
     let model = new ChatModel()
 
     // add a contact
-    const c: ChatContact = { name: 'Fred', npub: 'npub456', relays: [], relaysUpdatedAt: null }
+    const c: ChatContact = { name: 'Fred', npub: 'npub456', nip05: null, relays: [], relaysUpdatedAt: null }
     await model.setContact(c)
     assert.equal(model.getContactList().length, 1)
     assert.deepEqual(model.getContactList()[0], c)
@@ -247,7 +259,7 @@ describe('model', async () => {
     assert.deepEqual(model.getContactList()[0], c)
     
     // add another contact
-    const c2: ChatContact = { name: 'Pip', npub: 'npub789', relays: [], relaysUpdatedAt: null}
+    const c2: ChatContact = { name: 'Pip', npub: 'npub789', nip05: null, relays: [], relaysUpdatedAt: null}
     await model.setContact(c2)
     assert.equal(model.getContactList().length, 2)
     assert.deepEqual(model.getContactList()[0], c)
@@ -266,8 +278,8 @@ describe('model', async () => {
 
     // defualt settings
     let s1 = model.settings
-    assert.equal(s1.inboxRelays.length, 1)
-    assert.equal(s1.inboxRelays.length, 1)
+    assert.equal(s1.inboxRelays.length, 2)
+    assert.equal(s1.generalRelays.length, 6)
     
     // settings object is immutable via getter
     s1.someNewThing = 123
@@ -280,8 +292,8 @@ describe('model', async () => {
 
     // model is updated
     let s3 = model.settings
-    assert.equal(s3.inboxRelays.length, 2)
-    assert.equal(s3.inboxRelays[1], 'http://newrelay')
+    assert.equal(s3.inboxRelays.length, 3)
+    assert.equal(s3.inboxRelays[2], 'http://newrelay')
     assert.equal(s3.someNewThing, 123)
 
     // and data is saved

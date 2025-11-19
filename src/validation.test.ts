@@ -1,4 +1,4 @@
-import { stringIsAValidUrl, stringIsValidNpub } from './validation.js'
+import { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec, stringIsValidNostrAddress } from './validation.js'
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
 
@@ -65,7 +65,64 @@ describe('validation', () => {
       let isValid = stringIsValidNpub(t.text)
       assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
+  })
+
+  test('nsec', () => {
+    const tests = [
+      {
+        text: 'nsec1d3nsxh2yg00h6kr5cmeyg5aec40exu3jfx9qhrcl9tmsr0n9y6mqfdjtk3',
+        expected: true
+      },
+      {
+        text: '1gl95sqflrhgnvtvfjnnzzsnmcmdq2vg5txwpqvttafunx9ztl0ns88chl8',
+        expected: false
+      },
+      {
+        text: 'nsecdq2vg5txwpqvttafunx9ztl0ns88chl8',
+        expected: false
+      },
+      {
+        text: 'npub1gl95sqflrhgnvtvfjnnzzsnmcmdq2vg5txwpqvttafunx9ztl0ns88chl8',
+        expected: false
+      },
+      {
+        text: '9999999999999',
+        expected: false
+      },
+    ]
+
+    for(let t of tests) {
+      let isValid = stringIsValidNsec(t.text)
+      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
+    }
 
   })
+
+  test('nostr address', () => {
+    const tests = [
+      {
+        text: 'example@domain.com',
+        expected: true
+      },
+      {
+        text: 'domain.com',
+        expected: true
+      },
+      {
+        text: 'invalid@@',
+        expected: false
+      },
+      {
+        text: 'blahblah',
+        expected: false
+      }
+    ]
+
+    for(let t of tests) {
+      let isValid = stringIsValidNostrAddress(t.text)
+      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
+    }
+  })
+
 
 })

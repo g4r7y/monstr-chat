@@ -4,6 +4,7 @@ export type ChatSettings = {
   inboxRelays: string[],
   generalRelays: string[]
   relaysUpdatedAt: number | null
+  profileAddress: string | null
 }
 
 const defaultSettings : ChatSettings = {
@@ -19,13 +20,15 @@ const defaultSettings : ChatSettings = {
     'wss://relay.damus.io',
     'wss://relay.0xchat.com', 
   ],
-  relaysUpdatedAt: null
+  relaysUpdatedAt: null,
+  profileAddress: null
 
 }
 
 export type ChatContact = {
   name: string,
   npub: string,
+  nip05: string | null,
   relays: string[],
   relaysUpdatedAt: number | null
 }

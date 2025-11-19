@@ -1,5 +1,6 @@
 import { URL } from 'url'
 import { decode } from '@nostr/tools/nip19'
+import { isNip05 } from '@nostr/tools/nip05'
 
 const stringIsAValidUrl = (str: string, protocols: string[] = []) : boolean => {
     try {
@@ -31,5 +32,9 @@ const stringIsValidNsec = (nsec: string) : boolean => {
     }
 }
 
+const stringIsValidNostrAddress = (addr: string) : boolean => {
+    return isNip05(addr)
+}
 
-export { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec }
+
+export { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec, stringIsValidNostrAddress }

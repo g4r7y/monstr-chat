@@ -1,4 +1,4 @@
-import { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec, stringIsValidNostrAddress } from './validation.js'
+import { isValidUrl, isValidNpub, isValidNsec, isValidNip05Address, isValidBip39Word, isValidBip39Phrase } from './validation.js'
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
 
@@ -31,7 +31,7 @@ describe('validation', () => {
     ]
 
     for(let t of tests) {
-      let isValid = t.protocols ? stringIsAValidUrl(t.text, t.protocols) :  stringIsAValidUrl(t.text)
+      let isValid = t.protocols ? isValidUrl(t.text, t.protocols) :  isValidUrl(t.text)
       assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}` )
     }
 
@@ -62,7 +62,7 @@ describe('validation', () => {
     ]
 
     for(let t of tests) {
-      let isValid = stringIsValidNpub(t.text)
+      let isValid = isValidNpub(t.text)
       assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
   })
@@ -92,13 +92,13 @@ describe('validation', () => {
     ]
 
     for(let t of tests) {
-      let isValid = stringIsValidNsec(t.text)
+      let isValid = isValidNsec(t.text)
       assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
 
   })
 
-  test('nostr address', () => {
+  test('nip05 address', () => {
     const tests = [
       {
         text: 'example@domain.com',
@@ -119,10 +119,61 @@ describe('validation', () => {
     ]
 
     for(let t of tests) {
-      let isValid = stringIsValidNostrAddress(t.text)
+      let isValid = isValidNip05Address(t.text)
       assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
   })
 
+  test('bip39 mnemonic, individual word', () => {
+    const tests = [
+      {
+        text: 'weasel',
+        expected: true
+      },
+      {
+        text: 'sausage',
+        expected: true
+      },
+      {
+        text: 'invalid@@',
+        expected: false
+      },
+      {
+        text: 'blahblah',
+        expected: false
+      }
+    ]
+
+    for(let t of tests) {
+      let isValid = isValidBip39Word(t.text)
+      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
+    }
+  })
+
+  test('bip39 mnemonic, full phrase', () => {
+    const tests = [
+      {
+        text: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+        expected: true
+      },
+      {
+        text: 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo',
+        expected: false
+      },
+      {
+        text: 'invalid@@',
+        expected: false
+      },
+      {
+        text: '',
+        expected: false
+      }
+    ]
+
+    for(let t of tests) {
+      let isValid = isValidBip39Phrase(t.text)
+      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
+    }
+  })
 
 })

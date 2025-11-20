@@ -1,9 +1,10 @@
 import tk from 'terminal-kit'
 import ChatController from './chatController.js'
 import { ChatContact, ChatMessage, ChatModel } from './chatModel.js'
-import { stringIsAValidUrl, stringIsValidNpub, stringIsValidNsec, stringIsValidNostrAddress } from './validation.js'
+import { isValidUrl, isValidNpub, isValidNsec, isValidNip05Address, isValidBip39Word, isValidBip39Phrase } from './validation.js'
 import { wrapText, truncateText } from './textUtils.js'
 import { showPrompt, showYesNoPrompt, showDialog, showMenu, showHorizontalMenu, startScrollPane, stopScrollPane, pressToContinue } from './terminalUi.js'
+import { error } from 'console'
 
 const { terminal } = tk
 
@@ -72,7 +73,7 @@ class ChatUi {
         'You will need this in future if you ever need to restore your Nostr key.\n' +
         'Keep this in a safe place and do not share it with anybody.\n' + 
         'After you press ok, you will never be able to see it again.\n\n' +
-        'Your memorable recovery phrase is:\n')
+        ' Your memorable recovery phrase is:\n')
       terminal.yellow(`${mnemonic}\n\n`)
 
       await pressToContinue('Ready to start?')
@@ -100,27 +101,74 @@ class ChatUi {
     }
 
     if (option === 'restoreNsec') {
-      let editing = true
-      let currentText = 'nsec'
       terminal('\n')
+      let editing = true
+      let initialText = 'nsec'
+      terminal.saveCursor()
       while(editing) {
-        let nsec = await showPrompt('Enter your private key: ', currentText)
-        editing = false
-        if (nsec !== null) {
-          if (!stringIsValidNsec(nsec)) {
-            editing = await showYesNoPrompt('\nPrivate nsec key is not valid. Continue editing?')
-            terminal.move(0,-2)
-            terminal.eraseDisplayBelow()
-            currentText = nsec
-          } else {
-            await this.#chatController.resetKey(nsec)
-          }
+        terminal.restoreCursor()
+        terminal.eraseDisplayBelow()
+        let nsec = await showPrompt('Enter your private key: ', initialText)
+        if (nsec === null) {
+          editing = false
+        } else if (!isValidNsec(nsec)) {
+          editing = await showYesNoPrompt('\nNot a valid nsec key. Try again?')
+          initialText = nsec
+        } else {
+          editing = false
+          await this.#chatController.resetKey(nsec)
+          terminal.yellow('\n\nYour key has been restored!\n\n')
+          await pressToContinue('Ready to start?')
         }
       }
     }
 
     if (option === 'restoreBip39') {
-      //TODO bip39 restore
+      terminal('\n')
+      let editing = true
+      let initialText = ''
+      let words = ''
+      let wordNum = 1
+      terminal.saveCursor()
+      while(editing) {
+        terminal.restoreCursor()
+        terminal.eraseDisplayBelow()
+        terminal.yellow(`Recovery phrase: ${words}\n`)
+        if (wordNum <= 12) {
+          let word = await showPrompt(`Enter word ${wordNum}: `, initialText)
+          initialText = ''
+          if (word === null) {
+            editing = false
+          } else if (!isValidBip39Word(word)) {
+              editing = await showYesNoPrompt('\nNot a valid word. Try again?')
+              initialText = word
+          } else {
+            words = words ? `${words} ${word}` : word
+            wordNum++
+          } 
+        } else {
+          // final word has been entered
+          if (!isValidBip39Phrase(words)) {
+            editing = await showYesNoPrompt('\nRecovery phrase is not a valid combination of words. Start again?')
+            words = ''
+            wordNum = 1
+          } else {
+            editing = false
+            try {
+              await this.#chatController.resetKeyFromSeedWords(words)
+              terminal.yellow('\nYour key has been restored!\n\n')
+              await pressToContinue('Ready to start?')
+            } catch (error) {
+              editing = await showYesNoPrompt('\nFailed to restore your key from recovery phrase. Start again?')
+              words = ''
+              wordNum = 1
+            }
+          }
+          
+        }
+        
+        
+      }
     }
     
     this.#view.pop()
@@ -298,7 +346,7 @@ class ChatUi {
       if (result) {
         [recipient, text] = result
         const contact = this.#chatModel.getContactByName(recipient)
-          if (!contact && !stringIsValidNpub(recipient)) {
+          if (!contact && !isValidNpub(recipient)) {
           editing = await showYesNoPrompt('Contact npub is not valid. Continue editing?')
           continue
         } 
@@ -389,12 +437,12 @@ class ChatUi {
           break
         }
 
-        if (stringIsValidNpub(response)) {
+        if (isValidNpub(response)) {
           npub = response
           // TODO lookup nip05 event from relays
           state = 'add'
         }
-        else if (stringIsValidNostrAddress(response)) {
+        else if (isValidNip05Address(response)) {
           nip05 = response
           const foundNpub = await this.#chatController.lookupNip05Address(nip05)
           if (foundNpub === null) {
@@ -572,7 +620,7 @@ class ChatUi {
       if (!nip05) {
         editing = false
       } else {
-        if (!stringIsValidNostrAddress(nip05)) {
+        if (!isValidNip05Address(nip05)) {
           editing = await showYesNoPrompt('Invalid Nostr address. It should look something like: name@domain.com. Continue editing?')
         } else {
           const npub = await this.#chatController.lookupNip05Address(nip05)
@@ -641,7 +689,7 @@ class ChatUi {
             break
           }
           relayUrl = resp
-          isValid = stringIsAValidUrl(relayUrl, ['ws','wss'])
+          isValid = isValidUrl(relayUrl, ['ws','wss'])
           if (!isValid) {
             terminal.red('Invalid url')
             terminal.restoreCursor()

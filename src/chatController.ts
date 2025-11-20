@@ -11,7 +11,7 @@ import { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMet
 import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
-import { stringIsValidNpub } from './validation.js'
+import { isValidNpub } from './validation.js'
 import { SimplePool } from '@nostr/tools'
 import { normalizeURL } from '@nostr/tools/utils'
 
@@ -141,7 +141,7 @@ class ChatController {
     // subscribing for all of our contacts
     let npubs = this.#model.getContactList()
       .map(c => c.npub)
-      .filter(npub => stringIsValidNpub(npub))
+      .filter(npub => isValidNpub(npub))
       .map(npub => decode(npub).data as string)
       
     // subscribe for self too
@@ -189,12 +189,9 @@ class ChatController {
   // @return string: bip39 word list
   async createNewKey() : Promise<string> {
     const words = generateSeedWords()
-    let { publicKey, privateKey } = accountFromSeedWords(words)
-    this.#privateKey = privateKey
-    this.#pubKey = publicKey
-    await writeKey(nsecEncode(this.#privateKey ))
+    await this.resetKeyFromSeedWords(words)
 
-    // now that we have a new key we should broadcast its default relaylist
+    // Now that we have a new key we should broadcast its default relaylist
     await this.broadcastRelayList()
 
     return words
@@ -205,8 +202,15 @@ class ChatController {
     this.#privateKey = decode(nsec).data as Uint8Array
     this.#pubKey = getPublicKey(this.#privateKey)
     await writeKey(nsecEncode(this.#privateKey ))
+    // Note: we don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
+  }
 
-    // don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
+  // Reset key from bip39
+  async resetKeyFromSeedWords(bip39Mnemonic: string) {
+    let { publicKey, privateKey } = accountFromSeedWords(bip39Mnemonic)
+    this.#privateKey = privateKey
+    this.#pubKey = publicKey
+    await writeKey(nsecEncode(this.#privateKey ))
   }
 
   async lookupNip05Address(nip05: string) : Promise<string | null> {

@@ -139,7 +139,7 @@ class ChatUi {
           if (word === null) {
             editing = false
           } else if (!isValidBip39Word(word)) {
-              editing = await showYesNoPrompt('\nNot a valid word. Try again?')
+              editing = await showYesNoPrompt('Not a valid word. Try again?')
               initialText = word
           } else {
             words = words ? `${words} ${word}` : word
@@ -395,11 +395,7 @@ class ChatUi {
     const contactNpub = this.#viewContext
     const currentContact = this.#chatModel.getContactByNpub(contactNpub)!
     terminal.yellow('Name:             ')
-    if (!currentContact.profileName || currentContact.name === currentContact.profileName) {
-      terminal.white(`${currentContact.name}\n`)
-    } else {
-      terminal.white(`${currentContact.name} (${currentContact.profileName})\n`)
-    }
+    terminal.white(`${currentContact.name}\n`)
     terminal.yellow('Verified address: ')
     if (currentContact.nip05) {
       terminal.white(currentContact.nip05)
@@ -408,7 +404,11 @@ class ChatUi {
       terminal.white('None')
       terminal.brightRed(' ✘\n')
     }
-    if (currentContact?.profileAbout) {
+    if (currentContact.profileName) {
+      terminal.yellow('Nickname:         ')
+      terminal.white(`${currentContact.profileName}\n`)
+    }
+    if (currentContact.profileAbout) {
       terminal.yellow('About:            ')
       terminal.white(`${currentContact.profileAbout}\n`)
     }
@@ -445,7 +445,7 @@ class ChatUi {
         terminal('Or you can enter their npub key if you have it.\n\n')
 
         const response = await showPrompt('Find user: ')
-        terminal('\n\n')
+        terminal('\n')
         if (!response) {
           break
         }
@@ -495,11 +495,11 @@ class ChatUi {
           terminal.brightBlue(' ✔\n')
         }
         if (contactProfile.name) {
-          terminal('Profile name:  ') 
+          terminal('Nickname:      ') 
           terminal.yellow(`${contactProfile.name}\n`)
         }
         if (contactProfile.about) {
-          terminal('Profile about: ') 
+          terminal('About:         ') 
           terminal.yellow(`${contactProfile.about}\n`)
         }
         
@@ -535,10 +535,11 @@ class ChatUi {
         if (!resp) {
           break
         }
-        terminal('\n')      
 
-        let contactName = await showPrompt('Enter a name for this contact: ', contactProfile.name)
-        
+        let contactName = await showPrompt('\nEnter a name for this contact: ', contactProfile.name)
+        if (contactName === null) {
+          break;
+        }
         if (!contactName) {
           const resp = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
           if (!resp) {
@@ -552,8 +553,11 @@ class ChatUi {
         } else {
           // valid, so write the contact
           const contact: ChatContact = { 
-            name: contactName, npub, nip05: contactProfile.nip05,
-            profileName: contactProfile.name, profileAbout: contactProfile.about,
+            name: contactName, 
+            npub, 
+            nip05: contactProfile.nip05,
+            profileName: contactProfile.name, 
+            profileAbout: contactProfile.about,
             relays: [], relaysUpdatedAt: null }
           await this.#chatModel.setContact(contact)
           
@@ -586,7 +590,6 @@ class ChatUi {
       terminal.yellow(`${contact.npub}\n\n`)
       
       let name = await showPrompt('Contact name: ', defaultName)
-      terminal('\n')
       
       if (name === null) {
         editing = false
@@ -643,7 +646,7 @@ class ChatUi {
     terminal.yellow('Your nickname: ')
     terminal.white(settings.profileName ?? '')
     terminal('\n')
-    terminal.yellow('About you: ')
+    terminal.yellow('About you:     ')
     terminal.white(settings.profileAbout ?? '')
     terminal('\n')
     terminal.yellow('Nostr address (NIP-05): ')
@@ -675,15 +678,13 @@ class ChatUi {
     terminal.clear()
     terminal.bgGreen('Edit Profile\n\n')
     let initialText = this.#chatModel.settings.profileName ?? ''
-    let profileName = await showPrompt('Your name: ',  initialText)
-    terminal('\n')
+    let profileName = await showPrompt('Your nickname: ',  initialText)
     if (profileName === null) {
       // escape
       return
     }
     initialText = this.#chatModel.settings.profileAbout ?? ''
     let profileAbout = await showPrompt('About you: ',  initialText)
-    terminal('\n')
     if (profileAbout === null) {
       // escape
       return
@@ -691,12 +692,13 @@ class ChatUi {
 
     initialText = this.#chatModel.settings.nip05 ?? ''
     let editing = true
+    let shouldUpdate = false
     terminal.saveCursor()
     while (editing) {
       terminal.restoreCursor()
       terminal.eraseDisplayBelow()
-      let nip05 = await showPrompt('Enter your Nostr NIP-05 address: ',  initialText)
-      terminal('\n\n')
+      let nip05 = await showPrompt('Your Nostr NIP-05 address: ',  initialText)
+      terminal('\n')
       if (nip05 === null) {
         // escape
         return
@@ -705,6 +707,7 @@ class ChatUi {
       if (nip05 === '') {
         // set to empty, don't bother with verification
         settings.nip05 = null
+        shouldUpdate = true
         editing = false
       } else if (!isValidNip05Address(nip05)) {
         editing = await showYesNoPrompt('Invalid address. It should look something like: user@domain. Try again?')
@@ -717,16 +720,19 @@ class ChatUi {
         } else {
           await pressToContinue('Your Nostr address has been verified')
           settings.nip05 = nip05
+          shouldUpdate = true
           editing = false
         }
       }
     }
 
-    settings.profileName = profileName
-    settings.profileAbout = profileAbout
-    await this.#chatModel.setSettings(settings)
-    await this.#chatController.broadcastUserMetadata()
-    await pressToContinue('Your Nostr profile has been updated')
+    if (shouldUpdate) {
+      settings.profileName = profileName
+      settings.profileAbout = profileAbout
+      await this.#chatModel.setSettings(settings)
+      await this.#chatController.broadcastUserMetadata()
+      await pressToContinue('Your Nostr profile has been updated')
+    }
   }
 
   
@@ -767,7 +773,6 @@ class ChatUi {
           }
 
           let resp = await showPrompt(`Relay ${i+1}: `, relayUrl)
-          terminal('\n')
           terminal.eraseLineAfter()
           if (resp==null) {
             // cancelled

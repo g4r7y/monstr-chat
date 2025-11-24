@@ -6,6 +6,7 @@ const { terminal, Rect, ScreenBuffer } = tk
 export async function showPrompt(question: string, defaultResponse: string = '', minLength: number = 0): Promise<string | null> {
   terminal.yellow(question)
   const response = await terminal.inputField({ minLength, maxLength: 512, cancelable: true, default: defaultResponse }).promise
+  terminal('\n')
   return response === undefined ? null : response
 }
   

@@ -7,7 +7,8 @@ import { queryProfile } from '@nostr/tools/nip05'
 
 import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
-import { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
+import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
+import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
 import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
@@ -66,6 +67,7 @@ class ChatController {
     try {
       await this.subscribeToIncomingDms()
       await this.subscribeToRelayMetadata()
+      await this.subscribeToUserMetadata()
     } catch (err) {
       console.log(`Startup error: ${err}`)
       startupError = true
@@ -147,7 +149,7 @@ class ChatController {
     // subscribe for self too
     npubs.push(this.#pubKey)
 
-    console.log(`Subscribing to relay metadata for contacts: ${this.#model.getContactList().map(c=>c.name)}`)
+    console.log(`Subscribing to relay metadata for contacts: ${this.#model.getContactList().map(c=>c.name)} + self`)
     await subscribeToRelayListMetadata(npubs, this.#pool, 
       this.#model.settings.generalRelays, 
       async (ev: Event) => await this.#onRelaylistMetadata(ev)
@@ -160,6 +162,40 @@ class ChatController {
     await publishRelayListMetadata(this.#pubKey, this.#privateKey,
       this.#pool, this.#model.settings.generalRelays, 
       this.#model.settings.inboxRelays)
+  }
+
+    // Subscribe/re-subscribe to receive user metadata for all of our contacts.
+  // Also include our own npub in case user metadata is changed by another client.
+  // General (aka discovery) relays are used for the subscription
+  async subscribeToUserMetadata() {
+    // subscribing for all of our contacts
+    let npubs = this.#model.getContactList()
+      .map(c => c.npub)
+      .filter(npub => isValidNpub(npub))
+      .map(npub => decode(npub).data as string)
+      
+    // subscribe for self too
+    npubs.push(this.#pubKey)
+
+    console.log(`Subscribing to user metadata for contacts: ${this.#model.getContactList().map(c=>c.name)} + self`)
+    await subscribeToUserMetadata(npubs, this.#pool, 
+      this.#model.settings.generalRelays, 
+      async (ev: Event) => await this.#onUserMetadata(ev)
+    )
+  }
+
+
+  // Broadcast our user metadata to the general discovery relays. This includes our nip05 address.
+  // Throws if cannot broadcast to any relays
+  async broadcastUserMetadata() {
+    const settings = this.#model.settings
+    const content: Record<string, string> = {
+      ...(settings.profileName ? {name: settings.profileName} : {}),
+      ...(settings.profileAbout ? {about: settings.profileAbout} : {}),
+      ...(settings.nip05 ? {nip05: settings.nip05} : {}),
+    }
+    await publishUserMetadata(this.#pubKey, this.#privateKey,
+      this.#pool, this.#model.settings.generalRelays, content)
   }
 
   // Checks that the specified relay URLs are connected.
@@ -189,9 +225,12 @@ class ChatController {
   // @return string: bip39 word list
   async createNewKey() : Promise<string> {
     const words = generateSeedWords()
-    await this.resetKeyFromSeedWords(words)
+    let { publicKey, privateKey } = accountFromSeedWords(words)
+    this.#privateKey = privateKey
+    this.#pubKey = publicKey
+    await writeKey(nsecEncode(this.#privateKey ))
 
-    // Now that we have a new key we should broadcast its default relaylist
+    // Now that we have a new key we broadcast its default relaylist
     await this.broadcastRelayList()
 
     return words
@@ -204,22 +243,46 @@ class ChatController {
     await writeKey(nsecEncode(this.#privateKey ))
     // Note: we don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
   }
-
+  
   // Reset key from bip39
   async resetKeyFromSeedWords(bip39Mnemonic: string) {
     let { publicKey, privateKey } = accountFromSeedWords(bip39Mnemonic)
     this.#privateKey = privateKey
     this.#pubKey = publicKey
     await writeKey(nsecEncode(this.#privateKey ))
+    // Note: we don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
   }
 
+  
+  async getUserProfile(npub: string) : Promise<Record<string, string> | null> {
+    const userPubKey = decode(npub).data as string
+    const userEvent = await getUserMetadata(userPubKey, this.#pool, this.#model.settings.generalRelays)
+    if (!userEvent) {
+      return null
+    }
+    
+    const content = extractContentFromUserMetadataEvent(userEvent)
+    console.log('getUserProfile1', npub, userEvent)
+    
+    let profile: Record<string, string> = {}
+
+    if (content?.nip05) {
+      const foundNpub = await this.lookupNip05Address(content.nip05)
+      console.log('getUserProfile2 lookup nip05 found:', foundNpub)
+      if (foundNpub === npub) {
+        profile.nip05 = content.nip05
+      }
+    }
+    profile.name = content?.name ?? null
+    profile.about = content?.about ?? null
+    return profile
+  }
+  
   async lookupNip05Address(nip05: string) : Promise<string | null> {
     const profile =  await queryProfile(nip05)
     const npub = profile ? npubEncode(profile.pubkey) : null
     return npub
   }
-
-
   
   // Callback for incoming DM subscription.
   async #onIncoming(msg: ChatMessage) {
@@ -248,15 +311,66 @@ class ChatController {
     if (ev.pubkey === this.#pubKey) {
       console.log(`Received relaylist for self`, ev.created_at, this.#model.settings.relaysUpdatedAt) 
       if (!this.#model.settings.relaysUpdatedAt || this.#model.settings.relaysUpdatedAt < ev.created_at) { 
-        console.log(`Updating relaylist for self`) 
         const currentSettings = this.#model.settings
-        // TODO only update if changed
-        currentSettings.inboxRelays = extractReadRelaysFromNip65(ev)
-        await this.#model.setSettings(currentSettings)
+        const eventRelays = extractReadRelaysFromNip65(ev)
+        if (JSON.stringify(eventRelays)!==JSON.stringify(currentSettings.inboxRelays)) {
+          console.log(`Updating relaylist for self`) 
+          currentSettings.inboxRelays = eventRelays
+          await this.#model.setSettings(currentSettings)
+        }
       }
     }
   }
 
+  // Callback for kind0 user metadata event subscription.
+  // Called whenever a subscribed npubs's user metadata changes.
+  // Checks if we have a corresponding contact and updates its details.
+  async #onUserMetadata(ev: Event) {
+    const npub = npubEncode(ev.pubkey)
+    // update user metadata for contact
+    const contact = this.#model.getContactByNpub(npub)
+    if (contact ) {
+      // TODO only update contact if event time is newer than last update?
+      const content = extractContentFromUserMetadataEvent(ev)
+      contact.profileName = content?.name ?? contact.profileName
+      contact.profileAbout = content?.about ?? contact.profileAbout
+      if (content?.nip05 !== contact.nip05) {
+        if (!content?.nip05) {
+          contact.nip05 = null
+        } else {
+          const nip05Npub = await this.lookupNip05Address(content.nip05)
+          if (nip05Npub === npub) {
+            // update contact with verified nip05
+            contact.nip05 = content.nip05
+          }
+        }
+      }
+      console.log(`Updating user profile for contact: ${contact.name}`) 
+      await this.#model.setContact(contact)
+    }
+      
+    // update user metadata for self
+    if (ev.pubkey === this.#pubKey) {
+      console.log(`Received user metadata for self`) 
+      const currentSettings = this.#model.settings
+      const content = extractContentFromUserMetadataEvent(ev)
+      currentSettings.profileName = content?.name ?? currentSettings.profileName
+      currentSettings.profileAbout = content?.about ?? currentSettings.profileAbout
+      if (content?.nip05 !== currentSettings.nip05) {
+        if (!content?.nip05) {
+          currentSettings.nip05 = null
+        } else {
+          const nip05Npub = await this.lookupNip05Address(content.nip05)
+          if (nip05Npub === this.getNpub()) {
+            // update our settings with verified nip05
+            currentSettings.nip05 = content.nip05
+          }
+        }
+      }
+      console.log(`Updating user profile for self`) 
+      await this.#model.setSettings(currentSettings)
+    }
+  }
 }
 
 export default ChatController

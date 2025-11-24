@@ -41,7 +41,9 @@ describe('model', async () => {
         'wss://relay.damus.io',
       ],
       relaysUpdatedAt: null, 
-      profileAddress: null 
+      nip05: null,
+      profileName: null,
+      profileAbout: null,
     }
     assert.deepEqual(model.settings, defaultSettings)
     assert.equal(model.getMessageList().length, 0)
@@ -221,7 +223,7 @@ describe('model', async () => {
     let model = new ChatModel()
 
     // add a contact
-    const c: ChatContact = { name: 'Fred', npub: 'npub456', nip05: null, relays: [], relaysUpdatedAt: null }
+    const c: ChatContact = { name: 'Fred', npub: 'npub456', nip05: null, relays: [], relaysUpdatedAt: null, profileName: null, profileAbout: null  }
     await model.setContact(c)
     assert.equal(model.getContactList().length, 1)
     assert.deepEqual(model.getContactList()[0], c)
@@ -259,7 +261,7 @@ describe('model', async () => {
     assert.deepEqual(model.getContactList()[0], c)
     
     // add another contact
-    const c2: ChatContact = { name: 'Pip', npub: 'npub789', nip05: null, relays: [], relaysUpdatedAt: null}
+    const c2: ChatContact = { name: 'Pip', npub: 'npub789', nip05: null, relays: [], relaysUpdatedAt: null, profileName: null, profileAbout: null }
     await model.setContact(c2)
     assert.equal(model.getContactList().length, 2)
     assert.deepEqual(model.getContactList()[0], c)

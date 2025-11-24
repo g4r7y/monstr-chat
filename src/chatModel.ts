@@ -4,7 +4,9 @@ export type ChatSettings = {
   inboxRelays: string[],
   generalRelays: string[]
   relaysUpdatedAt: number | null
-  profileAddress: string | null
+  nip05: string | null
+  profileName: string | null
+  profileAbout: string | null
 }
 
 const defaultSettings : ChatSettings = {
@@ -21,14 +23,18 @@ const defaultSettings : ChatSettings = {
     'wss://relay.0xchat.com', 
   ],
   relaysUpdatedAt: null,
-  profileAddress: null
+  nip05: null,
+  profileName: null,
+  profileAbout: null,
 
 }
 
 export type ChatContact = {
-  name: string,
+  name: string, //local name
   npub: string,
   nip05: string | null,
+  profileName: string | null
+  profileAbout: string | null
   relays: string[],
   relaysUpdatedAt: number | null
 }

@@ -3,7 +3,7 @@ import { SubCloser } from "@nostr/tools/abstract-pool"
 
 let subCloser : SubCloser
 
-const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, pool: SimplePool, relays: string[], inboxRelayList: string[]) => {
+const publishRelayListMetadata = async (pubkey: string, nsec: Uint8Array, pool: SimplePool, relays: string[], inboxRelayList: string[]) => {
 
   // Define all the relays we expect to READ messages from, i.e. our inbox relays.
   // Other people will need to send DM to these relays to reach us.
@@ -20,7 +20,7 @@ const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, pool: Si
     created_at: Math.floor(createdTimestamp / 1000),
     tags: relayTags,
     content: "",
-    pubkey: npub
+    pubkey
   };
 
   try {
@@ -33,7 +33,7 @@ const publishRelayListMetadata = async (npub: string, nsec: Uint8Array, pool: Si
   }
 }
 
-const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>Promise<void> ) => {
+const subscribeToRelayListMetadata = async (pubkeyList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>Promise<void> ) => {
   if (subCloser) {
     subCloser.close()
   }
@@ -42,7 +42,7 @@ const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool
       relays, 
       {
         kinds: [10002],
-        authors: npubList,
+        authors: pubkeyList,
       },
       {
         id: 'relaylist-metadata-sub-id',  // always use fixed sub id
@@ -58,18 +58,19 @@ const subscribeToRelayListMetadata = async (npubList: string[], pool: SimplePool
   }
 }
 
-const getRelayListMetadata = async (npub: string, pool: SimplePool, relays: string[]) : Promise<Event | undefined> => {
+const getRelayListMetadata = async (pubkey: string, pool: SimplePool, relays: string[]) : Promise<Event | undefined> => {
   try {
     const events = await pool.querySync(
       relays, 
       {
         kinds: [10002],
-        authors: [npub],
+        authors: [pubkey],
       },
     )
     if (events) {
-      // TODO may be different events from different relays so take the latest
-      return events[0]
+      // may be events from multiple relays, so take the latest
+      const latest = events.sort((a,b)=> b.created_at - a.created_at)[0]
+      return latest
     }
     return undefined
 

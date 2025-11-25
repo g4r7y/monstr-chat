@@ -4,17 +4,17 @@ import { getPublicKey, Event } from '@nostr/tools'
 import { nsecEncode, npubEncode, decode } from '@nostr/tools/nip19'
 import { generateSeedWords, accountFromSeedWords } from '@nostr/tools/nip06'
 import { queryProfile } from '@nostr/tools/nip05'
+import { SimplePool } from '@nostr/tools'
+import { normalizeURL } from '@nostr/tools/utils'
 
 import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
-import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
 import { isValidNpub } from './validation.js'
-import { SimplePool } from '@nostr/tools'
-import { normalizeURL } from '@nostr/tools/utils'
+import ChatUi from './terminal/viewRouter.js'
 
 
 class ChatController {
@@ -54,7 +54,7 @@ class ChatController {
     if (this.#privateKey.length == 0) {
       // no existing key
       firstLaunch = true
-      await this.#ui.go('firstLaunch')
+      await this.#ui.go('welcome')
       if (this.#privateKey.length == 0) {
         // still no key, so just exit
         return

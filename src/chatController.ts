@@ -15,7 +15,7 @@ import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
 import { isValidNpub } from './validation.js'
 import ChatUi from './terminal/viewRouter.js'
-
+import createRelayMonitor, { RelayMonitor } from './relayMonitor.js'
 
 class ChatController {
   #pubKey: string
@@ -23,6 +23,9 @@ class ChatController {
   #model: ChatModel
   #ui: ChatUi
   #pool: SimplePool
+  #offline: boolean
+  #relayMonitor: RelayMonitor
+
 
   constructor() {
     this.#pubKey = ''
@@ -33,6 +36,9 @@ class ChatController {
     
     const poolOptions = { enablePing: true, enableReconnect: true }
     this.#pool = new SimplePool(poolOptions)
+
+    this.#offline = false
+    this.#relayMonitor = createRelayMonitor(this.#pool) 
   }
 
   async run() {
@@ -49,11 +55,8 @@ class ChatController {
       }
     }
 
-    let firstLaunch = false
-
     if (this.#privateKey.length == 0) {
       // no existing key
-      firstLaunch = true
       await this.#ui.go('welcome')
       if (this.#privateKey.length == 0) {
         // still no key, so just exit
@@ -62,34 +65,31 @@ class ChatController {
     }
     
     
-    let startupError = false
+    let subscribedOk = await this.#subscribeToRelays()
 
-    try {
-      await this.subscribeToIncomingDms()
-      await this.subscribeToRelayMetadata()
-      await this.subscribeToUserMetadata()
-    } catch (err) {
-      console.log(`Startup error: ${err}`)
-      startupError = true
-    }
-    
-    // allow tim for inbox relays to start
-    const onTimer = async (milliseconds: number) => {
+    // allow time for inbox relays to start
+    const delay = async (milliseconds: number) => {
       return new Promise((r) => {
         setTimeout( () => { r(true) }, milliseconds)
       })
     }
-    await onTimer(500)
+    await delay(500)
 
-    // check in case all inbox relays are bad
-    const connError = (this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0)
+    this.#relayMonitor.start(this.#model.settings.inboxRelays, this.#onConnectionChange.bind(this))
 
-    if (startupError || connError) {
+    // initial check in case all inbox relays are bad
+    const connError = (this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0)  
+
+    if (!subscribedOk || connError) {
+      this.#offline = true
       await this.#ui.go('offline')
     } else {
       await this.#ui.go()
     }
 
+    // if (this.#connectionTimer) {
+    //   clearTimeout(this.#connectionTimer)
+    // }
     this.#pool.destroy()
   }
 
@@ -131,6 +131,7 @@ class ChatController {
 
   // Subscribe/re-subscribe to receive DMs from inbox relays
   async subscribeToIncomingDms() {
+    console.log(`Subscribing to receive DMs`)
     await receiveDms(this.#pubKey, this.#privateKey, 
       this.#pool, this.#model.settings.inboxRelays, 
       async (msg: ChatMessage) => await this.#onIncoming(msg))
@@ -183,7 +184,6 @@ class ChatController {
       async (ev: Event) => await this.#onUserMetadata(ev)
     )
   }
-
 
   // Broadcast our user metadata to the general discovery relays. This includes our nip05 address.
   // Throws if cannot broadcast to any relays
@@ -276,6 +276,36 @@ class ChatController {
     profile.name = content?.name ?? null
     profile.about = content?.about ?? null
     return profile
+  }
+
+  ///////////////////////////////////////////////////////////
+  // private methods
+
+  async #subscribeToRelays() : Promise<boolean> {
+    try {
+      await this.subscribeToIncomingDms()
+      await this.subscribeToRelayMetadata()
+      await this.subscribeToUserMetadata()
+    } catch (err) {
+      console.log(`Subscription error: ${err}`)
+      return false
+    }
+    return true
+  }
+
+
+  async #onConnectionChange(connectionState: boolean) {
+    if (connectionState) {
+      console.log('Connection resumed. Resubscribing...')
+      this.#offline = false
+      const success = await this.#subscribeToRelays()
+      if (success) {
+        console.log('Successfully subscribed. No longer offline')
+      }
+    } else {
+      console.log('Connection lost. Going offline')
+      this.#offline = true 
+    }
   }
   
   async lookupNip05Address(nip05: string) : Promise<string | null> {

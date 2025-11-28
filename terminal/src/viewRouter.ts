@@ -1,6 +1,7 @@
 import tk from 'terminal-kit'
-import ChatController from '../core/chatController.js'
-import { ChatMessage, ChatModel } from '../core/chatModel.js'
+import ChatController from '../../core/src/chatController.js'
+import ChatUi from '../../core/src/chatUi.js'
+import { ChatMessage, ChatModel } from '../../core/src/chatModel.js'
 import { showYesNoPrompt } from './terminalUi.js'
 import { welcome } from './welcome.js'
 import { mainMenu } from './mainMenu.js'
@@ -20,7 +21,7 @@ export type ViewContext = Readonly<{
   viewParams: Record<string, string>
 }>
 
-class ChatUi {
+class ViewRouter implements ChatUi {
 
   #chatController: ChatController
   #chatModel: ChatModel
@@ -67,7 +68,7 @@ class ChatUi {
     }
   }
 
-  newMessage(msg: ChatMessage) {
+  notifyMessage(msg: ChatMessage) {
     if (this.#view[this.#view.length-1] == 'viewConversation') {
       refreshConversation(msg, this.#getViewContext())
     }
@@ -97,4 +98,4 @@ async function offlinePrompt(context: ViewContext) {
   }
 }
 
-export default ChatUi
+export default ViewRouter

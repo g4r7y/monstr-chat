@@ -11,28 +11,28 @@ import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
+import ChatUi from './chatUi.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
 import { isValidNpub } from './validation.js'
-import ChatUi from '../terminal/viewRouter.js'
 import createRelayMonitor, { RelayMonitor } from './relayMonitor.js'
 
 class ChatController {
   #pubKey: string
   #privateKey: Uint8Array
   #model: ChatModel
-  #ui: ChatUi
+  #ui: ChatUi | null
   #pool: SimplePool
   #offline: boolean
   #relayMonitor: RelayMonitor
 
 
-  constructor() {
+  constructor(model: ChatModel) {
+    this.#model = model
+    this.#ui = null
+
     this.#pubKey = ''
     this.#privateKey = new Uint8Array()
-
-    this.#model = new ChatModel()
-    this.#ui = new ChatUi(this, this.#model)
     
     const poolOptions = { enablePing: true, enableReconnect: true }
     this.#pool = new SimplePool(poolOptions)
@@ -41,7 +41,15 @@ class ChatController {
     this.#relayMonitor = createRelayMonitor(this.#pool) 
   }
 
+  setUi(ui: ChatUi) {
+    this.#ui = ui 
+  }
+
   async run() {
+    if (!this.#ui) {
+      throw new Error('UI not set');
+    }
+
     // load settings, contacts, messages
     await this.#model.load()
 
@@ -318,7 +326,7 @@ class ChatController {
   async #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
       await this.#model.setMessage(msg.id, msg)
-      this.#ui.newMessage(msg)
+      this.#ui?.notifyMessage(msg)
     }
   }
 

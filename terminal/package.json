@@ -1,0 +1,19 @@
+{
+  "name": "monstr-chat-terminal",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npx tsc --noemit && node --experimental-test-module-mocks --import tsx --test **/*.test.ts"
+  },
+  "bin": {
+    "monstr-chat": "./dist/terminal/main.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "terminal-kit": "3.1.2",
+    "@types/terminal-kit": "2.5.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "typescript": "5.8.3"
+  }
+}

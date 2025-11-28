@@ -1,6 +1,6 @@
 import tk from 'terminal-kit'
-import { ChatContact } from '../core/chatModel.js'
-import { isValidNpub, isValidNip05Address } from '../core/validation.js'
+import { ChatContact } from '../../core/src/chatModel.js'
+import { isValidNpub, isValidNip05Address } from '../../core/src/validation.js'
 import { showPrompt, showYesNoPrompt, showMenu } from './terminalUi.js'
 import { ViewContext } from './viewRouter.js'
 

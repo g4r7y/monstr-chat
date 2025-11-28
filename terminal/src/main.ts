@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 
-import ChatController from "./chatController.js"
 import tk from 'terminal-kit'
 const { terminal } = tk
 import fs from 'fs';
+import ChatController from "../../core/src/chatController.js"
+import ViewRouter from './viewRouter.js';
+import { ChatModel } from '../../core/src/chatModel.js';
 
 const main = async () => {
-  const chat = new ChatController()
-  await chat.run()
+  const model = new ChatModel()
+  const controller = new ChatController(model)
+  const ui = new ViewRouter(controller, model)
+  controller.setUi(ui)
+  await controller.run()
 }
 
 

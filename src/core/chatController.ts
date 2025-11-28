@@ -14,7 +14,7 @@ import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractC
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
 import { readKey, writeKey } from './localStore.js'
 import { isValidNpub } from './validation.js'
-import ChatUi from './terminal/viewRouter.js'
+import ChatUi from '../terminal/viewRouter.js'
 import createRelayMonitor, { RelayMonitor } from './relayMonitor.js'
 
 class ChatController {

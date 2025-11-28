@@ -1,5 +1,5 @@
 import tk from 'terminal-kit'
-import { ChatMessage } from '../chatModel.js'
+import { ChatMessage } from '../core/chatModel.js'
 import { wrapText, truncateText } from './textUtils.js'
 import { showPrompt, showYesNoPrompt, showHorizontalMenu, startScrollPane, stopScrollPane } from './terminalUi.js'
 import { ViewContext } from './viewRouter.js'

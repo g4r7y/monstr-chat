@@ -1,6 +1,6 @@
 import tk from 'terminal-kit'
-import ChatController from '../chatController.js'
-import { ChatMessage, ChatModel } from '../chatModel.js'
+import ChatController from '../core/chatController.js'
+import { ChatMessage, ChatModel } from '../core/chatModel.js'
 import { showYesNoPrompt } from './terminalUi.js'
 import { welcome } from './welcome.js'
 import { mainMenu } from './mainMenu.js'

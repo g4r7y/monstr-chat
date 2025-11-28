@@ -1,5 +1,5 @@
 import tk from 'terminal-kit'
-import { isValidUrl, isValidNip05Address } from '../validation.js'
+import { isValidUrl, isValidNip05Address } from '../core/validation.js'
 import { showPrompt, showYesNoPrompt, showMenu, pressToContinue } from './terminalUi.js'
 import { ViewContext } from './viewRouter.js'
 const { terminal } = tk

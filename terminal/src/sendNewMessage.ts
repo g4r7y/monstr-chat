@@ -1,5 +1,5 @@
 import tk from 'terminal-kit'
-import { isValidNpub } from '../core/validation.js'
+import { isValidNpub } from '../../core/src/validation.js'
 import { showYesNoPrompt, showDialog } from './terminalUi.js'
 import { ViewContext } from './viewRouter.js'
 import { handleSendError } from './helpers.js'

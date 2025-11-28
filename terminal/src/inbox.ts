@@ -1,5 +1,5 @@
 import tk from 'terminal-kit'
-import { ChatMessage } from '../core/chatModel.js'
+import { ChatMessage } from '../../core/src/chatModel.js'
 import { ViewContext } from './viewRouter.js'
 import { getDisplayableMessageContact } from './helpers.js'
 import { showMenu } from './terminalUi.js'

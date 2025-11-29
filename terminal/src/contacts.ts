@@ -28,13 +28,12 @@ async function viewContact(context: ViewContext) {
   const currentContact = context.model.getContactByNpub(contactNpub)!
   terminal.yellow('Name:             ')
   terminal.white(`${currentContact.name}\n`)
-  terminal.yellow('Verified address: ')
+  terminal.yellow('Npub:             ')
+  terminal.white(`${currentContact.npub}\n\n`)
   if (currentContact.nip05) {
+    terminal.yellow('Verified address: ')
     terminal.white(currentContact.nip05)
     terminal.brightBlue(' ✔\n')
-  } else {
-    terminal.white('None')
-    terminal.brightRed(' ✘\n')
   }
   if (currentContact.profileName) {
     terminal.yellow('Nickname:         ')
@@ -44,8 +43,6 @@ async function viewContact(context: ViewContext) {
     terminal.yellow('About:            ')
     terminal.white(`${currentContact.profileAbout}\n`)
   }
-  terminal.yellow('Npub:             ')
-  terminal.white(`${currentContact.npub}\n`)
   terminal.yellow('Inbox relays:     ')
   terminal.white(`${currentContact.relays?.join('\n                  ') ?? 'unknown'}\n`)
   terminal('\n')

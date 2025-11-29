@@ -6,13 +6,12 @@ Command line chat app built on the Nostr protocol.
 
 ### Build:
 
-```npx tsc```
-
-This will compile the ts code and output to the dist folder.
+```npm run install```
+```npm run build```
 
 ### Run:
 
-```node dist/main.js```
+```npm run start```
 
 ### Requires:
 

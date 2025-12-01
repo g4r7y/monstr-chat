@@ -32,7 +32,7 @@ async function welcome(context: ViewContext) {
       'It is important to keep your nsec key safe and never share it with anybody else.\n' +
       'Your npub key can be shared with others so that they can send messages to you and read your messages.\n\n')
     terminal('Your public Nostr key is: \n')
-    terminal.yellow(`${context.chatController.getNpub()}.\n\n`)
+    terminal.yellow(`${context.chatController.getNpub()}\n\n`)
     await pressToContinue('Continue?')
 
     terminal.clear()

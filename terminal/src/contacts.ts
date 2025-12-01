@@ -1,5 +1,5 @@
 import tk from 'terminal-kit'
-import { ChatContact } from '../../core/src/chatModel.js'
+import { ChatContact } from '@core/chatModel.js'
 import { isValidNpub, isValidNip05Address } from '../../core/src/validation.js'
 import { showPrompt, showYesNoPrompt, showMenu } from './terminalUi.js'
 import { ViewContext } from './viewRouter.js'
@@ -63,11 +63,16 @@ async function addContact(context: ViewContext) {
   let npub = context.viewParams.contactNpub ?? ''
   let contactProfile : Record<string, string> = {}
 
-  let state = npub ? 'add' : 'find'
+  let state = npub ? 'addExisting' : 'find'
   while (state) {
     terminal.clear()
     terminal.bgGreen('Add Contact\n\n')
 
+    if (state == 'addExisting') {
+        // look up user metadata event from relays
+        contactProfile = await context.chatController.getUserProfile(npub) ?? contactProfile
+        state = 'found'
+    }
     if (state == 'find') {
       terminal('You can search for a user by their verified Nostr address.\n')
       terminal('This is sometimes called a NIP-05 address and looks something like: user@domain\n')
@@ -84,7 +89,7 @@ async function addContact(context: ViewContext) {
         npub = response
         // look up user metadata event from relays
         contactProfile = await context.chatController.getUserProfile(npub) ?? contactProfile
-        state = 'add'
+        state = 'found'
       }
       // if entered user@domain
       else if (isValidNip05Address(response)) {
@@ -101,7 +106,7 @@ async function addContact(context: ViewContext) {
           // look up user metadata from relays
           contactProfile = await context.chatController.getUserProfile(npub) ?? contactProfile
           contactProfile.nip05 = contactProfile.nip05 ?? nip05
-          state = 'add'
+          state = 'found'
         }
       } else {
         const resp = await showYesNoPrompt('Not a valid Nostr address or npub. Try again?')
@@ -111,7 +116,7 @@ async function addContact(context: ViewContext) {
       }
     }
     
-    if (state == 'add') {
+    if (state == 'found') {
       const contact = context.model.getContactByNpub(npub)
 
       if (contact) {

@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "core/dist",
     "paths": {
-      "@core/*": ["./src/*"]
+      "@core/*": ["core/src/*"],
+      "@terminal/*": ["terminal/src/*"]
     }
   }
 }

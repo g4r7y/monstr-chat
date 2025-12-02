@@ -3,9 +3,9 @@
 import tk from 'terminal-kit'
 const { terminal } = tk
 import fs from 'fs';
-import ChatController from "../../core/src/chatController.js"
-import ViewRouter from './viewRouter.js';
-import { ChatModel } from '../../core/src/chatModel.js';
+import ChatController from "@core/chatController.js"
+import { ChatModel } from '@core/chatModel.js'
+import ViewRouter from './viewRouter.js'
 
 const main = async () => {
   const model = new ChatModel()

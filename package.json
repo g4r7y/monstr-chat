@@ -4,10 +4,9 @@
   "scripts": {
     "test": "npx tsc --noemit && node --experimental-test-module-mocks --import tsx --test **/*.test.ts",
     "install": "npm install --prefix terminal",
-    "build:terminal": "cd terminal && npx tsc",
-    "build": "npm run build:terminal",
-    "start:terminal": "npm run build:terminal && cd terminal && node dist/terminal/src/main",
-    "start": "npm run start:terminal"
+    "build:terminal": "cd terminal && npm run build",
+    "start:terminal": "cd terminal && npm run start",
+    "go": "npm run install && npm run build:terminal && npm run start:terminal"
   },
   "type": "module",
   "author": "",

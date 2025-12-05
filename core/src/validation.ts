@@ -1,4 +1,3 @@
-import { URL } from 'url'
 import { decode } from '@nostr/tools/nip19'
 import { isNip05 } from '@nostr/tools/nip05'
 import { validateWords } from '@nostr/tools/nip06'
@@ -6,6 +5,7 @@ import { wordlist } from '@scure/bip39/wordlists/english'
 
 const isValidUrl = (str: string, protocols: string[] = []) : boolean => {
     try {
+        const URL = globalThis.URL
         let url = new URL(str)
         if (protocols.length>0 && url.protocol) {
           return protocols.map(x => `${x.toLowerCase()}:`).includes(url.protocol)

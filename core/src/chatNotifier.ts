@@ -1,9 +1,7 @@
 import { ChatMessage } from "./chatModel.js"
 
-interface ChatUi {
-  go(initialView?: string): void
+interface ChatNotifier {
   notifyMessage(msg: ChatMessage): void
-
 }
 
-export default ChatUi
+export default ChatNotifier

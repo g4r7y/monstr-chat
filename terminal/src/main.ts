@@ -5,14 +5,33 @@ const { terminal } = tk
 import fs from 'fs';
 import ChatController from "@core/chatController.js"
 import { ChatModel } from '@core/chatModel.js'
+import LocalStore from './localStore.js'
 import ViewRouter from './viewRouter.js'
 
 const main = async () => {
-  const model = new ChatModel()
-  const controller = new ChatController(model)
+  const localStore = new LocalStore()
+  const model = new ChatModel(localStore)
+  const controller = new ChatController(model, localStore)
   const ui = new ViewRouter(controller, model)
-  controller.setUi(ui)
-  await controller.run()
+
+  // subscribe to notifications
+  controller.subscribe(ui) 
+  let initOk = await controller.init()
+  if (!initOk) {
+    // show welcome flow to create new key
+    await ui.go('welcome')
+    // then retry initialise
+    initOk = await controller.init()
+  }
+
+  if (initOk) {
+    const connected = await controller.connect()
+    await ui.go(connected ? 'main' : 'offline')
+  }
+
+  console.log('Closing connections...')
+  controller.close()
+  console.log('Done')
 }
 
 
@@ -31,4 +50,4 @@ try {
   terminal.fullscreen(false) // need to do this before logging error to stdout
   terminal(`Error: ${err.message}\nExiting.\n`)
 }
-terminal.processExit(0)  
+terminal.processExit(0)

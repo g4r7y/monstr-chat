@@ -11,25 +11,27 @@ import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
-import ChatUi from './chatUi.js'
+import ChatNotifier from './chatNotifier.js'
+import KeyStore from './keyStore.js'
 import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
-import { readKey, writeKey } from './localStore.js'
 import { isValidNpub } from './validation.js'
 import createRelayMonitor, { RelayMonitor } from './relayMonitor.js'
 
 class ChatController {
+  #model: ChatModel
+  #keyStore: KeyStore
+  #notifier: ChatNotifier | null
   #pubKey: string
   #privateKey: Uint8Array
-  #model: ChatModel
-  #ui: ChatUi | null
   #pool: SimplePool
   #offline: boolean
   #relayMonitor: RelayMonitor
 
 
-  constructor(model: ChatModel) {
+  constructor(model: ChatModel, keyStore: KeyStore) {
     this.#model = model
-    this.#ui = null
+    this.#keyStore = keyStore
+    this.#notifier = null
 
     this.#pubKey = ''
     this.#privateKey = new Uint8Array()
@@ -41,20 +43,16 @@ class ChatController {
     this.#relayMonitor = createRelayMonitor(this.#pool) 
   }
 
-  setUi(ui: ChatUi) {
-    this.#ui = ui 
+  subscribe(notifier: ChatNotifier) {
+    this.#notifier = notifier 
   }
 
-  async run() {
-    if (!this.#ui) {
-      throw new Error('UI not set');
-    }
-
+  async init() : Promise<boolean> {
     // load settings, contacts, messages
     await this.#model.load()
 
     // try and read key from store
-    let nsecStr = await readKey()
+    let nsecStr = await this.#keyStore.readKey()
     if (nsecStr) {
       const decoded = decode(nsecStr)
       if (decoded.type === 'nsec' && decoded.data) {
@@ -64,15 +62,14 @@ class ChatController {
     }
 
     if (this.#privateKey.length == 0) {
-      // no existing key
-      await this.#ui.go('welcome')
-      if (this.#privateKey.length == 0) {
-        // still no key, so just exit
-        return
-      }
+      // no existing key, go to welcome state
+      return false
     }
+
+    return true
+  }
     
-    
+  async connect() : Promise<boolean> {
     let subscribedOk = await this.#subscribeToRelays()
 
     // allow time for inbox relays to start
@@ -90,14 +87,13 @@ class ChatController {
 
     if (!subscribedOk || connError) {
       this.#offline = true
-      await this.#ui.go('offline')
-    } else {
-      await this.#ui.go()
-    }
+      return false
+    } 
 
-    // if (this.#connectionTimer) {
-    //   clearTimeout(this.#connectionTimer)
-    // }
+    return true
+  }
+
+  close() {
     this.#pool.destroy()
   }
 
@@ -236,7 +232,7 @@ class ChatController {
     let { publicKey, privateKey } = accountFromSeedWords(words)
     this.#privateKey = privateKey
     this.#pubKey = publicKey
-    await writeKey(nsecEncode(this.#privateKey ))
+    await this.#keyStore.writeKey(nsecEncode(this.#privateKey ))
 
     // Now that we have a new key we broadcast its default relaylist
     await this.broadcastRelayList()
@@ -248,7 +244,7 @@ class ChatController {
   async resetKey(nsec: string) {
     this.#privateKey = decode(nsec).data as Uint8Array
     this.#pubKey = getPublicKey(this.#privateKey)
-    await writeKey(nsecEncode(this.#privateKey ))
+    await this.#keyStore.writeKey(nsecEncode(this.#privateKey ))
     // Note: we don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
   }
   
@@ -257,7 +253,7 @@ class ChatController {
     let { publicKey, privateKey } = accountFromSeedWords(bip39Mnemonic)
     this.#privateKey = privateKey
     this.#pubKey = publicKey
-    await writeKey(nsecEncode(this.#privateKey ))
+    await this.#keyStore.writeKey(nsecEncode(this.#privateKey ))
     // Note: we don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist 
   }
 
@@ -326,7 +322,7 @@ class ChatController {
   async #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
       await this.#model.setMessage(msg.id, msg)
-      this.#ui?.notifyMessage(msg)
+      this.#notifier?.notifyMessage(msg)
     }
   }
 

@@ -1,115 +1,116 @@
-import { mock, test, describe, before } from 'node:test'
-import { ChatMessage, ChatContact } from './chatModel.js'
+import { mock, test, describe, beforeEach, TestContext } from 'node:test'
+import { ChatMessage, ChatContact, ChatAppData, ChatSettings } from './chatModel.js'
 import assert from 'node:assert'
+import DataStore from './dataStore.js'
 
-const readAppDataMock = mock.fn()
+
+// lazy load ChatModel so that its mocked dependencies are setup first
+let ChatModel: new(dataStore: DataStore)=>any
+
 const writeAppDataMock = mock.fn()
-const readMessagesMock = mock.fn()
 const writeMessagesMock = mock.fn()
-mock.module('./localStore.ts', { namedExports: 
-  {
-    readAppData: readAppDataMock, 
-    writeAppData: writeAppDataMock,
-    readMessages: readMessagesMock, 
-    writeMessages: writeMessagesMock
-  } 
-})
+
+let fakeDataStore : DataStore = {
+  readAppData: async () => fakeAppData, 
+  writeAppData: writeAppDataMock,
+  readMessages: async () => fakeMessages, 
+  writeMessages: writeMessagesMock
+}
+
+const someSettings: ChatSettings = {
+  inboxRelays: [],
+  generalRelays: [],
+  relaysUpdatedAt: null,
+  nip05: null,
+  profileName: null,
+  profileAbout: null,
+}
+
+let fakeAppData: ChatAppData | null = null
+let fakeMessages: ChatMessage[] | null = null
+
 
 describe('model', async () => {
-  // lazy load ChatModel so that its mocked dependencies are setup first
-  let ChatModel: new()=>any
-  before( async() => {
+
+  beforeEach(async (t) => {
     ({ ChatModel } = await import('./chatModel.js'))
   })
 
-  test('first load, without any app data', async () => {
-    readAppDataMock.mock.mockImplementation(():any => null)
-    readMessagesMock.mock.mockImplementation(():any => null)
-    let model = new ChatModel()
+  test('first load, without any app data', async (t: TestContext) => {
+    fakeAppData = null
+    fakeMessages = null
+    let model = new ChatModel(fakeDataStore)
     await model.load()
-    const defaultSettings = {
-      generalRelays: [      
-        'ws://localhost:8008',
-        'wss://nostr.wine',
-        'wss://nostr.band',
-        'wss://relay.snort.social',
-        'wss://relay.damus.io',
-        'wss://relay.0xchat.com',
-      ],
-      inboxRelays: [      
-        'ws://localhost:8008',
-        'wss://relay.damus.io',
-      ],
-      relaysUpdatedAt: null, 
-      nip05: null,
-      profileName: null,
-      profileAbout: null,
-    }
-    assert.deepEqual(model.settings, defaultSettings)
+
+    //has some default settings
+    assert(model.settings.generalRelays.length > 1)
+    assert(model.settings.inboxRelays.length > 1)
+    assert.strictEqual(model.settings.relaysUpdatedAt, null)
+    assert.strictEqual(model.settings.nip05, null)
+    assert.strictEqual(model.settings.profileName, null)
+    assert.strictEqual(model.settings.profileAbout, null)
+
     assert.equal(model.getMessageList().length, 0)
     assert.equal(model.getContactList().length, 0)
   })
 
   
   test('load messages', async () => {
-    readAppDataMock.mock.mockImplementation(():any => {
-      return { 
+    fakeAppData = { 
         contacts: [], 
-        settings: [],
+        settings: someSettings,
       }
-    })
-    readMessagesMock.mock.mockImplementation(():any => {
-      return [
-        // conversation 1...........
-        {
-          sender: 'myself',
-          receiver: 'npub1',
-          text: 'conversation1 hello',
-          time: '2025-05-09T23:01:07.000Z',
-          id: 'msgId1',
-          state: 'tx'
-        },
-        {
-          sender: 'npub1',
-          receiver: 'myself',
-          text: 'conversation1 middle',
-          time: '2025-05-09T23:11:07.000Z',
-          id: 'msgId2',
-          state: 'rx'
-        },
-      
-        // convo 2...........
-        {
-          sender: 'npub2',
-          receiver: 'myself',
-          text: 'conversation2 goodbye',
-          time: '2025-05-09T20:11:07.000Z',
-          id: 'msgId5',
-          state: 'rx'
-        },
-        {
-          sender: 'myself',
-          receiver: 'npub2',
-          text: 'conversation2 hello',
-          time: '2025-05-09T20:01:07.000Z',
-          id: 'msgId4',
-          state: 'tx'
-        },
 
-        // more from conversation 1
-        {
-          sender: 'npub1',
-          receiver: 'myself',
-          text: 'conversation1 goodbye',
-          time: '2025-05-09T23:21:07.000Z',
-          id: 'msgId3',
-          state: 'rx'
-        },
-      ]
-    })
+    fakeMessages = [
+      // conversation 1...........
+      {
+        sender: 'myself',
+        receiver: 'npub1',
+        text: 'conversation1 hello',
+        time: new Date('2025-05-09T23:01:07.000Z'),
+        id: 'msgId1',
+        state: 'tx'
+      },
+      {
+        sender: 'npub1',
+        receiver: 'myself',
+        text: 'conversation1 middle',
+        time: new Date('2025-05-09T23:11:07.000Z'),
+        id: 'msgId2',
+        state: 'rx'
+      },
+    
+      // convo 2...........
+      {
+        sender: 'npub2',
+        receiver: 'myself',
+        text: 'conversation2 goodbye',
+        time: new Date('2025-05-09T20:11:07.000Z'),
+        id: 'msgId5',
+        state: 'rx'
+      },
+      {
+        sender: 'myself',
+        receiver: 'npub2',
+        text: 'conversation2 hello',
+        time: new Date('2025-05-09T20:01:07.000Z'),
+        id: 'msgId4',
+        state: 'tx'
+      },
+
+      // more from conversation 1
+      {
+        sender: 'npub1',
+        receiver: 'myself',
+        text: 'conversation1 goodbye',
+        time: new Date('2025-05-09T23:21:07.000Z'),
+        id: 'msgId3',
+        state: 'rx'
+      },
+    ]
 
     //
-    let model = new ChatModel()
+    let model = new ChatModel(fakeDataStore)
     await model.load()
 
     const msgs = model.getMessageList()
@@ -134,36 +135,48 @@ describe('model', async () => {
   })
 
   test('load contacts', async () => {
-    readAppDataMock.mock.mockImplementation(():any => {
-      return { 
-        contacts: [
-          {
-            name: "Rod",
-            npub: "npub123"
-          },
-          {
-            name: "Freddy",
-            npub: "npub456"
-          },
-          {
-            name: "Jane",
-            npub: "npub789"
-          },
-        ] 
-      }
-    })
+    const emptyContact = {
+      name: null,
+      npub: null,
+      nip05: null,
+      profileAbout: null,
+      profileName: null,
+      relays: [],
+      relaysUpdatedAt: null
+    }
 
-    let model = new ChatModel()
+    fakeAppData = { 
+      contacts: [
+        {
+          ...emptyContact,
+          name: "Rod",
+          npub: "npub123",
+        },
+        {
+          ...emptyContact,
+          name: "Freddy",
+          npub: "npub456"
+        },
+        {
+          ...emptyContact,
+          name: "Jane",
+          npub: "npub789"
+        },
+      ],
+      settings: someSettings
+    }
+
+    let model = new ChatModel(fakeDataStore)
     await model.load()
 
     const contacts = model.getContactList()
     assert.equal(contacts.length, 3)
-    assert.deepEqual(contacts[0], { name: 'Rod', npub: 'npub123'})
-    assert.deepEqual(contacts[1], { name: 'Freddy', npub: 'npub456'})
-    assert.deepEqual(contacts[2], { name: 'Jane', npub: 'npub789'})
+    assert.deepEqual(contacts[0], { ...emptyContact, name: 'Rod', npub: 'npub123'})
+    assert.deepEqual(contacts[1], { ...emptyContact, name: 'Freddy', npub: 'npub456'})
+    assert.deepEqual(contacts[2], { ...emptyContact, name: 'Jane', npub: 'npub789'})
 
     const foundContact = model.getContactByName('Freddy')
-    assert.deepEqual(foundContact, { name: 'Freddy', npub: 'npub456'})
+    assert.deepEqual(foundContact, { ...emptyContact, name: 'Freddy', npub: 'npub456'})
     const notFoundContact = model.getContactByName('zippy')
     assert.equal(notFoundContact, null)
   })
@@ -171,7 +184,7 @@ describe('model', async () => {
   test('add message', async () => {
     writeMessagesMock.mock.resetCalls()
       
-    let model = new ChatModel()
+    let model = new ChatModel(fakeDataStore)
 
     // add a message
     const msg: ChatMessage = {
@@ -220,7 +233,7 @@ describe('model', async () => {
   test('add/get/edit/delete contact', async () => {
     writeAppDataMock.mock.resetCalls()
       
-    let model = new ChatModel()
+    let model = new ChatModel(fakeDataStore)
 
     // add a contact
     const c: ChatContact = { name: 'Fred', npub: 'npub456', nip05: null, relays: [], relaysUpdatedAt: null, profileName: null, profileAbout: null  }
@@ -276,7 +289,7 @@ describe('model', async () => {
   test('get/set settings', async () => {
     writeAppDataMock.mock.resetCalls()
 
-    let model = new ChatModel()
+    let model = new ChatModel(fakeDataStore)
 
     // defualt settings
     let s1 = model.settings

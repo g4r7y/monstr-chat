@@ -1,4 +1,4 @@
-import { readAppData, writeAppData, readMessages, writeMessages } from './localStore.js'
+import DataStore from './dataStore.js'
 
 export type ChatSettings = {
   inboxRelays: string[],
@@ -58,8 +58,10 @@ export class ChatModel {
   #messages: Map<string, ChatMessage>
   #contacts: Map<string, ChatContact>
   #settings: ChatSettings
+  #dataStore: DataStore
   
-  constructor() {
+  constructor(dataStore: DataStore) {
+    this.#dataStore = dataStore
     // initialise to defaults
     this.#contacts = new Map()
     this.#messages = new Map()
@@ -67,7 +69,7 @@ export class ChatModel {
   }
   
   async load() {
-    let data = await readAppData()
+    let data = await this.#dataStore.readAppData()
     if (data != null) {
       const { contacts, settings } = data
       if (contacts) {
@@ -86,10 +88,10 @@ export class ChatModel {
       }
     } else {
       // write initial default data
-      await this.#syncAppDataToLocalStore()
+      await this.#syncAppDataToStorage()
     }
 
-    let msgs = await readMessages()
+    let msgs = await this.#dataStore.readMessages()
     if (msgs != null) {
       // write messages to Map object, where keys are the message id
       this.#messages = new Map()
@@ -101,7 +103,7 @@ export class ChatModel {
       })
     } else {
       // write initial empty list to message store
-      this.#syncMessagesToLocalStore()
+      this.#syncMessagesToStorage()
     }
   }
 
@@ -154,34 +156,34 @@ export class ChatModel {
 
   async setSettings(settings: ChatSettings) {
     this.#settings = settings
-    await this.#syncAppDataToLocalStore()
+    await this.#syncAppDataToStorage()
   }
   
   async setMessage(msgId: string, msg: ChatMessage) {
     this.#messages.set(msgId, msg)
-    await this.#syncMessagesToLocalStore()
+    await this.#syncMessagesToStorage()
   }
 
   async setContact(contact: ChatContact) {
     this.#contacts.set(contact.npub, contact)
-    await this.#syncAppDataToLocalStore()
+    await this.#syncAppDataToStorage()
   }
 
   async deleteContact(npub: string) {
     this.#contacts.delete(npub)
-    await this.#syncAppDataToLocalStore()
+    await this.#syncAppDataToStorage()
   }
 
-  async #syncAppDataToLocalStore() {
+  async #syncAppDataToStorage() {
     const data: ChatAppData = { 
       contacts: Array.from(this.#contacts.values()), 
       settings: this.#settings 
     }
-    await writeAppData(data) 
+    await this.#dataStore.writeAppData(data) 
   }
   
-  async #syncMessagesToLocalStore() {
+  async #syncMessagesToStorage() {
     const msgs = Array.from(this.#messages.values())
-    await writeMessages(msgs)
+    await this.#dataStore.writeMessages(msgs)
   }
 }

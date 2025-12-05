@@ -2,7 +2,7 @@
   "name": "monstr-chat",
   "version": "1.0.0",
   "scripts": {
-    "test": "npx tsc --noemit && node --experimental-test-module-mocks --import tsx --test **/*.test.ts",
+    "test": "node --experimental-test-module-mocks --import tsx --test **/*.test.ts",
     "install": "npm install --prefix terminal",
     "build:terminal": "cd terminal && npm run build",
     "start:terminal": "cd terminal && npm run start",

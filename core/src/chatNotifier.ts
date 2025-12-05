@@ -1,7 +1,5 @@
-import { ChatMessage } from "./chatModel.js"
+import type { ChatMessage } from "./chatModel.js"
 
-interface ChatNotifier {
+export interface ChatNotifier {
   notifyMessage(msg: ChatMessage): void
 }
-
-export default ChatNotifier

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert';
-import { generateSecretKey, finalizeEvent, EventTemplate  } from '@nostr/tools'
+import { generateSecretKey, finalizeEvent, type EventTemplate  } from '@nostr/tools'
 import { extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 
 describe('relay metadata', () => {

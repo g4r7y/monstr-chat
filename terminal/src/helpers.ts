@@ -1,7 +1,7 @@
 import tk from 'terminal-kit'
-import { ChatMessage } from '@core/chatModel.js'
+import type { ChatMessage } from '@core/chatModel.js'
 import { showYesNoPrompt } from './terminalUi.js'
-import { ViewContext } from './viewRouter.js'
+import type { ViewContext } from './viewRouter.js'
 
 const { terminal } = tk
 

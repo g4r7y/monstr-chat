@@ -1,7 +1,7 @@
-import { mock, test, describe, beforeEach, TestContext } from 'node:test'
-import { ChatMessage, ChatContact, ChatAppData, ChatSettings } from './chatModel.js'
+import { mock, test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert'
-import DataStore from './dataStore.js'
+import type { ChatMessage, ChatContact, ChatAppData, ChatSettings } from './chatModel.js'
+import type { DataStore } from './dataStore.js'
 
 
 // lazy load ChatModel so that its mocked dependencies are setup first
@@ -36,7 +36,7 @@ describe('model', async () => {
     ({ ChatModel } = await import('./chatModel.js'))
   })
 
-  test('first load, without any app data', async (t: TestContext) => {
+  test('first load, without any app data', async () => {
     fakeAppData = null
     fakeMessages = null
     let model = new ChatModel(fakeDataStore)

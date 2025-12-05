@@ -1,5 +1,5 @@
 
-import { SimplePool, SubCloser } from "@nostr/tools/pool"
+import { SimplePool, type SubCloser } from "@nostr/tools/pool"
 
 let subCloser: SubCloser
 

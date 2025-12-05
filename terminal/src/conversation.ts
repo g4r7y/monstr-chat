@@ -1,8 +1,8 @@
 import tk from 'terminal-kit'
-import { ChatMessage } from '@core/chatModel.js'
+import type  { ChatMessage } from '@core/chatModel.js'
 import { wrapText, truncateText } from './textUtils.js'
 import { showPrompt, showYesNoPrompt, showHorizontalMenu, startScrollPane, stopScrollPane } from './terminalUi.js'
-import { ViewContext } from './viewRouter.js'
+import type { ViewContext } from './viewRouter.js'
 import { getDisplayableMessageContact, getDisplayableMessageTimestamp, handleSendError } from './helpers.js'
 const { terminal } = tk
 

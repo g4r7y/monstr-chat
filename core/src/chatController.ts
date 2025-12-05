@@ -1,5 +1,5 @@
 
-import { getPublicKey, Event } from '@nostr/tools'
+import { getPublicKey, type Event } from '@nostr/tools'
 
 import { nsecEncode, npubEncode, decode } from '@nostr/tools/nip19'
 import { generateSeedWords, accountFromSeedWords } from '@nostr/tools/nip06'
@@ -11,11 +11,11 @@ import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
-import ChatNotifier from './chatNotifier.js'
-import KeyStore from './keyStore.js'
-import { ChatModel, ChatMessage, ChatContact } from './chatModel.js'
+import type { ChatNotifier } from './chatNotifier.js'
+import type { KeyStore } from './keyStore.js'
+import { ChatModel, type ChatMessage, type ChatContact } from './chatModel.js'
 import { isValidNpub } from './validation.js'
-import createRelayMonitor, { RelayMonitor } from './relayMonitor.js'
+import createRelayMonitor, { type RelayMonitor } from './relayMonitor.js'
 
 class ChatController {
   #model: ChatModel

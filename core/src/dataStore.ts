@@ -1,6 +1,6 @@
-import { ChatAppData, ChatMessage } from "./chatModel.js";
+import type { ChatAppData, ChatMessage } from "./chatModel.js";
 
-interface DataStore {
+export interface DataStore {
 
   readAppData() : Promise<ChatAppData | null>;
 
@@ -10,5 +10,3 @@ interface DataStore {
 
   writeMessages(msgs: ChatMessage[]) : void
 }
-
-export default DataStore

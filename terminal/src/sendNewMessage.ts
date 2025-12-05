@@ -1,7 +1,7 @@
 import tk from 'terminal-kit'
 import { isValidNpub } from '@core/validation.js'
 import { showYesNoPrompt, showDialog } from './terminalUi.js'
-import { ViewContext } from './viewRouter.js'
+import type { ViewContext } from './viewRouter.js'
 import { handleSendError } from './helpers.js'
 const { terminal } = tk
 

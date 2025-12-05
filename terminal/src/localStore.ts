@@ -1,8 +1,8 @@
 import os from 'os'
 import fs from 'fs/promises'
-import { ChatAppData, ChatMessage } from '../../core/src/chatModel.js'
-import KeyStore from '@core/keyStore.js'
-import DataStore from '@core/dataStore.js'
+import type { ChatAppData, ChatMessage } from '../../core/src/chatModel.js'
+import type { KeyStore } from '@core/keyStore.js'
+import type { DataStore } from '@core/dataStore.js'
 
 const getAppDir = () => {
   let appDir = '.nostrchat'

@@ -1,7 +1,7 @@
 import { npubEncode } from "@nostr/tools/nip19"
 import { wrapEvent } from "@nostr/tools/nip17"
 import { SimplePool } from "@nostr/tools/pool"
-import { ChatMessage } from "./chatModel.js"
+import type { ChatMessage } from "./chatModel.js"
 
 
 // NIP17 

@@ -1,9 +1,9 @@
 
 import { npubEncode } from "@nostr/tools/nip19"
 import { unwrapEvent } from "@nostr/tools/nip17"
-import { NostrEvent } from "@nostr/tools"
-import { SimplePool, SubCloser } from "@nostr/tools/pool"
-import { ChatMessage } from "./chatModel.js"
+import { SimplePool, type SubCloser } from "@nostr/tools/pool"
+import type { NostrEvent } from "@nostr/tools"
+import type { ChatMessage } from "./chatModel.js"
 
 let subCloser: SubCloser
 

@@ -1,5 +1,5 @@
-import { Event, finalizeEvent, SimplePool } from "@nostr/tools"
-import { SubCloser } from "@nostr/tools/abstract-pool"
+import { type Event, finalizeEvent, SimplePool } from "@nostr/tools"
+import type { SubCloser } from "@nostr/tools/abstract-pool"
 
 let subCloser : SubCloser
 

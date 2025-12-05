@@ -1,6 +1,6 @@
 import tk from 'terminal-kit'
 import { showMenu } from './terminalUi.js'
-import { ViewContext } from './viewRouter.js'
+import type { ViewContext } from './viewRouter.js'
 
 const { terminal } = tk
 

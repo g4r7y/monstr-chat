@@ -1,4 +1,4 @@
-interface KeyStore {
+export interface KeyStore {
 
   readKey() : Promise<string | null>;
 
@@ -6,4 +6,3 @@ interface KeyStore {
 
 }
   
-export default KeyStore

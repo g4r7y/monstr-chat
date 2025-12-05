@@ -1,4 +1,4 @@
-import DataStore from './dataStore.js'
+import type { DataStore } from './dataStore.js'
 
 export type ChatSettings = {
   inboxRelays: string[],
@@ -103,7 +103,7 @@ export class ChatModel {
       })
     } else {
       // write initial empty list to message store
-      this.#syncMessagesToStorage()
+      this.#syncMessagesToLocalStore()
     }
   }
 
@@ -161,7 +161,7 @@ export class ChatModel {
   
   async setMessage(msgId: string, msg: ChatMessage) {
     this.#messages.set(msgId, msg)
-    await this.#syncMessagesToStorage()
+    await this.#syncMessagesToLocalStore()
   }
 
   async setContact(contact: ChatContact) {
@@ -182,7 +182,7 @@ export class ChatModel {
     await this.#dataStore.writeAppData(data) 
   }
   
-  async #syncMessagesToStorage() {
+  async #syncMessagesToLocalStore() {
     const msgs = Array.from(this.#messages.values())
     await this.#dataStore.writeMessages(msgs)
   }

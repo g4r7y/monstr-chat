@@ -1,8 +1,8 @@
 import tk from 'terminal-kit'
-import { ChatContact } from '@core/chatModel.js'
+import type { ChatContact } from '@core/chatModel.js'
 import { isValidNpub, isValidNip05Address } from '@core/validation.js'
 import { showPrompt, showYesNoPrompt, showMenu } from './terminalUi.js'
-import { ViewContext } from './viewRouter.js'
+import type { ViewContext } from './viewRouter.js'
 
 const { terminal } = tk
 

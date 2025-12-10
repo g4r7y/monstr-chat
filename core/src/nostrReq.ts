@@ -22,7 +22,6 @@ const sendReq = (pool: SimplePool, relays: string[], callback: ()=>void ) => {
       })
   } catch (err) {
     // ignore errors, we don't care
-    console.log('sent REQ failed with error:', err)
   }
 }
 

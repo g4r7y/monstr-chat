@@ -2,7 +2,7 @@ import { SimplePool } from "@nostr/tools";
 import { sendReq } from "./nostrReq.js";
 
 // how often to run the heartbeat check
-const connectionCheckInterval = 5000
+const connectionCheckInterval = 10000
 // max time to wait for the relay to respond
 const relayResponseTime = 1000
 

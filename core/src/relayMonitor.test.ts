@@ -9,7 +9,7 @@ describe('relay monitor', () => {
     mock.timers.enable();
 
     let relayOk = true
-    const expectedHeartbeatInterval = 5000
+    const expectedHeartbeatInterval = 10000
     const expectedRelayCheckInterval = 1000
 
     mock.module('./nostrReq.ts', {

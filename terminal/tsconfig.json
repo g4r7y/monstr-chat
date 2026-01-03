@@ -7,5 +7,7 @@
       "@terminal/*": ["terminal/src/*"],
       "@core/*": ["core/src/*"]
     }
-  }
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
 }

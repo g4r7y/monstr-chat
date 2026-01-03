@@ -10,7 +10,7 @@ const { terminal } = tk
 async function viewConversation(context: ViewContext) {
   const strangerLabel = 'Unknown'
   const { contactNpub } = context.viewParams
-  const contactLabel = context.model.getContactByNpub(contactNpub)?.name ?? 'Unknown'
+  const contactLabel = context.chatController.getContactByNpub(contactNpub)?.name ?? 'Unknown'
   terminal.clear()
   terminal.bgGreen('Conversation with ')
   terminal.bgGreen.brightYellow(`${contactLabel}\n`)
@@ -62,7 +62,7 @@ async function viewConversation(context: ViewContext) {
       } else {
         // send message and remain in send state
         try {
-          const contact = context.model.getContactByNpub(contactNpub)
+          const contact = context.chatController.getContactByNpub(contactNpub)
           if (contact) {
             await context.chatController.sendDmToContact(contact, msgToSend)
           } else {
@@ -98,7 +98,7 @@ function updateConversationView (context: ViewContext) {
   
   const { contactNpub } = context.viewParams
   let lines = new Array()
-  const convs = context.model.getConversations()
+  const convs = context.chatController.getConversations()
   if (convs.has(contactNpub)) {
     const msgs = convs.get(contactNpub)!.reverse()
     msgs.forEach((msg: ChatMessage) => {

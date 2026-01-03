@@ -13,7 +13,7 @@ async function contactsMenu(context: ViewContext) {
   menu.set('Back',  () => context.view.pop())
   menu.set('Add New Contact', () => { context.view.push('addContact'); delete context.viewParams.contactNpub })
   
-  context.model.getContactList()
+  context.chatController.getContactList()
     .sort((a: ChatContact, b: ChatContact) => a.name.localeCompare(b.name))
     .forEach((c: ChatContact) => {
       menu.set(c.name, () => { context.view.push('viewContact'); context.viewParams.contactNpub = c.npub })
@@ -25,7 +25,7 @@ async function viewContact(context: ViewContext) {
   terminal.clear()
   terminal.bgGreen('View Contact\n\n')
   const { contactNpub } = context.viewParams
-  const currentContact = context.model.getContactByNpub(contactNpub)!
+  const currentContact = context.chatController.getContactByNpub(contactNpub)!
   terminal.yellow('Name:             ')
   terminal.white(`${currentContact.name}\n`)
   terminal.yellow('Npub:             ')
@@ -117,7 +117,7 @@ async function addContact(context: ViewContext) {
     }
     
     if (state == 'found') {
-      const contact = context.model.getContactByNpub(npub)
+      const contact = context.chatController.getContactByNpub(npub)
 
       if (contact) {
         terminal('Contact name:  ')
@@ -154,7 +154,7 @@ async function addContact(context: ViewContext) {
           updatedContact.profileAbout !== contact.profileAbout ||
           updatedContact.profileName !== contact.profileName;
         if (hasChanged) {
-          await context.model.setContact(updatedContact)
+          await context.chatController.setContact(updatedContact)
         }
         const resp = await showYesNoPrompt(`Search again?`)
         if (!resp) {
@@ -179,7 +179,7 @@ async function addContact(context: ViewContext) {
         if (!resp) {
           break
         }
-      } else if (context.model.getContactByName(contactName) !== null) {
+      } else if (context.chatController.getContactByName(contactName) !== null) {
         const resp = await showYesNoPrompt('Another contact already exists with this name. Continue editing?')
         if (!resp) {
           break
@@ -193,7 +193,7 @@ async function addContact(context: ViewContext) {
           profileName: contactProfile.name, 
           profileAbout: contactProfile.about,
           relays: [], relaysUpdatedAt: null }
-        await context.model.setContact(contact)
+        await context.chatController.setContact(contact)
         
         // new contact, so update subscription so we can get contact's relaylist
         await context.chatController.subscribeToRelayMetadata()
@@ -207,7 +207,7 @@ async function addContact(context: ViewContext) {
 
 async function editContact(context: ViewContext) {
   let { contactNpub } = context.viewParams
-  let contact = context.model.getContactByNpub(contactNpub)
+  let contact = context.chatController.getContactByNpub(contactNpub)
   if (!contact) {
     context.view.pop()
     return
@@ -230,13 +230,13 @@ async function editContact(context: ViewContext) {
       // exit
     } else if (name === '') {
       editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
-    } else if (name !== origName && context.model.getContactByName(name) !== null) {
+    } else if (name !== origName && context.chatController.getContactByName(name) !== null) {
       editing = await showYesNoPrompt('Another contact already exists with this name. Continue editing?')
       defaultName = name
     } else {
       // valid, so write the contact
       contact = { ...contact, name };
-      await context.model.setContact(contact)
+      await context.chatController.setContact(contact)
       editing = false
     }
   }
@@ -245,7 +245,7 @@ async function editContact(context: ViewContext) {
 
 async function deleteContact(context: ViewContext) {
   let { contactNpub } = context.viewParams
-  let contact = context.model.getContactByNpub(contactNpub)
+  let contact = context.chatController.getContactByNpub(contactNpub)
   if (!contact) {
     context.view.pop()
     return
@@ -254,7 +254,7 @@ async function deleteContact(context: ViewContext) {
   terminal('\n')
   let confirmed = await showYesNoPrompt(`Delete ${contact.name}. Are you sure?`)
   if (confirmed) {
-    await context.model.deleteContact(contactNpub)
+    await context.chatController.deleteContact(contactNpub)
     // need to pop twice, to exit the contacts view also
     context.view.pop()
   }

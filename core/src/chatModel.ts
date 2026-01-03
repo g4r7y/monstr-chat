@@ -138,22 +138,6 @@ export class ChatModel {
     return null
   }
 
-  // Get conversations
-  // @return Map of conversations, where key is the contact npub, value is list of messages
-  getConversations(): Map<string,ChatMessage[]> {
-    const convs = new Map<string, ChatMessage[]>()
-    const sortedMessages = Array.from(this.#messages.values())
-    // sort descending (i.e. head will be newest)
-    sortedMessages.sort((a: ChatMessage, b: ChatMessage) => b.time.getTime() - a.time.getTime())
-    for(let msg of sortedMessages) {
-      const key = (msg.state === 'tx') ? msg.receiver : msg.sender
-      let msgList = convs.has(key) ? convs.get(key)! : new Array()
-      msgList.push(msg)
-      convs.set(key, msgList)
-    }
-    return convs
-  }
-
   async setSettings(settings: ChatSettings) {
     this.#settings = settings
     await this.#syncAppDataToStorage()

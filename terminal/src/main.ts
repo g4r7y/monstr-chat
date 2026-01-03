@@ -3,16 +3,17 @@
 import tk from 'terminal-kit'
 const { terminal } = tk
 import fs from 'fs';
-import ChatController from "@core/chatController.js"
-import { ChatModel } from '@core/chatModel.js'
+import { ChatModel } from "@core/chatModel.js"
+import { ChatControllerImpl } from "@core/chatController.js"
+import type { ChatController } from '@core/chatController.js'
 import LocalStore from './localStore.js'
 import ViewRouter from './viewRouter.js'
 
 const main = async () => {
   const localStore = new LocalStore()
   const model = new ChatModel(localStore)
-  const controller = new ChatController(model, localStore)
-  const ui = new ViewRouter(controller, model)
+  const controller: ChatController = new ChatControllerImpl(model, localStore)
+  const ui = new ViewRouter(controller)
 
   // subscribe to notifications
   controller.subscribe(ui) 

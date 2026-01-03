@@ -1,7 +1,7 @@
 import tk from 'terminal-kit'
-import ChatController from '@core/chatController.js'
+import type { ChatController } from '@core/chatController.js'
 import type { ChatNotifier } from '@core/chatNotifier.js'
-import { type ChatMessage, ChatModel } from '@core/chatModel.js'
+import { type ChatMessage } from '@core/chatModel.js'
 import { showYesNoPrompt } from './terminalUi.js'
 import { welcome } from './welcome.js'
 import { mainMenu } from './mainMenu.js'
@@ -16,7 +16,6 @@ const { terminal } = tk
 
 export type ViewContext = Readonly<{
   chatController: ChatController,
-  model: ChatModel,
   view: string[],
   viewParams: Record<string, string>
 }>
@@ -24,13 +23,11 @@ export type ViewContext = Readonly<{
 class ViewRouter implements ChatNotifier {
 
   #chatController: ChatController
-  #chatModel: ChatModel
   #view: string[]
   #viewParams: Record<string, string>
   
-  constructor(controller: ChatController, model: ChatModel) {
+  constructor(controller: ChatController) {
     this.#chatController = controller
-    this.#chatModel = model
     this.#view = []
     this.#viewParams = {}
   }
@@ -77,7 +74,6 @@ class ViewRouter implements ChatNotifier {
   #getViewContext() : ViewContext {
     return Object.freeze({
       chatController: this.#chatController,
-      model: this.#chatModel,
       view: this.#view,
       viewParams: this.#viewParams
     })

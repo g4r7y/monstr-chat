@@ -21,7 +21,7 @@ function getDisplayableMessageTimestamp(msg: ChatMessage): string {
 }
 
 function getDisplayableMessageContact(npub: string, context: ViewContext): string {
-  const contact = context.model.getContactByNpub(npub)
+  const contact = context.chatController.getContactByNpub(npub)
   return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`
 }
 

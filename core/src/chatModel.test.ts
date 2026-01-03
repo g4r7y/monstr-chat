@@ -62,7 +62,6 @@ describe('model', async () => {
       }
 
     fakeMessages = [
-      // conversation 1...........
       {
         sender: 'myself',
         receiver: 'npub1',
@@ -79,26 +78,6 @@ describe('model', async () => {
         id: 'msgId2',
         state: 'rx'
       },
-    
-      // convo 2...........
-      {
-        sender: 'npub2',
-        receiver: 'myself',
-        text: 'conversation2 goodbye',
-        time: new Date('2025-05-09T20:11:07.000Z'),
-        id: 'msgId5',
-        state: 'rx'
-      },
-      {
-        sender: 'myself',
-        receiver: 'npub2',
-        text: 'conversation2 hello',
-        time: new Date('2025-05-09T20:01:07.000Z'),
-        id: 'msgId4',
-        state: 'tx'
-      },
-
-      // more from conversation 1
       {
         sender: 'npub1',
         receiver: 'myself',
@@ -114,24 +93,10 @@ describe('model', async () => {
     await model.load()
 
     const msgs = model.getMessageList()
-    assert.equal(msgs.length, 5)
-
-    const convs = model.getConversations()
-    assert.equal(convs.size, 2) // 2 conversations
-    const entries = convs.entries()
-    // conversation1
-    let [key, msgList] = entries.next().value
-    assert.equal(key, 'npub1')
-    assert.equal(msgList.length, 3)
-    assert.equal(msgList[0].text, 'conversation1 goodbye')
-    assert.equal(msgList[1].text, 'conversation1 middle')
-    assert.equal(msgList[2].text, 'conversation1 hello')
-    // conversation2
-    ;[key, msgList] = entries.next().value
-    assert.equal(key, 'npub2')
-    assert.equal(msgList.length, 2) 
-    assert.equal(msgList[0].text, 'conversation2 goodbye')
-    assert.equal(msgList[1].text, 'conversation2 hello')
+    assert.equal(msgs.length, 3)
+    assert.equal(msgs[0].text, 'conversation1 hello')
+    assert.equal(msgs[1].text, 'conversation1 middle')
+    assert.equal(msgs[2].text, 'conversation1 goodbye')
   })
 
   test('load contacts', async () => {

@@ -13,7 +13,7 @@ async function viewInbox(context: ViewContext) {
   const menu = new Map()
   menu.set('Back', () => context.view.pop())
   
-  const convs = context.model.getConversations()
+  const convs = context.chatController.getConversations()
   convs.forEach((msgList: ChatMessage[]) => {
     const topMsg = msgList[0]
     const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender

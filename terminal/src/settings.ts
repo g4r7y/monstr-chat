@@ -20,7 +20,7 @@ async function settingsMenu(context: ViewContext) {
 async function settingsProfile(context: ViewContext) {
   terminal.clear()
   terminal.bgGreen('Profile\n\n')
-  const settings = context.model.settings
+  const settings = context.chatController.getSettings()
   terminal.yellow('Your nickname: ')
   terminal.white(settings.profileName ?? '')
   terminal('\n')
@@ -55,20 +55,20 @@ async function settingsProfile(context: ViewContext) {
 
   terminal.clear()
   terminal.bgGreen('Edit Profile\n\n')
-  let initialText = context.model.settings.profileName ?? ''
+  let initialText = context.chatController.getSettings().profileName ?? ''
   let profileName = await showPrompt('Your nickname: ',  initialText)
   if (profileName === null) {
     // escape
     return
   }
-  initialText = context.model.settings.profileAbout ?? ''
+  initialText = context.chatController.getSettings().profileAbout ?? ''
   let profileAbout = await showPrompt('About you: ',  initialText)
   if (profileAbout === null) {
     // escape
     return
   }
 
-  initialText = context.model.settings.nip05 ?? ''
+  initialText = context.chatController.getSettings().nip05 ?? ''
   let editing = true
   let shouldUpdate = false
   terminal.saveCursor()
@@ -107,7 +107,7 @@ async function settingsProfile(context: ViewContext) {
   if (shouldUpdate) {
     settings.profileName = profileName
     settings.profileAbout = profileAbout
-    await context.model.setSettings(settings)
+    await context.chatController.setSettings(settings)
     await context.chatController.broadcastUserMetadata()
     await pressToContinue('Your Nostr profile has been updated')
   }
@@ -133,7 +133,7 @@ async function settingsViewRelays(context: ViewContext) {
   terminal.bgGreen('Relays\n\n')
   terminal.yellow('Inbox relays:\n\n')
   terminal.white('These relays are used to receive your incoming messages.\nIt is recommended to have up to 3 of these.\n\n')
-  let relays = context.model.settings.inboxRelays
+  let relays = context.chatController.getSettings().inboxRelays
   if (relays.length == 0) {
     terminal.white('[None]')
   }
@@ -150,7 +150,7 @@ async function settingsViewRelays(context: ViewContext) {
 
   terminal.yellow('\nDiscovery relays:\n\n')
   terminal.white('These relays are used to broadcast your relay information so that your contacts know how to send messages to you.\nThey are also used to discover information about your contacts so that you can send messages to them.\nIt is recommended to use several popular nostr relays.\n\n')
-  relays = context.model.settings.generalRelays
+  relays = context.chatController.getSettings().generalRelays
   if (relays.length == 0) {
     terminal.white('[None]')
   }
@@ -227,7 +227,7 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
     return results
   }
 
-  const currentSettings = context.model.settings
+  const currentSettings = context.chatController.getSettings()
 
   if (relayType === 'inbox') {
     terminal.yellow('Inbox relays:\n\n')
@@ -252,7 +252,7 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
     throw new Error('Bad relay type')
   }
 
-  await context.model.setSettings(currentSettings)
+  await context.chatController.setSettings(currentSettings)
 
   // send out updated nip65, whether changing inbox or general relays
   try {

@@ -13,11 +13,48 @@ import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMet
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
 import type { ChatNotifier } from './chatNotifier.js'
 import type { KeyStore } from './keyStore.js'
-import { ChatModel, type ChatMessage, type ChatContact } from './chatModel.js'
+import { ChatModel, type ChatMessage, type ChatContact, type ChatSettings } from './chatModel.js'
 import { isValidNpub } from './validation.js'
 import createRelayMonitor, { type RelayMonitor } from './relayMonitor.js'
 
-class ChatController {
+
+export interface ChatController {
+  subscribe(notifier: ChatNotifier) : void,
+  init() : Promise<boolean>,
+  connect() : Promise<boolean>,
+  close() : void,
+
+  getSettings() : ChatSettings
+  setSettings(settings: ChatSettings) : Promise<void> 
+  getContactByNpub(contactNpub : string): ChatContact | null
+  getConversations(): Map<string,ChatMessage[]>
+  getContactByName(name : string): ChatContact | null
+  getContactList(): ChatContact[]
+  setContact(contact: ChatContact) : Promise<void>
+  deleteContact(npub: string) : Promise<void>
+
+  sendDmToContact(recipient: ChatContact, text: string) : Promise<void>
+  sendDmToUnknown(recipientNpub: string, text: string) : Promise<void>
+
+  subscribeToIncomingDms() : Promise<void>
+  subscribeToRelayMetadata() : Promise<void>
+  broadcastRelayList() : Promise<void>
+  subscribeToUserMetadata() : Promise<void>
+  broadcastUserMetadata()  : Promise<void>
+  checkConnectedRelays(relayUrls: string[]) : string[]
+
+  getNpub() : string
+  getNsec() : string
+  lookupNip05Address(nip05: string) : Promise<string | null> 
+
+  createNewKey() : Promise<string>
+  resetKey(nsec: string) : Promise<void>
+  resetKeyFromSeedWords(bip39Mnemonic: string) : Promise<void>
+  getUserProfile(npub: string) : Promise<Record<string, string> | null>
+}
+
+
+export class ChatControllerImpl implements ChatController {
   #model: ChatModel
   #keyStore: KeyStore
   #notifier: ChatNotifier | null
@@ -27,7 +64,7 @@ class ChatController {
   #offline: boolean
   #relayMonitor: RelayMonitor
 
-
+ 
   constructor(model: ChatModel, keyStore: KeyStore) {
     this.#model = model
     this.#keyStore = keyStore
@@ -96,6 +133,53 @@ class ChatController {
   close() {
     this.#pool.destroy()
   }
+
+  // model
+
+  getSettings() : ChatSettings {
+    return this.#model.settings
+  }
+
+  async setSettings(settings: ChatSettings) : Promise<void> {
+    await this.#model.setSettings(settings)
+  }
+
+  getContactByNpub(contactNpub : string): ChatContact | null {
+    return this.#model.getContactByNpub(contactNpub)
+  }
+
+  // Get conversations
+  // @return Map of conversations, where key is the contact npub, value is list of messages
+  getConversations(): Map<string,ChatMessage[]> {
+    const convs = new Map<string, ChatMessage[]>()
+    const sortedMessages = Array.from(this.#model.getMessageList())
+    // sort descending (i.e. head will be newest)
+    sortedMessages.sort((a: ChatMessage, b: ChatMessage) => b.time.getTime() - a.time.getTime())
+    for(let msg of sortedMessages) {
+      const key = (msg.state === 'tx') ? msg.receiver : msg.sender
+      let msgList = convs.has(key) ? convs.get(key)! : new Array()
+      msgList.push(msg)
+      convs.set(key, msgList)
+    }
+    return convs
+  }
+
+  getContactByName(name : string): ChatContact | null {
+    return this.#model.getContactByName(name)
+  }
+
+  getContactList(): ChatContact[] {
+    return this.#model.getContactList()
+  }
+
+  async setContact(contact: ChatContact) {
+    await this.#model.setContact(contact)
+  }
+
+  async deleteContact(npub: string) {
+    await this.#model.deleteContact(npub)
+  }
+
 
   // Send DM using the recipient's inbox relay(s)
   async sendDmToContact(recipient: ChatContact, text: string) {
@@ -281,6 +365,12 @@ class ChatController {
     profile.about = content?.about ?? null
     return profile
   }
+  
+  async lookupNip05Address(nip05: string) : Promise<string | null> {
+    const profile =  await queryProfile(nip05)
+    const npub = profile ? npubEncode(profile.pubkey) : null
+    return npub
+  }
 
   ///////////////////////////////////////////////////////////
   // private methods
@@ -312,11 +402,6 @@ class ChatController {
     }
   }
   
-  async lookupNip05Address(nip05: string) : Promise<string | null> {
-    const profile =  await queryProfile(nip05)
-    const npub = profile ? npubEncode(profile.pubkey) : null
-    return npub
-  }
   
   // Callback for incoming DM subscription.
   async #onIncoming(msg: ChatMessage) {
@@ -406,5 +491,3 @@ class ChatController {
     }
   }
 }
-
-export default ChatController

@@ -23,7 +23,7 @@ async function sendNewMessage(context: ViewContext) {
     editing = false
     if (result) {
       [recipient, text] = result
-      const contact = context.model.getContactByName(recipient)
+      const contact = context.chatController.getContactByName(recipient)
         if (!contact && !isValidNpub(recipient)) {
         editing = await showYesNoPrompt('Contact npub is not valid. Continue editing?')
         continue

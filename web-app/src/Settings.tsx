@@ -1,8 +1,8 @@
-import Accordion from 'react-bootstrap/Accordion';
-import { useController } from './controllerContext'
+import { Accordion } from 'react-bootstrap';
+import { useChatController } from './chatControllerContext'
 
 function Settings() {
-  const controller = useController()
+  const controller = useChatController()
   return (
     <Accordion>
       <Accordion.Item eventKey="0">

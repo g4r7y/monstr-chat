@@ -11,19 +11,21 @@ import { sendDm } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
-import type { ChatNotifier } from './chatNotifier.js'
 import type { KeyStore } from './keyStore.js'
 import { ChatModel, type ChatMessage, type ChatContact, type ChatSettings } from './chatModel.js'
 import { isValidNpub } from './validation.js'
 import createRelayMonitor, { type RelayMonitor } from './relayMonitor.js'
+import type { MessageListener } from './messageListener.js'
 
 
 export interface ChatController {
-  subscribe(notifier: ChatNotifier) : void,
   init() : Promise<boolean>,
   connect() : Promise<boolean>,
   close() : void,
-
+  
+  addMessageListener(listener: MessageListener) : void
+  removeMessageListener(listener: MessageListener) : void
+  
   getSettings() : ChatSettings
   setSettings(settings: ChatSettings) : Promise<void> 
   getContactByNpub(contactNpub : string): ChatContact | null
@@ -57,18 +59,18 @@ export interface ChatController {
 export class ChatControllerImpl implements ChatController {
   #model: ChatModel
   #keyStore: KeyStore
-  #notifier: ChatNotifier | null
+  #listeners: MessageListener[]
   #pubKey: string
   #privateKey: Uint8Array
   #pool: SimplePool
-  #offline: boolean
   #relayMonitor: RelayMonitor
+  #offline: boolean //not used yet
 
  
   constructor(model: ChatModel, keyStore: KeyStore) {
     this.#model = model
     this.#keyStore = keyStore
-    this.#notifier = null
+    this.#listeners = []
 
     this.#pubKey = ''
     this.#privateKey = new Uint8Array()
@@ -76,12 +78,18 @@ export class ChatControllerImpl implements ChatController {
     const poolOptions = { enablePing: true, enableReconnect: true }
     this.#pool = new SimplePool(poolOptions)
 
-    this.#offline = false
     this.#relayMonitor = createRelayMonitor(this.#pool) 
+    this.#offline = false
+    void this.#offline; //not used yet, suppress linter
+
   }
 
-  subscribe(notifier: ChatNotifier) {
-    this.#notifier = notifier 
+  addMessageListener(listener: MessageListener) {
+    this.#listeners.push(listener)
+  }
+
+  removeMessageListener(listener: MessageListener) {
+    this.#listeners = this.#listeners.filter( l => l !== listener)
   }
 
   async init() : Promise<boolean> {
@@ -407,7 +415,7 @@ export class ChatControllerImpl implements ChatController {
   async #onIncoming(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
       await this.#model.setMessage(msg.id, msg)
-      this.#notifier?.notifyMessage(msg)
+      this.#listeners.forEach(l => l.notifyMessage(msg))
     }
   }
 

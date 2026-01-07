@@ -1,18 +1,18 @@
-import { createContext, StrictMode } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import './index.css'
 import App from './App.tsx'
 import { ChatModel } from '@core/chatModel'
-import ChatController from '@core/chatController'
+import { ChatControllerImpl, type ChatController } from '@core/chatController'
 import ChatDataStore from './chatDataStore'
 import NostrKeyStore from './nostrKeyStore'
-import { ControllerContext } from './controllerContext.ts'
+import { ChatControllerContext } from './chatControllerContext.ts'
 
 const localDataStore = new ChatDataStore()
 const keyStore  = new NostrKeyStore()
 const model = new ChatModel(localDataStore)
-const controller = new ChatController(model, keyStore)
+const controller: ChatController = new ChatControllerImpl(model, keyStore)
 
 
   // subscribe to notifications
@@ -41,9 +41,9 @@ const controller = new ChatController(model, keyStore)
 
     createRoot(document.getElementById('root')!).render(
       <StrictMode>
-        <ControllerContext.Provider value={controller}>
+        <ChatControllerContext.Provider value={controller}>
           <App />
-        </ControllerContext.Provider>
+        </ChatControllerContext.Provider>
 
       </StrictMode>,
     )

@@ -4,7 +4,7 @@ import Container from 'react-bootstrap/Container';
 function Contacts() {
   return (
       <Container>
-        No contacts
+        No friends
       </Container>
 
   )

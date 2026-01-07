@@ -1,0 +1,68 @@
+import React from 'react';
+import Container from 'react-bootstrap/Container';
+import ListGroup from 'react-bootstrap/ListGroup';
+import { useChatController } from './chatControllerContext';
+import { useAppView } from './appViewContext';
+import type { ChatController } from '@core/chatController';
+import type { MessageListener } from '@core/messageListener';
+import type { ChatMessage } from '@core/chatModel';
+// import type { ChatMessage } from '@core/chatModel';
+
+function getContactLabel(npub: string, controller: ChatController): string {
+  const contact = controller.getContactByNpub(npub)
+  return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`
+}
+
+// The message inbox view component
+function Inbox() {
+
+  const controller = useChatController()
+  const [ conversations,setConversations ] = React.useState(controller.getConversations()) 
+
+  
+  React.useEffect(() => {
+    const updateConversations = () => {
+      setConversations(controller.getConversations());
+    };
+    
+    const myListener = new class implements MessageListener {
+      notifyMessage() {
+        updateConversations()
+      }
+    }
+      
+    controller.addMessageListener(myListener)
+
+    return () => {
+      controller.removeMessageListener(myListener)
+    }
+  }, [ conversations, controller ])
+
+
+  const { switchView } = useAppView()
+  const handleOpenConversation = () => {
+    switchView('conversation');
+  };
+
+
+
+  return (
+      <Container>
+        <ListGroup>
+          { Array.from(conversations.values()).map( (conv: ChatMessage[]) => {
+            const topMsg = conv[0]
+            const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender
+            return <ListGroup.Item onClick={handleOpenConversation} action as="li" className="d-flex justify-content-between align-items-start">
+                <div className="ms-2 me-auto">
+                  <div className="fw-bold">{getContactLabel(contactNpub, controller)}</div>
+                  {topMsg.text}
+                </div>
+            </ListGroup.Item>
+          })}
+        </ListGroup>
+      </Container>
+  )
+}
+
+export default Inbox
+

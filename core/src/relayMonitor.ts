@@ -1,5 +1,7 @@
 import { SimplePool } from "@nostr/tools";
 import { sendReq } from "./nostrReq.js";
+// import type { Timeout } from 'timers';
+
 
 // how often to run the heartbeat check
 const connectionCheckInterval = 10000

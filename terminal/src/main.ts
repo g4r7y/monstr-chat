@@ -15,8 +15,8 @@ const main = async () => {
   const controller: ChatController = new ChatControllerImpl(model, localStore)
   const ui = new ViewRouter(controller)
 
-  // subscribe to notifications
-  controller.subscribe(ui) 
+  // subscribe to new message notifications
+  controller.addMessageListener(ui) 
   let initOk = await controller.init()
   if (!initOk) {
     // show welcome flow to create new key
@@ -30,6 +30,7 @@ const main = async () => {
     await ui.go(connected ? 'main' : 'offline')
   }
 
+  controller.removeMessageListener(ui) 
   console.log('Closing connections...')
   controller.close()
   console.log('Done')

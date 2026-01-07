@@ -1,6 +1,6 @@
 import tk from 'terminal-kit'
 import type { ChatController } from '@core/chatController.js'
-import type { ChatNotifier } from '@core/chatNotifier.js'
+import type { MessageListener } from '@core/messageListener.js'
 import { type ChatMessage } from '@core/chatModel.js'
 import { showYesNoPrompt } from './terminalUi.js'
 import { welcome } from './welcome.js'
@@ -20,7 +20,7 @@ export type ViewContext = Readonly<{
   viewParams: Record<string, string>
 }>
 
-class ViewRouter implements ChatNotifier {
+class ViewRouter implements MessageListener {
 
   #chatController: ChatController
   #view: string[]

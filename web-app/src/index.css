@@ -21,4 +21,8 @@ navbar {
   color: #2a8e18;
 }
 
+::placeholder {
+  font-style: italic;
+}
+
 

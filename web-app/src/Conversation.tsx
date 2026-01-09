@@ -1,11 +1,11 @@
-import React from 'react';
-import { Button, Container, ListGroup } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Button, Col, Container, Form, ListGroup, Navbar, Nav, Row } from 'react-bootstrap';
 
 import { useChatController } from './chatControllerContext';
 import { useAppView } from './appViewContext';
 import type { ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
-import type { ChatMessage } from '@core/chatModel';
+import type { ChatMessage, ChatContact } from '@core/chatModel';
 
 function getContactLabel(npub: string, controller: ChatController): string {
   const contact = controller.getContactByNpub(npub)
@@ -28,11 +28,11 @@ function Inbox() {
   const [ conversations,setConversations ] = React.useState(controller.getConversations()) 
 
   
-  React.useEffect(() => {
+  React.useEffect(() => {    
     const updateConversations = () => {
       setConversations(controller.getConversations());
     };
-    
+
     const myListener = new class implements MessageListener {
       notifyMessage() {
         // TODO check if message is part of this conversation
@@ -47,17 +47,64 @@ function Inbox() {
     }
   }, [ conversations, controller ])
 
+  const [msgText, setMsgText] = useState('');
+
 
   const { switchView } = useAppView()
   const handleBack = () => {
     switchView('main');
   };
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    handleSend()
+  };
 
+
+
+  const handleSend = () => {
+    const contact: ChatContact = {
+      npub: 'npub1shd7ezsx5552wdvuj7pk6wsc20jarwz86shffuh7kus0her0smmsgg4ncu',
+      name: 'test',
+      nip05: null,
+      profileName: null,
+      profileAbout: null,
+      relays: [],
+      relaysUpdatedAt: null
+    }
+    controller.sendDmToContact(contact, msgText)
+    setMsgText('')    
+  };
 
   return (
       <Container>
-        <Button onClick={handleBack}>Back</Button>
+        <Navbar bg="light" className="mb-3">
+          <Navbar.Brand>Conversation with xxxx</Navbar.Brand>
+          <Nav className="ms-auto">
+            <Button variant="outline-secondary" onClick={handleBack}>
+              &#8592; Back
+            </Button>
+          </Nav>
+        </Navbar>
+
+        <Form onSubmit={handleSubmit} className="mb-3">
+          <Row>
+            {/* <Col xs="auto" classname="ms-auto">
+              <Form.Label>Message:</Form.Label>
+            </Col> */}
+            <Col>
+              <Form.Control 
+                type="text" 
+                placeholder="Reply" 
+                value={msgText}
+                onChange={(event) => setMsgText(event.target.value)}
+                />
+            </Col>
+            <Col xs="auto" classname="ms-auto">
+              <Button variant="warning" onClick={handleSend}>Send</Button>
+            </Col>
+          </Row>
+        </Form>
         <ListGroup>
           { Array.from(conversations.values())[0].map( (msg: ChatMessage) => {
             const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, controller)

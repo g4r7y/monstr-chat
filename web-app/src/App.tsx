@@ -20,9 +20,6 @@ function App() {
   return (
     
     <Container>
-      <Navbar bg="light" >
-          <Navbar.Brand>Monstr Chat</Navbar.Brand>
-      </Navbar>
       <AppViewProvider>
         <MainAppView />
       </AppViewProvider>

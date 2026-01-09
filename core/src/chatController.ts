@@ -198,7 +198,8 @@ export class ChatControllerImpl implements ChatController {
       await this.sendDmToUnknown(recipient.npub, text)
     } else {
       const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipient.relays, text)
-      await this.#model.setMessage(sentMsg.id, sentMsg)
+      // save sent message locally
+      await this.#onNewMessage(sentMsg)
     }
   }
 
@@ -222,7 +223,8 @@ export class ChatControllerImpl implements ChatController {
       throw new Error('NoRelay')
     }
     const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipientRelays, text)
-    await this.#model.setMessage(sentMsg.id, sentMsg)
+    // save sent message locally
+    await this.#onNewMessage(sentMsg)
   }
 
   // Subscribe/re-subscribe to receive DMs from inbox relays
@@ -230,7 +232,7 @@ export class ChatControllerImpl implements ChatController {
     console.log(`Subscribing to receive DMs`)
     await receiveDms(this.#pubKey, this.#privateKey, 
       this.#pool, this.#model.settings.inboxRelays, 
-      async (msg: ChatMessage) => await this.#onIncoming(msg))
+      async (msg: ChatMessage) => await this.#onNewMessage(msg))
   }
 
   // Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
@@ -411,8 +413,9 @@ export class ChatControllerImpl implements ChatController {
   }
   
   
-  // Callback for incoming DM subscription.
-  async #onIncoming(msg: ChatMessage) {
+  // Callback for new DM. This could be an incoming message or also a sent DM.
+  // saves the message locally then notifies any subscribed listeners.
+  async #onNewMessage(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
       await this.#model.setMessage(msg.id, msg)
       this.#listeners.forEach(l => l.notifyMessage(msg))

@@ -5,7 +5,8 @@ export type AppViewNameType = 'main' | 'conversation';
 // Define the type to be used with the context
 interface AppViewContextType {
   view: AppViewNameType;
-  switchView: (view: AppViewNameType) => void;
+  currentContact: string;
+  switchView: (view: AppViewNameType, currentContact?: string) => void;
 }
 
 // The context object 

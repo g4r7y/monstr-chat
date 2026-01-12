@@ -66,7 +66,7 @@ async function viewConversation(context: ViewContext) {
           if (contact) {
             await context.chatController.sendDmToContact(contact, msgToSend)
           } else {
-            await context.chatController.sendDmToUnknown(contactNpub, msgToSend)
+            await context.chatController.sendDmToNpub(contactNpub, msgToSend)
           }
           draftMessage = ''
         } catch (err) {

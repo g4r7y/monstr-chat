@@ -33,7 +33,7 @@ async function sendNewMessage(context: ViewContext) {
         if (contact) {
           await context.chatController.sendDmToContact(contact, text)
         } else {
-          await context.chatController.sendDmToUnknown(recipient, text)
+          await context.chatController.sendDmToNpub(recipient, text)
         }
       } catch (err) {
         editing = await handleSendError(err)

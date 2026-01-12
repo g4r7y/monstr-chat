@@ -2,25 +2,46 @@
 import { npubEncode } from "@nostr/tools/nip19"
 import { unwrapEvent } from "@nostr/tools/nip17"
 import { SimplePool, type SubCloser } from "@nostr/tools/pool"
-import type { NostrEvent } from "@nostr/tools"
+import type { NostrEvent, UnsignedEvent } from "@nostr/tools"
 import type { ChatMessage } from "./chatModel.js"
+import { isNull } from "node:util"
 
 let subCloser: SubCloser
 
 // NIP17
-const onReceiveDm = async (npub: string, nsec: Uint8Array, event: NostrEvent) : Promise<ChatMessage | null> => {
+const onReceiveDm = async (pubkey: string, nsec: Uint8Array, event: NostrEvent) : Promise<ChatMessage | null> => {
   try {
-    const plainEvent = await unwrapEvent(event, nsec)
+    type PlainEventWithId = UnsignedEvent & { id: string }
+    const plainEvent : PlainEventWithId = await unwrapEvent(event, nsec)
+    console.log('npub', pubkey, 'received plain event', JSON.stringify(plainEvent))
     let createdDate = new Date(0)
     createdDate.setUTCSeconds(plainEvent.created_at)
-    // TODO should we use local time for received messages too? in case the event times are out of synch with sent times?
-    let msg = {
-      sender: npubEncode(plainEvent.pubkey),
-      receiver: npubEncode(npub), //self
-      text: plainEvent.content,
-      time: createdDate,
-      id: plainEvent.id,
-      state: 'rx'
+
+    const pTags = plainEvent.tags.filter( tag => tag.length > 1 && tag[0] == "p")
+    const hasOtherRecipients = pTags.filter(pTag => pTag[1] !== pubkey).length > 0
+    
+    let msg = null
+    if (plainEvent.pubkey === pubkey && hasOtherRecipients) { // from self and not just to ourself
+      // it's an outgoing message
+      const firstReceiver = pTags.find(ptag => ptag[1] !== pubkey)![1]
+      msg = {
+        sender: npubEncode(pubkey),
+        text: plainEvent.content,
+        time: createdDate,
+        id: plainEvent.id,
+        state: 'tx',
+        receiver: npubEncode(firstReceiver)
+      }
+    } else { 
+      // it's an incoming message or a message to self 
+      msg = {
+        sender: npubEncode(plainEvent.pubkey),
+        text: plainEvent.content,
+        time: createdDate,
+        id: plainEvent.id,
+        state: 'rx',
+        receiver: npubEncode(pubkey)
+      }
     }
     // console.log('received DM', JSON.stringify(msg))
     return msg

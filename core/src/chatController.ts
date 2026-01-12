@@ -7,7 +7,7 @@ import { queryProfile } from '@nostr/tools/nip05'
 import { SimplePool } from '@nostr/tools'
 import { normalizeURL } from '@nostr/tools/utils'
 
-import { sendDm } from './nostrSendDm.js'
+import { sendDm, type SendDmRecipient } from './nostrSendDm.js'
 import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
@@ -36,7 +36,7 @@ export interface ChatController {
   deleteContact(npub: string) : Promise<void>
 
   sendDmToContact(recipient: ChatContact, text: string) : Promise<void>
-  sendDmToUnknown(recipientNpub: string, text: string) : Promise<void>
+  sendDmToNpub(recipientNpub: string, text: string) : Promise<void>
 
   subscribeToIncomingDms() : Promise<void>
   subscribeToRelayMetadata() : Promise<void>
@@ -189,42 +189,49 @@ export class ChatControllerImpl implements ChatController {
   }
 
 
-  // Send DM using the recipient's inbox relay(s)
+  // Send DM using the recipient's inbox relay(s).
+  // Also sends a copy to ourself so our sent messages will persist on relay.
   async sendDmToContact(recipient: ChatContact, text: string) {
-    const recipientPubKey = decode(recipient.npub).data as string
-
     if (!recipient?.relays?.length) {
-      console.log(`Send: contact ${recipient.npub} doesn't have relay defined, trying again with relaylist fetch`)
-      await this.sendDmToUnknown(recipient.npub, text)
+      console.log(`Send: contact ${recipient.npub} doesn't have relay defined, trying to fetch relaylist first`)
+      await this.sendDmToNpub(recipient.npub, text)
     } else {
-      const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipient.relays, text)
-      // save sent message locally
-      await this.#onNewMessage(sentMsg)
+      await this.sendDmToNpub(recipient.npub, text, recipient.relays)
     }
   }
 
-  // Send DM to an unknown contact.
-  // First tries to fetch the recipient's relay(s) from NIP65, 
+  // Send DM to specified npub.
+  // If relays not given, tries to fetch the recipient's relay(s) from NIP65, 
   // then sends DM using the recipient's inbox relay(s).
   // Throws if no read relays can be found.
-  async sendDmToUnknown(recipientNpub: string, text: string) {
+  // Also sends a copy to ourself so our sent messages will persist on relay.
+  async sendDmToNpub(recipientNpub: string, text: string, recipientRelays?: string[]) {
     const recipientPubKey = decode(recipientNpub).data as string
-    
-    const event = await getRelayListMetadata(recipientPubKey, this.#pool, this.#model.settings.generalRelays)
 
-    if (!event) {
-      console.log(`Send: can't find NIP65 relaylist for ${recipientNpub}`)
-      throw new Error('NoRelay')
+    if (!recipientRelays) {
+      const event = await getRelayListMetadata(recipientPubKey, this.#pool, this.#model.settings.generalRelays)
+
+      if (!event) {
+        console.log(`Send: can't find NIP65 relaylist for ${recipientNpub}`)
+        throw new Error('NoRelay')
+      }
+
+      recipientRelays = extractReadRelaysFromNip65(event)
+      if (!recipientRelays?.length) {
+        console.log(`Send: relaylist for ${recipientNpub} is missing or empty`)
+        throw new Error('NoRelay')
+      }
     }
 
-    const recipientRelays = extractReadRelaysFromNip65(event)
-    if (!recipientRelays?.length) {
-       console.log(`Send: relaylist for ${recipientNpub} is missing or empty`)
-      throw new Error('NoRelay')
+    const selfRelays = this.#model.settings.inboxRelays
+    const recipientGroup: SendDmRecipient[] = [
+      { pubKey: recipientPubKey, relays: recipientRelays}
+    ]
+    // if not a message to self, additionally include sender in recipient list
+    if (recipientPubKey !== this.#pubKey) {
+      recipientGroup.push({ pubKey: this.#pubKey, relays: selfRelays})
     }
-    const sentMsg = await sendDm(this.#pubKey, this.#privateKey, recipientPubKey, this.#pool, recipientRelays, text)
-    // save sent message locally
-    await this.#onNewMessage(sentMsg)
+    await sendDm(this.#privateKey, recipientGroup, this.#pool, text)
   }
 
   // Subscribe/re-subscribe to receive DMs from inbox relays

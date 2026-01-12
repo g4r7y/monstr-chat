@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button, Col, Container, Form, ListGroup, Navbar, Nav, Row } from 'react-bootstrap';
 
 import { useChatController } from './chatControllerContext';
 import { useAppView } from './appViewContext';
-import type { ChatController } from '@core/chatController';
+import { type ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
-import type { ChatMessage, ChatContact } from '@core/chatModel';
+import type { ChatMessage } from '@core/chatModel';
 
-function getContactLabel(npub: string, controller: ChatController): string {
-  const contact = controller.getContactByNpub(npub)
+function getContactLabel(npub: string, chatController: ChatController): string {
+  const contact = chatController.getContactByNpub(npub)
   return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`
 }
 
@@ -24,13 +24,13 @@ function getDisplayableMessageTimestamp(msg: ChatMessage): string {
 // The conversation view component
 function Inbox() {
 
-  const controller = useChatController()
-  const [ conversations,setConversations ] = React.useState(controller.getConversations()) 
-
-  
+  const chatController = useChatController()
+  const [ conversations, setConversations ] = React.useState(chatController.getConversations()) 
+  const [ msgText, setMsgText ] = React.useState('');
+    
   React.useEffect(() => {    
     const updateConversations = () => {
-      setConversations(controller.getConversations());
+      setConversations(chatController.getConversations());
     };
 
     const myListener = new class implements MessageListener {
@@ -40,17 +40,16 @@ function Inbox() {
       }
     }
       
-    controller.addMessageListener(myListener)
+    chatController.addMessageListener(myListener)
 
     return () => {
-      controller.removeMessageListener(myListener)
+      chatController.removeMessageListener(myListener)
     }
-  }, [ conversations, controller ])
-
-  const [msgText, setMsgText] = useState('');
+  }, [ conversations, chatController ])
 
 
-  const { switchView } = useAppView()
+
+  const { switchView, currentContact } = useAppView()
   const handleBack = () => {
     switchView('main');
   };
@@ -61,25 +60,15 @@ function Inbox() {
   };
 
 
-
   const handleSend = () => {
-    const contact: ChatContact = {
-      npub: 'npub1shd7ezsx5552wdvuj7pk6wsc20jarwz86shffuh7kus0her0smmsgg4ncu',
-      name: 'test',
-      nip05: null,
-      profileName: null,
-      profileAbout: null,
-      relays: [],
-      relaysUpdatedAt: null
-    }
-    controller.sendDmToContact(contact, msgText)
+    chatController.sendDmToNpub(currentContact, msgText)
     setMsgText('')    
   };
 
   return (
       <Container>
         <Navbar bg="light" className="mb-3">
-          <Navbar.Brand>Conversation with xxxx</Navbar.Brand>
+          <Navbar.Brand>Conversation with {getContactLabel(currentContact, chatController)}</Navbar.Brand>
           <Nav className="ms-auto">
             <Button variant="outline-secondary" onClick={handleBack}>
               &#8592; Back
@@ -89,9 +78,6 @@ function Inbox() {
 
         <Form onSubmit={handleSubmit} className="mb-3">
           <Row>
-            {/* <Col xs="auto" classname="ms-auto">
-              <Form.Label>Message:</Form.Label>
-            </Col> */}
             <Col>
               <Form.Control 
                 type="text" 
@@ -106,8 +92,8 @@ function Inbox() {
           </Row>
         </Form>
         <ListGroup>
-          { Array.from(conversations.values())[0].map( (msg: ChatMessage) => {
-            const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, controller)
+          { conversations.get(currentContact)?.map( (msg: ChatMessage) => {
+            const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, chatController)
             return <ListGroup.Item action as="li" className="d-flex justify-content-between align-items-start">
                 <div className="ms-2 me-auto">
                   <div>{getDisplayableMessageTimestamp(msg)}</div>

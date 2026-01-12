@@ -1,6 +1,5 @@
 import { SimplePool } from "@nostr/tools/pool"
 import type { EventTemplate, NostrEvent } from '@nostr/tools/core'
-import { getPublicKey } from '@nostr/tools'
 import * as nip59 from '@nostr/tools/nip59'
 
 type Recipient = {

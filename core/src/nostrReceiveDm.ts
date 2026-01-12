@@ -4,7 +4,6 @@ import { unwrapEvent } from "@nostr/tools/nip17"
 import { SimplePool, type SubCloser } from "@nostr/tools/pool"
 import type { NostrEvent, UnsignedEvent } from "@nostr/tools"
 import type { ChatMessage } from "./chatModel.js"
-import { isNull } from "node:util"
 
 let subCloser: SubCloser
 

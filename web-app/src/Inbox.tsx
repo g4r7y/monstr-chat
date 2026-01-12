@@ -40,8 +40,8 @@ function Inbox() {
 
 
   const { switchView } = useAppView()
-  const handleOpenConversation = () => {
-    switchView('conversation');
+  const handleOpenConversation = (contactNpub: string) => {
+    switchView('conversation', contactNpub);
   };
 
 
@@ -52,7 +52,7 @@ function Inbox() {
           { Array.from(conversations.values()).map( (conv: ChatMessage[]) => {
             const topMsg = conv[0]
             const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender
-            return <ListGroup.Item onClick={handleOpenConversation} action as="li" className="d-flex justify-content-between align-items-start">
+            return <ListGroup.Item onClick={() => handleOpenConversation(contactNpub)} action as="li" className="d-flex justify-content-between align-items-start">
                 <div className="ms-2 me-auto">
                   <div className="fw-bold">{getContactLabel(contactNpub, controller)}</div>
                   {topMsg.text}

@@ -2,7 +2,7 @@ import MainMenu from './MainMenu'
 import Conversation from './Conversation.tsx';
 import { AppViewProvider } from './AppViewProvider';
 import { useAppView } from './appViewContext';
-import { Container, Navbar } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 
 
 const MainAppView = () => {

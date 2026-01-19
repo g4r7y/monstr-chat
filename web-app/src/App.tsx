@@ -11,7 +11,9 @@ const MainAppView = () => {
   const appView = useAppView()
   return (
     <div>
-      {appView.view === 'main' && <MainMenu />}
+      {appView.view === 'main' && <MainMenu activeTab='chats'/>}
+      {appView.view === 'friends' && <MainMenu activeTab='friends'/>}
+      {appView.view === 'settings' && <MainMenu activeTab='settings'/>}
       {appView.view === 'conversation' && <Conversation />}
       {appView.view === 'add-friend' && <AddFriend />}
       {appView.view === 'view-friend' && <ViewFriend />}

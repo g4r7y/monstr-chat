@@ -20,8 +20,10 @@ function AddFriend() {
  
   
   const [contactProfile, setContactProfile] = React.useState<Record<string, string> | null>({});
-  const [nickName, setNickName] = React.useState('');
   const [loaded, setLoaded] = React.useState(false);
+  const [nickName, setNickName] = React.useState('');
+  const [inputError, setInputError] = React.useState('');
+
   
   React.useEffect(() => {
     const lookupContactProfile = async () => {
@@ -34,23 +36,28 @@ function AddFriend() {
   }, []);
   
   const handleSave = async () => {
-    const contact: ChatContact = {
-      name: nickName,
-      npub: currentContactNpub,
-      nip05: contactProfile?.nip05 ?? null,
-      profileName: contactProfile?.name ?? null,
-      profileAbout: contactProfile?.about ?? null,
-      relays: [],
-      relaysUpdatedAt: null
+    if (nickName.length === 0) {
+      setInputError('Name cannot be empty')
+    } else if (chatController.getContactByName(nickName) !== null) {
+      setInputError('You already have a friend with the same name')
+    } else {
+      const contact: ChatContact = {
+        name: nickName,
+        npub: currentContactNpub,
+        nip05: contactProfile?.nip05 ?? null,
+        profileName: contactProfile?.name ?? null,
+        profileAbout: contactProfile?.about ?? null,
+        relays: [],
+        relaysUpdatedAt: null
+      }
+      await chatController.setContact(contact);
+
+      // new contact, so update subscription so we can get contact's relaylist
+      await chatController.subscribeToRelayMetadata()
+      await chatController.subscribeToUserMetadata()
+
+      handleBack()
     }
-  
-    await chatController.setContact(contact);
-
-    // new contact, so update subscription so we can get contact's relaylist
-    await chatController.subscribeToRelayMetadata()
-    await chatController.subscribeToUserMetadata()
-
-    handleBack()
   }
   
   return (
@@ -69,11 +76,10 @@ function AddFriend() {
           <Form.Label className="col-sm-2 col-form-label">Npub:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext"
+              className="form-control-plaintext truncate"
               type="text"  
               value={currentContactNpub}
               disabled readOnly
-              style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
             />
           </div>
         </div>
@@ -87,11 +93,10 @@ function AddFriend() {
           <Form.Label className="col-sm-2 col-form-label">Nip05 address:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext"
+              className="form-control-plaintext truncate"
               type="text"  
               value={contactProfile.nip05 }
               disabled readOnly
-              style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
             />
           </div>
         </div>}
@@ -100,11 +105,10 @@ function AddFriend() {
           <Form.Label className="col-sm-2 col-form-label">Profile name:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext"
+              className="form-control-plaintext truncate"
               type="text"  
               value={contactProfile.name }
               disabled readOnly
-              style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
             />
           </div>
         </div>}
@@ -114,10 +118,9 @@ function AddFriend() {
           <div className="col-sm-10">
             <Form.Control 
               className="form-control-plaintext"
-              type="text"  
+              type="textarea"  
               value={contactProfile.about }
               disabled readOnly
-              style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
             />
             </div>
         </div>}
@@ -128,11 +131,14 @@ function AddFriend() {
             <Form.Control 
               type="text" 
               value={nickName}
-              onChange={(event) => setNickName(event.target.value)}
+              onChange={(event) => { setNickName(event.target.value); setInputError('')}}
+              isInvalid = {!!inputError}
             />
+            <Form.Control.Feedback type="invalid">
+              {inputError}
+            </Form.Control.Feedback>
           </div>
-           {/* TODO validate name control - not empty, not existing contact */}
-          <Button className="mb-3" variant="warning" onClick={handleSave}>Save</Button>
+          <Button className="mb-3" variant="primary" onClick={handleSave}>Save</Button>
         </div>}
       </Form>
     </Container>

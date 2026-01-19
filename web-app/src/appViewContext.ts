@@ -1,12 +1,12 @@
 import { createContext, useContext } from 'react';
 
-export type AppViewNameType = 'main' | 'conversation';
+export type AppViewNameType = 'main' | 'conversation' | 'add-friend' | 'view-friend';
 
 // Define the type to be used with the context
 interface AppViewContextType {
   view: AppViewNameType;
-  currentContact: string;
-  switchView: (view: AppViewNameType, currentContact?: string) => void;
+  currentContactNpub: string;
+  switchView: (view: AppViewNameType, currentContactNpub?: string) => void;
 }
 
 // The context object 

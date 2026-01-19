@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Col, Container, Form, ListGroup, Navbar, Nav, Row } from 'react-bootstrap';
+import { Button, Col, Container, Form, ListGroup, Navbar, Row, Card } from 'react-bootstrap';
 
 import { useChatController } from './chatControllerContext';
 import { useAppView } from './appViewContext';
@@ -20,9 +20,8 @@ function getDisplayableMessageTimestamp(msg: ChatMessage): string {
 }
 
 
-
 // The conversation view component
-function Inbox() {
+function Conversation() {
 
   const chatController = useChatController()
   const [ conversations, setConversations ] = React.useState(chatController.getConversations()) 
@@ -49,42 +48,64 @@ function Inbox() {
 
 
 
-  const { switchView, currentContact } = useAppView()
+  const { switchView, currentContactNpub } = useAppView()
+
+
   const handleBack = () => {
     switchView('main');
   };
+
+  const handleAddFriend = () => {
+    switchView('add-friend');
+  };
+
+  const handleViewFriend = () => {
+    switchView('view-friend')
+  }
+
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     handleSend()
   };
 
-
   const handleSend = () => {
-    chatController.sendDmToNpub(currentContact, msgText)
+    chatController.sendDmToNpub(currentContactNpub, msgText)
     setMsgText('')    
   };
 
   return (
-      <Container>
-        <Navbar bg="light" className="mb-3">
-          <Navbar.Brand>Conversation with {getContactLabel(currentContact, chatController)}</Navbar.Brand>
-          <Nav className="ms-auto">
-            <Button variant="outline-secondary" onClick={handleBack}>
-              &#8592; Back
-            </Button>
-          </Nav>
+      <Container className="ys-auto">
+        <Navbar className="mb-3" bg="light">
+          <div className="d-flex align-items-center">
+          <Button  onClick={handleBack} className="me-3" variant="outline-secondary"><i className="fas fa-chevron-left"></i> Back</Button>
+          <Navbar.Brand>Chat with {chatController.getContactByNpub(currentContactNpub) ? getContactLabel(currentContactNpub, chatController) : "Unknown contact"}</Navbar.Brand>
+          {chatController.getContactByNpub(currentContactNpub) !== null && 
+          <Button  onClick={handleViewFriend} size="lg" variant="link" className="info-button text-muted">
+            <i className="fas fa-info-circle"></i>
+          </Button>
+          }  
+          </div>
         </Navbar>
+
+        {chatController.getContactByNpub(currentContactNpub) === null &&
+          <Card className="mb-3">
+            <Card.Body>
+              <Card.Text>Contact is not in your friends list. Add to friends?</Card.Text>
+              <Button onClick={handleAddFriend} variant="primary">Add</Button>
+            </Card.Body>
+          </Card>
+        }
 
         <Form onSubmit={handleSubmit} className="mb-3">
           <Row>
             <Col>
-              <Form.Control 
+              <Form.Control
                 type="text" 
                 placeholder="Reply" 
                 value={msgText}
                 onChange={(event) => setMsgText(event.target.value)}
-                />
+              />
             </Col>
             <Col xs="auto" classname="ms-auto">
               <Button variant="warning" onClick={handleSend}>Send</Button>
@@ -92,7 +113,7 @@ function Inbox() {
           </Row>
         </Form>
         <ListGroup>
-          { conversations.get(currentContact)?.map( (msg: ChatMessage) => {
+          { conversations.get(currentContactNpub)?.map( (msg: ChatMessage) => {
             const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, chatController)
             return <ListGroup.Item action as="li" className="d-flex justify-content-between align-items-start">
                 <div className="ms-2 me-auto">
@@ -107,4 +128,4 @@ function Inbox() {
   )
 }
 
-export default Inbox
+export default Conversation

@@ -9,15 +9,15 @@ interface AppViewProviderProps {
 
 const AppViewProvider: React.FunctionComponent<AppViewProviderProps> = ( { children } ) => {
   const [view, setView] = useState('main' as AppViewNameType);
-  const [currentContact, setCurrentContact] = useState('');
+  const [currentContactNpub, setCurrentContactNpub] = useState('');
 
   const switchView = (newView: AppViewNameType, contactNpub?: string) => {
+    contactNpub && setCurrentContactNpub(contactNpub)
     setView(newView);
-    contactNpub && setCurrentContact(contactNpub)
   };
 
   return (
-    <AppViewContext.Provider value={{ view, currentContact, switchView }}>
+    <AppViewContext.Provider value={{ view, currentContactNpub, switchView }}>
       {children}
     </AppViewContext.Provider>
   );

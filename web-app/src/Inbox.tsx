@@ -36,7 +36,7 @@ function Inbox() {
     return () => {
       controller.removeMessageListener(myListener)
     }
-  }, [ conversations, controller ])
+  }, [ conversations, controller ])//todo - need these deps?
 
 
   const { switchView } = useAppView()

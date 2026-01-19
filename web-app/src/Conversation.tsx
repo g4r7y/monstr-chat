@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Col, Container, Form, ListGroup, Navbar, Row, Card } from 'react-bootstrap';
-
+import TextareaAutosize from 'react-textarea-autosize';
 import { useChatController } from './chatControllerContext';
 import { useAppView } from './appViewContext';
 import { type ChatController } from '@core/chatController';
@@ -79,19 +79,19 @@ function Conversation() {
         <Navbar className="mb-3" bg="light">
           <div className="d-flex align-items-center">
           <Button  onClick={handleBack} className="me-3" variant="outline-secondary"><i className="fas fa-chevron-left"></i> Back</Button>
-          <Navbar.Brand>Chat with {chatController.getContactByNpub(currentContactNpub) ? getContactLabel(currentContactNpub, chatController) : "Unknown contact"}</Navbar.Brand>
+          <Navbar.Brand>Chat with {chatController.getContactByNpub(currentContactNpub) ? getContactLabel(currentContactNpub, chatController) : "Stranger"}</Navbar.Brand>
           {chatController.getContactByNpub(currentContactNpub) !== null && 
-          <Button  onClick={handleViewFriend} size="lg" variant="link" className="info-button text-muted">
-            <i className="fas fa-info-circle"></i>
+          <Button  onClick={handleViewFriend} size="lg" variant="link" className="info-button text-info">
+            <i className="fas fa-address-card"></i>
           </Button>
           }  
           </div>
         </Navbar>
 
         {chatController.getContactByNpub(currentContactNpub) === null &&
-          <Card className="mb-3">
+          <Card className="mb-3 d-inline-block">
             <Card.Body>
-              <Card.Text>Contact is not in your friends list. Add to friends?</Card.Text>
+              <Card.Text>This contact is not in your friends list.<br /> Add to friends?</Card.Text>
               <Button onClick={handleAddFriend} variant="primary">Add</Button>
             </Card.Body>
           </Card>
@@ -100,15 +100,15 @@ function Conversation() {
         <Form onSubmit={handleSubmit} className="mb-3">
           <Row>
             <Col>
-              <Form.Control
+              <Form.Control as={TextareaAutosize}
                 type="text" 
-                placeholder="Reply" 
+                placeholder="Your message" 
                 value={msgText}
                 onChange={(event) => setMsgText(event.target.value)}
               />
             </Col>
             <Col xs="auto" classname="ms-auto">
-              <Button variant="warning" onClick={handleSend}>Send</Button>
+              <Button variant="primary" onClick={handleSend}>Send</Button>
             </Col>
           </Row>
         </Form>
@@ -119,7 +119,7 @@ function Conversation() {
                 <div className="ms-2 me-auto">
                   <div>{getDisplayableMessageTimestamp(msg)}</div>
                   <div className="fw-bold">{contactLabel}</div>
-                  {msg.text}
+                  <div>{msg.text}</div>
                 </div>
             </ListGroup.Item>
           })}

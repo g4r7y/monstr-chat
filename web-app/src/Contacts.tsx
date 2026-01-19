@@ -32,11 +32,11 @@ function Contacts() {
                   <div className="fw-bold">{c.name}</div>
                 </div>
                 <div className="ms-auto d-flex align-items-center">
-                  <Button  onClick={handleViewFriend(c)} size="lg" variant="link" className="info-button text-muted">
-                    <i className="fas fa-info-circle taxt-danger"></i>
+                  <Button  onClick={handleViewFriend(c)} size="lg" variant="link" className="info-button text-info">
+                    <i className="fas fa-address-card"></i>
                   </Button>
-                  <Button  onClick={handleChat(c)} size="lg" variant="link" className="text-secondary">
-                    <i className="fas fa-message text-warning"></i>
+                  <Button  onClick={handleChat(c)} size="lg" variant="link" className="text-primary">
+                    <i className="fas fa-message"></i>
                   </Button>
                 </div>
             </ListGroup.Item>

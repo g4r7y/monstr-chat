@@ -52,10 +52,10 @@ function Inbox() {
           { Array.from(conversations.values()).map( (conv: ChatMessage[]) => {
             const topMsg = conv[0]
             const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender
-            return <ListGroup.Item onClick={() => handleOpenConversation(contactNpub)} action as="li" className="d-flex justify-content-between align-items-start">
+            return <ListGroup.Item onClick={() => handleOpenConversation(contactNpub)} action as="li" className="align-items-start">
                 <div className="ms-2 me-auto">
-                  <div className="fw-bold">{getContactLabel(contactNpub, controller)}</div>
-                  {topMsg.text}
+                  <div className="fw-bold truncate">{getContactLabel(contactNpub, controller)}</div>
+                  <div className="truncate">{topMsg.text}</div>
                 </div>
             </ListGroup.Item>
           })}

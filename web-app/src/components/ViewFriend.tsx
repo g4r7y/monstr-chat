@@ -3,9 +3,9 @@ import { Button, Form, Navbar } from 'react-bootstrap';
 import Container from 'react-bootstrap/Container';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import { useChatController } from './chatControllerContext';
-import { useAppView } from './appViewContext';
 import type { ChatContact } from '@core/chatModel';
+import { useChatController } from '../chatControllerContext';
+import { useAppView } from '../appViewContext';
 
 
 

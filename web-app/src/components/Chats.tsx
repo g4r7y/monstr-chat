@@ -1,12 +1,12 @@
 import React from 'react';
 import Container from 'react-bootstrap/Container';
 import ListGroup from 'react-bootstrap/ListGroup';
-import { useChatController } from './chatControllerContext';
-import { useAppView } from './appViewContext';
+
 import type { ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';
-// import type { ChatMessage } from '@core/chatModel';
+import { useChatController } from '../chatControllerContext';
+import { useAppView } from '../appViewContext';
 
 function getContactLabel(npub: string, controller: ChatController): string {
   const contact = controller.getContactByNpub(npub)

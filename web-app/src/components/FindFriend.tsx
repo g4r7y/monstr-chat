@@ -1,11 +1,11 @@
 import React from 'react';
-import { Button, Form, Navbar, Container, Card } from 'react-bootstrap';
+import { Button, Form, Navbar, Container } from 'react-bootstrap';
 
-import { useChatController } from './chatControllerContext';
-import { useAppView } from './appViewContext';
 import type { ChatContact } from '@core/chatModel';
-import ContactProfile from './ContactProfile';
 import { isValidNip05Address, isValidNpub } from '@core/validation';
+import { useChatController } from '../chatControllerContext';
+import { useAppView } from '../appViewContext';
+import FriendProfile from './FriendProfile';
 
 function FindFriend() {
 
@@ -137,7 +137,7 @@ function FindFriend() {
         </Form> 
 
       <div className="mt-3">
-        <ContactProfile contactToLookup={contactToLookup} onLookupDone={handleContactLookupDone} />
+        <FriendProfile contactToLookup={contactToLookup} onLookupDone={handleContactLookupDone} />
       </div>
 
       {profileLookupDone && contactNpub &&

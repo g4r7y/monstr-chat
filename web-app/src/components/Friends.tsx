@@ -2,13 +2,13 @@ import React from 'react';
 import { Button, Card, ListGroup } from 'react-bootstrap';
 import Container from 'react-bootstrap/Container';
 
-import { useChatController } from './chatControllerContext';
+import { useChatController } from '../chatControllerContext';
 import type { ChatContact } from '@core/chatModel';
-import { useAppView } from './appViewContext';
+import { useAppView } from '../appViewContext';
 
 
 
-function Contacts() {
+function Friends() {
   const chatController = useChatController()
   const { switchView } = useAppView()
   const [ contacts ] = React.useState(chatController.getContactList())
@@ -18,7 +18,7 @@ function Contacts() {
   }
 
   const handleFindFriend = () => {
-    switchView('find-friend') //todo
+    switchView('find-friend')
   }
 
   const handleChat = (contact: ChatContact) => () => {
@@ -65,5 +65,5 @@ function Contacts() {
   )
 }
 
-export default Contacts
+export default Friends
 

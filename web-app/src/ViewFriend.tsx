@@ -75,7 +75,7 @@ function ViewFriend() {
         </div>
         {contact?.nip05 &&
         <div className="row mb-3">
-          <Form.Label className="col-sm-2 col-form-label">Nip05 address:</Form.Label>
+          <Form.Label className="col-sm-2 col-form-label">NIP-05 address:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
               className="form-control-plaintext truncate"

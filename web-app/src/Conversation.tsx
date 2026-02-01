@@ -56,11 +56,11 @@ function Conversation() {
   };
 
   const handleAddFriend = () => {
-    switchView('add-friend');
+    switchView('add-friend', currentContactNpub);
   };
 
   const handleViewFriend = () => {
-    switchView('view-friend')
+    switchView('view-friend', currentContactNpub)
   }
 
 

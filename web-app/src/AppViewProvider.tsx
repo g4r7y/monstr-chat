@@ -12,7 +12,7 @@ const AppViewProvider: React.FunctionComponent<AppViewProviderProps> = ( { child
   const [currentContactNpub, setCurrentContactNpub] = useState('');
 
   const switchView = (newView: AppViewNameType, contactNpub?: string) => {
-    contactNpub && setCurrentContactNpub(contactNpub)
+    contactNpub ? setCurrentContactNpub(contactNpub) : setCurrentContactNpub('')
     setView(newView);
   };
 

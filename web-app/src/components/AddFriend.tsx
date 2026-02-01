@@ -1,10 +1,10 @@
 import React from 'react';
 import { Button, Form, Navbar, Container } from 'react-bootstrap';
 
-import { useChatController } from './chatControllerContext';
-import { useAppView } from './appViewContext';
 import type { ChatContact } from '@core/chatModel';
-import ContactProfile from './ContactProfile';
+import { useChatController } from '../chatControllerContext';
+import { useAppView } from '../appViewContext';
+import FriendProfile from './FriendProfile';
 
 function AddFriend() {
 
@@ -78,7 +78,7 @@ function AddFriend() {
           </div>
         </div>
 
-        <ContactProfile contactToLookup={currentContactNpub} onLookupDone={handleContactLookupDone} />
+        <FriendProfile contactToLookup={currentContactNpub} onLookupDone={handleContactLookupDone} />
      
         {profileLookupComplete &&
         <div>

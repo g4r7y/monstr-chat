@@ -1,5 +1,5 @@
 import { Accordion } from 'react-bootstrap';
-import { useChatController } from './chatControllerContext'
+import { useChatController } from '../chatControllerContext'
 
 function Settings() {
   const controller = useChatController()

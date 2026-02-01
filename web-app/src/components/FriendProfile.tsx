@@ -1,8 +1,8 @@
 import React from 'react';
 import { Form } from 'react-bootstrap';
 
-import { useChatController } from './chatControllerContext';
 import { isValidNip05Address, isValidNpub } from '@core/validation';
+import { useChatController } from '../chatControllerContext';
 
 
 interface ContactProfileProps {
@@ -10,7 +10,7 @@ interface ContactProfileProps {
   onLookupDone?: (contactNpub: string | null, contactProfile: Record<string, string> | null ) => void;
 }
 
-const ContactProfile : React.FunctionComponent<ContactProfileProps> = ({ contactToLookup, onLookupDone }) => { 
+const FriendProfile : React.FunctionComponent<ContactProfileProps> = ({ contactToLookup, onLookupDone }) => { 
   const chatController = useChatController()
 
   const [contactProfile, setContactProfile] = React.useState<Record<string, string> | null>({});
@@ -116,4 +116,4 @@ const ContactProfile : React.FunctionComponent<ContactProfileProps> = ({ contact
 }
 
 
-export default ContactProfile
+export default FriendProfile

@@ -1,9 +1,9 @@
+import { Container } from 'react-bootstrap';
 import MainMenu from './MainMenu'
 import Conversation from './Conversation.tsx';
 import AddFriend from './AddFriend.tsx';
-import { AppViewProvider } from './AppViewProvider';
-import { useAppView } from './appViewContext';
-import { Container } from 'react-bootstrap';
+import { AppViewProvider } from '../AppViewProvider';
+import { useAppView } from '../appViewContext';
 import ViewFriend from './ViewFriend.tsx';
 import FindFriend from './FindFriend.tsx';
 

@@ -1,7 +1,7 @@
-import { Container, Navbar, Tab, Tabs, type ContainerProps } from 'react-bootstrap';
+import { Container, Navbar, Tab, Tabs } from 'react-bootstrap';
 
-import Inbox from './Inbox';
-import Contacts from './Contacts';
+import Chats from './Chats';
+import Friends from './Friends';
 import Settings from './Settings';
 
 
@@ -13,10 +13,10 @@ const MainMenu  = ({ activeTab } : { activeTab: string }) => {
       </Navbar>
       <Tabs defaultActiveKey={activeTab ?? "chats"}className="mb-3">
         <Tab eventKey="chats" title="Chats">
-          <Inbox />
+          <Chats />
         </Tab>
         <Tab eventKey="friends" title="Friends">
-          <Contacts />
+          <Friends />
         </Tab>
         <Tab eventKey="settings" title="Settings">
           <Settings />

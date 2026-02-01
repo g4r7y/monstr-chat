@@ -1,8 +1,8 @@
 import React from 'react';
 import { Button, Col, Container, Form, ListGroup, Navbar, Row, Card } from 'react-bootstrap';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useChatController } from './chatControllerContext';
-import { useAppView } from './appViewContext';
+import { useChatController } from '../chatControllerContext';
+import { useAppView } from '../appViewContext';
 import { type ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';

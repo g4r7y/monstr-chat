@@ -5,6 +5,7 @@ import { AppViewProvider } from './AppViewProvider';
 import { useAppView } from './appViewContext';
 import { Container } from 'react-bootstrap';
 import ViewFriend from './ViewFriend.tsx';
+import FindFriend from './FindFriend.tsx';
 
 
 const MainAppView = () => {
@@ -17,6 +18,7 @@ const MainAppView = () => {
       {appView.view === 'conversation' && <Conversation />}
       {appView.view === 'add-friend' && <AddFriend />}
       {appView.view === 'view-friend' && <ViewFriend />}
+      {appView.view === 'find-friend' && <FindFriend />}
     </div>
   )
 }

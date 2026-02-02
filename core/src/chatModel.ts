@@ -11,16 +11,12 @@ export type ChatSettings = {
 
 const defaultSettings : ChatSettings = {
   inboxRelays: [
-    'ws://localhost:8008',
     'wss://relay.damus.io',
   ],
   generalRelays: [
-    'ws://localhost:8008',
     'wss://nostr.wine',
-    'wss://nostr.band',
     'wss://relay.snort.social',
     'wss://relay.damus.io',
-    'wss://relay.0xchat.com', 
   ],
   relaysUpdatedAt: null,
   nip05: null,

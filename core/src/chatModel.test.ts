@@ -43,8 +43,8 @@ describe('model', async () => {
     await model.load()
 
     //has some default settings
-    assert(model.settings.generalRelays.length > 1)
-    assert(model.settings.inboxRelays.length > 1)
+    assert(model.settings.generalRelays.length >= 1)
+    assert(model.settings.inboxRelays.length >= 1)
     assert.strictEqual(model.settings.relaysUpdatedAt, null)
     assert.strictEqual(model.settings.nip05, null)
     assert.strictEqual(model.settings.profileName, null)
@@ -258,8 +258,8 @@ describe('model', async () => {
 
     // defualt settings
     let s1 = model.settings
-    assert.equal(s1.inboxRelays.length, 2)
-    assert.equal(s1.generalRelays.length, 6)
+    assert.equal(s1.inboxRelays.length, 1)
+    assert.equal(s1.generalRelays.length, 3)
     
     // settings object is immutable via getter
     s1.someNewThing = 123
@@ -272,8 +272,8 @@ describe('model', async () => {
 
     // model is updated
     let s3 = model.settings
-    assert.equal(s3.inboxRelays.length, 3)
-    assert.equal(s3.inboxRelays[2], 'http://newrelay')
+    assert.equal(s3.inboxRelays.length, 2)
+    assert.equal(s3.inboxRelays[1], 'http://newrelay')
     assert.equal(s3.someNewThing, 123)
 
     // and data is saved

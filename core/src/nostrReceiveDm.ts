@@ -12,7 +12,6 @@ const onReceiveDm = async (pubkey: string, nsec: Uint8Array, event: NostrEvent) 
   try {
     type PlainEventWithId = UnsignedEvent & { id: string }
     const plainEvent : PlainEventWithId = await unwrapEvent(event, nsec)
-    console.log('npub', pubkey, 'received plain event', JSON.stringify(plainEvent))
     let createdDate = new Date(0)
     createdDate.setUTCSeconds(plainEvent.created_at)
 

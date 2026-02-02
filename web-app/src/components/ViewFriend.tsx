@@ -66,7 +66,7 @@ function ViewFriend() {
           <Form.Label className="col-sm-2 col-form-label">Npub:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext truncate"
+              className="truncate"
               type="text"  
               value={currentContactNpub}
               disabled readOnly
@@ -78,7 +78,7 @@ function ViewFriend() {
           <Form.Label className="col-sm-2 col-form-label">NIP-05 address:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext truncate"
+              className="truncate"
               type="text"  
               value={contact.nip05 }
               disabled readOnly
@@ -90,7 +90,7 @@ function ViewFriend() {
           <Form.Label className="col-sm-2 col-form-label">Profile name:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext truncate"
+              className="truncate"
               type="text"  
               value={contact.profileName }
               disabled readOnly
@@ -98,16 +98,26 @@ function ViewFriend() {
           </div>
         </div>}
         {contact?.profileAbout &&
-          <div className="row mb-3">
+        <div className="row mb-3">
           <Form.Label className="col-sm-2 col-form-label">About:</Form.Label>
           <div className="col-sm-10">
             <Form.Control as={TextareaAutosize}
-              className="form-control-plaintext"
-              type="textarea"  
+              type="text"  
               value={contact.profileAbout}
               disabled readOnly
             />
             </div>
+        </div>}
+        {contact?.relays &&
+        <div className="row mb-3">
+          <Form.Label className="col-sm-2 col-form-label">Inbox relays:</Form.Label>
+          <div className="col-sm-10">
+            <Form.Control as={TextareaAutosize}
+              type="text"  
+              value={ contact.relays.join('\n') }
+              disabled readOnly
+            />
+          </div>
         </div>}
         <div>
           <div className="mb-3">

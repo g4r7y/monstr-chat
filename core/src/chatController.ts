@@ -16,6 +16,7 @@ import { ChatModel, type ChatMessage, type ChatContact, type ChatSettings } from
 import { isValidNpub } from './validation.js'
 import createRelayMonitor, { type RelayMonitor } from './relayMonitor.js'
 import type { MessageListener } from './messageListener.js'
+import type { SettingsListener } from './settingsListener.js'
 
 
 export interface ChatController {
@@ -25,7 +26,10 @@ export interface ChatController {
   
   addMessageListener(listener: MessageListener) : void
   removeMessageListener(listener: MessageListener) : void
-  
+
+  addSettingsListener(listener: SettingsListener) : void
+  removeSettingsListener(listener: SettingsListener) : void
+
   getSettings() : ChatSettings
   setSettings(settings: ChatSettings) : Promise<void> 
   getContactByNpub(contactNpub : string): ChatContact | null
@@ -59,7 +63,8 @@ export interface ChatController {
 export class ChatControllerImpl implements ChatController {
   #model: ChatModel
   #keyStore: KeyStore
-  #listeners: MessageListener[]
+  #messageListeners: MessageListener[]
+  #settingsListeners: SettingsListener[]
   #pubKey: string
   #privateKey: Uint8Array
   #pool: SimplePool
@@ -70,7 +75,8 @@ export class ChatControllerImpl implements ChatController {
   constructor(model: ChatModel, keyStore: KeyStore) {
     this.#model = model
     this.#keyStore = keyStore
-    this.#listeners = []
+    this.#messageListeners = []
+    this.#settingsListeners = []
 
     this.#pubKey = ''
     this.#privateKey = new Uint8Array()
@@ -85,11 +91,19 @@ export class ChatControllerImpl implements ChatController {
   }
 
   addMessageListener(listener: MessageListener) {
-    this.#listeners.push(listener)
+    this.#messageListeners.push(listener)
   }
 
   removeMessageListener(listener: MessageListener) {
-    this.#listeners = this.#listeners.filter( l => l !== listener)
+    this.#messageListeners = this.#messageListeners.filter( l => l !== listener)
+  }
+
+  addSettingsListener(listener: SettingsListener) {
+    this.#settingsListeners.push(listener)
+  }
+
+  removeSettingsListener(listener: SettingsListener) {
+    this.#settingsListeners = this.#settingsListeners.filter( l => l !== listener)
   }
 
   async init() : Promise<boolean> {
@@ -270,7 +284,7 @@ export class ChatControllerImpl implements ChatController {
       this.#model.settings.inboxRelays)
   }
 
-    // Subscribe/re-subscribe to receive user metadata for all of our contacts.
+  // Subscribe/re-subscribe to receive user metadata for all of our contacts.
   // Also include our own npub in case user metadata is changed by another client.
   // General (aka discovery) relays are used for the subscription
   async subscribeToUserMetadata() {
@@ -425,35 +439,43 @@ export class ChatControllerImpl implements ChatController {
   async #onNewMessage(msg: ChatMessage) {
     if (!this.#model.getMessage(msg.id)) {
       await this.#model.setMessage(msg.id, msg)
-      this.#listeners.forEach(l => l.notifyMessage(msg))
+      this.#messageListeners.forEach(l => l.notifyMessage(msg))
     }
   }
 
   // Callback for NIP65 relay list subscription.
-  // Called whenever a subscribed npubs's relaylist changes.
+  // Called whenever a subscribed npub's relaylist changes. 
   // Checks if we have a corresponding contact and updates its relaylist.
-  // Only do this if created_at time is newer than last update as we will get duplicate events
-  // from multiple relay.
+  // May also be called for our own relaylist.
+  // Only does update if created_at time is newer than last update as we will get duplicate events
+  // from multiple relays.
   async #onRelaylistMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey)
     const contact = this.#model.getContactByNpub(npub)
-    // update contact if event time is newer (in case there are duplicate events from several relays)
+
+    // if it is a known contact and event time is newer (in case there are duplicate events from several relays)
     if (contact && (!contact.relaysUpdatedAt || contact.relaysUpdatedAt < ev.created_at)) {
       contact.relays = extractReadRelaysFromNip65(ev)
       contact.relaysUpdatedAt = ev.created_at
       console.log(`Updating relaylist for contact: ${contact.name}`) 
       await this.#model.setContact(contact)
     }
-    // update local settings if event time is newer
+
+    // if we have received relay list for self (perhaps changed on another client)
     if (ev.pubkey === this.#pubKey) {
       console.log(`Received relaylist for self`, ev.created_at, this.#model.settings.relaysUpdatedAt) 
+      // update local relay settings if event time is newer
       if (!this.#model.settings.relaysUpdatedAt || this.#model.settings.relaysUpdatedAt < ev.created_at) { 
         const currentSettings = this.#model.settings
         const eventRelays = extractReadRelaysFromNip65(ev)
         if (JSON.stringify(eventRelays)!==JSON.stringify(currentSettings.inboxRelays)) {
           console.log(`Updating relaylist for self`) 
           currentSettings.inboxRelays = eventRelays
+          currentSettings.relaysUpdatedAt = ev.created_at
           await this.#model.setSettings(currentSettings)
+          // resubscribe to the new inbox relays
+          await this.subscribeToIncomingDms()
+          this.#settingsListeners.forEach(l => l.notifySettingsChanged())
         }
       }
     }
@@ -506,6 +528,7 @@ export class ChatControllerImpl implements ChatController {
       }
       console.log(`Updating user profile for self`) 
       await this.#model.setSettings(currentSettings)
+      this.#settingsListeners.forEach(l => l.notifySettingsChanged())
     }
   }
 }

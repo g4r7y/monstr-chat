@@ -27,24 +27,20 @@ function Conversation() {
   const [ conversations, setConversations ] = React.useState(chatController.getConversations()) 
   const [ msgText, setMsgText ] = React.useState('');
     
-  React.useEffect(() => {    
-    const updateConversations = () => {
-      setConversations(chatController.getConversations());
-    };
-
+  React.useEffect(() => {        
     const myListener = new class implements MessageListener {
       notifyMessage() {
         // TODO check if message is part of this conversation
-        updateConversations()
+        setConversations(chatController.getConversations());
       }
     }
-      
+
     chatController.addMessageListener(myListener)
 
     return () => {
       chatController.removeMessageListener(myListener)
     }
-  }, [ conversations, chatController ])
+  }, [])
 
 
 

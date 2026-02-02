@@ -1,0 +1,51 @@
+import type { ChatSettings } from "@core/chatModel";
+import { useChatController } from "../chatControllerContext";
+import React from "react";
+import type { SettingsListener } from "@core/settingsListener";
+import { Col, ListGroup, ListGroupItem, Row } from "react-bootstrap";
+
+function UserProfile() {
+  const controller = useChatController();
+
+  const [ settings, setSettings ] = React.useState<ChatSettings>( controller.getSettings() );
+  
+  React.useEffect(() => {
+    console.log('userprofile render')
+    const listener = new class implements SettingsListener {
+      notifySettingsChanged(): void {
+        setSettings(controller.getSettings())
+      }
+    }
+
+    controller.addSettingsListener(listener)
+
+    return () => {
+      controller.removeSettingsListener(listener);
+    }
+  }, [])
+
+  return (
+    <ListGroup>
+      <ListGroupItem className="list-group-item-secondary text-break">
+        <Row>
+          <Col xs={4}>Your nickname:</Col>
+          <Col xs={8}>{settings?.profileName ?? ''}</Col>
+        </Row>
+      </ListGroupItem>
+      <ListGroupItem className="list-group-item-secondary text-break">
+        <Row>
+          <Col xs={4}>NIP-05 address:</Col>
+          <Col xs={8}>{settings?.nip05 ?? ''}</Col>
+        </Row>
+      </ListGroupItem>
+      <ListGroupItem className="list-group-item-secondary text-break">
+        <Row>
+          <Col xs={4}>About:</Col>
+          <Col xs={8}>{settings?.profileAbout ?? ''}</Col>
+        </Row>
+      </ListGroupItem>
+    </ListGroup>
+  )
+}
+
+export default UserProfile

@@ -17,6 +17,7 @@ const defaultSettings : ChatSettings = {
     'wss://nostr.wine',
     'wss://relay.snort.social',
     'wss://relay.damus.io',
+    'wss://relay.0xchat.com',
   ],
   relaysUpdatedAt: null,
   nip05: null,
@@ -166,4 +167,6 @@ export class ChatModel {
     const msgs = Array.from(this.#messages.values())
     await this.#dataStore.writeMessages(msgs)
   }
+
+  // TODO synch individual messages
 }

@@ -10,7 +10,6 @@ function Relays() {
   const [ settings, setSettings ] = React.useState<ChatSettings>( controller.getSettings() );
   
   React.useEffect(() => {
-    console.log('userprofile render')
     const listener = new class implements SettingsListener {
       notifySettingsChanged(): void {
         setSettings(controller.getSettings())

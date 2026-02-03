@@ -103,15 +103,15 @@ function Conversation() {
                 onChange={(event) => setMsgText(event.target.value)}
               />
             </Col>
-            <Col xs="auto" classname="ms-auto">
+            <Col xs="auto" className="ms-auto">
               <Button variant="primary" onClick={handleSend}>Send</Button>
             </Col>
           </Row>
         </Form>
         <ListGroup>
-          { conversations.get(currentContactNpub)?.map( (msg: ChatMessage) => {
+          { conversations.get(currentContactNpub)?.map( (msg: ChatMessage, i: number) => {
             const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, chatController)
-            return <ListGroup.Item action as="li" className="d-flex justify-content-between align-items-start">
+            return <ListGroup.Item key={i} action as="li" className="d-flex justify-content-between align-items-start">
                 <div className="ms-2 me-auto">
                   <div>{getDisplayableMessageTimestamp(msg)}</div>
                   <div className="fw-bold">{contactLabel}</div>

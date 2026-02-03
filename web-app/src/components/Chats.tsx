@@ -49,10 +49,10 @@ function Chats() {
           {conversations.size === 0 &&
             <ListGroup.Item>You have no messages.</ListGroup.Item>
           }
-          { Array.from(conversations.values()).map( (conv: ChatMessage[]) => {
+          { Array.from(conversations.values()).map( (conv: ChatMessage[], i: number) => {
             const topMsg = conv[0]
             const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender
-            return <ListGroup.Item onClick={() => handleOpenConversation(contactNpub)} action as="li" className="align-items-start">
+            return <ListGroup.Item key={i} onClick={() => handleOpenConversation(contactNpub)} action as="li" className="align-items-start">
                 <div className="ms-2 me-auto">
                   <div className="fw-bold truncate">{getContactLabel(contactNpub, controller)}</div>
                   <div className="truncate">{topMsg.text}</div>

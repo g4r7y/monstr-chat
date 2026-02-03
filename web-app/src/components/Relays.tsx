@@ -28,14 +28,14 @@ function Relays() {
     <div>
       <div className="row mb-2">Inbox relays:</div>
       <ListGroup className="mb-3">
-      {settings.inboxRelays.map(relay => (
-        <ListGroupItem className="list-group-item-secondary text-break">{relay}</ListGroupItem>)
+      {settings.inboxRelays.map((relay, i) => (
+        <ListGroupItem key={i} className="list-group-item-secondary text-break">{relay}</ListGroupItem>)
       )}
       </ListGroup>
       <div className="row mb-2">General relays:</div>
       <ListGroup className="mb-3">
-      {settings.generalRelays.map(relay => (
-        <ListGroupItem className="list-group-item-secondary text-break">{relay}</ListGroupItem>)
+      {settings.generalRelays.map((relay, i) => (
+        <ListGroupItem key={i} className="list-group-item-secondary text-break">{relay}</ListGroupItem>)
       )}
       </ListGroup>
 

@@ -41,8 +41,8 @@ function Friends() {
               <Button onClick={handleFindFriend} className="mb-3" variant="primary">Find Friend</Button>
 
               <ListGroup>
-                { contacts.map( (c: ChatContact) => {
-                  return <ListGroup.Item action as="li" className="d-flex align-items-start">
+                { contacts.map( (c: ChatContact, i: number) => {
+                  return <ListGroup.Item key={i} action as="li" className="d-flex align-items-start">
                       <div className="ms-2 me-auto">
                         <div className="fw-bold">{c.name}</div>
                       </div>

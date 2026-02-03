@@ -7,19 +7,19 @@ import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
+import { Card } from 'react-bootstrap';
 
 function getContactLabel(npub: string, controller: ChatController): string {
   const contact = controller.getContactByNpub(npub)
   return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`
 }
 
-// The message inbox view component
-function Inbox() {
+// The main inbox for all chats
+function Chats() {
 
   const controller = useChatController()
-  const [ conversations,setConversations ] = React.useState(controller.getConversations()) 
+  const [ conversations, setConversations ] = React.useState(controller.getConversations()) 
 
-  
   React.useEffect(() => {
     const updateConversations = () => {
       setConversations(controller.getConversations());
@@ -30,13 +30,12 @@ function Inbox() {
         updateConversations()
       }
     }
-      
     controller.addMessageListener(myListener)
 
     return () => {
       controller.removeMessageListener(myListener)
     }
-  }, [ conversations, controller ])//todo - need these deps?
+  }, [])
 
 
   const { switchView } = useAppView()
@@ -44,11 +43,12 @@ function Inbox() {
     switchView('conversation', contactNpub);
   };
 
-
-
   return (
       <Container>
         <ListGroup>
+          {conversations.size === 0 &&
+            <ListGroup.Item>You have no messages.</ListGroup.Item>
+          }
           { Array.from(conversations.values()).map( (conv: ChatMessage[]) => {
             const topMsg = conv[0]
             const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender
@@ -64,5 +64,5 @@ function Inbox() {
   )
 }
 
-export default Inbox
+export default Chats
 

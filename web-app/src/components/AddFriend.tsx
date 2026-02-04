@@ -70,7 +70,7 @@ function AddFriend() {
           <Form.Label className="col-sm-2 col-form-label">Npub:</Form.Label>
           <div className="col-sm-10">
             <Form.Control 
-              className="form-control-plaintext truncate"
+              className="truncate"
               type="text"  
               value={currentContactNpub}
               disabled readOnly

@@ -1,7 +1,6 @@
 import React from 'react';
-import { Button, Form, Navbar } from 'react-bootstrap';
+import { Button, Col, Form, ListGroup, ListGroupItem, Navbar, Row } from 'react-bootstrap';
 import Container from 'react-bootstrap/Container';
-import TextareaAutosize from 'react-textarea-autosize';
 
 import type { ChatContact } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
@@ -11,46 +10,46 @@ import { useAppView } from '../appViewContext';
 
 function ViewFriend() {
 
-  const chatController = useChatController()
-  
-  const { switchView, currentContactNpub } = useAppView()
+  const chatController = useChatController();
+
+  const { switchView, currentContactNpub } = useAppView();
 
   const handleBack = () => {
-    switchView('friends')
+    switchView('friends');
   }
 
   const [contact, setContact] = React.useState<ChatContact | null>(null);
   const [nickName, setNickName] = React.useState('');
   const [inputError, setInputError] = React.useState('');
-  
+
   React.useEffect(() => {
     const c = chatController.getContactByNpub(currentContactNpub);
     if (c) {
-      setContact(c)
-      setNickName(c.name)
+      setContact(c);
+      setNickName(c.name);
     }
   }, []);
-  
+
   const handleSave = async () => {
     if (nickName.length === 0) {
-      setInputError('Name cannot be empty')
+      setInputError('Name cannot be empty');
     } else if (nickName !== contact?.name && chatController.getContactByName(nickName) !== null) {
-      setInputError('You already have a friend with the same name')
+      setInputError('You already have a friend with the same name');
     }
     else {
       if (contact) {
         const updatedContact = {
           ...contact,
           name: nickName,
-        }
+        };
         await chatController.setContact(updatedContact);
       }
-      handleBack()
+      handleBack();
     }
   }
-  
+
   return (
-      <Container>
+    <Container>
       <Navbar bg="light" >
         <div className="d-flex align-items-center">
           <Button className="me-3" onClick={handleBack} variant="outline-secondary">
@@ -60,80 +59,68 @@ function ViewFriend() {
         </div>
       </Navbar>
 
-      <Form>
+      <ListGroup className="mt-3 mb-3">
 
-        <div className="row mt-3 mb-3">
-          <Form.Label className="col-sm-2 col-form-label">Npub:</Form.Label>
-          <div className="col-sm-10">
-            <Form.Control 
-              className="truncate"
-              type="text"  
-              value={currentContactNpub}
-              disabled readOnly
-            />
-          </div>
-        </div>
+        <ListGroupItem className="list-group-item-secondary text-break">
+          <Row>
+            <Col xs={4}>Npub:</Col>
+            <Col xs={8}>{currentContactNpub}</Col>
+          </Row>
+        </ListGroupItem>
+
         {contact?.nip05 &&
-        <div className="row mb-3">
-          <Form.Label className="col-sm-2 col-form-label">NIP-05 address:</Form.Label>
-          <div className="col-sm-10">
-            <Form.Control 
-              className="truncate"
-              type="text"  
-              value={contact.nip05 }
-              disabled readOnly
-            />
-          </div>
-        </div>}
+          <ListGroupItem className="list-group-item-secondary text-break">
+            <Row>
+              <Col xs={4}>NIP-05 address:</Col>
+              <Col xs={8} className="truncate">{contact.nip05}</Col>
+            </Row>
+          </ListGroupItem>
+        }
+
         {contact?.profileName &&
-        <div className="row mb-3">
-          <Form.Label className="col-sm-2 col-form-label">Profile name:</Form.Label>
-          <div className="col-sm-10">
-            <Form.Control 
-              className="truncate"
-              type="text"  
-              value={contact.profileName }
-              disabled readOnly
-            />
-          </div>
-        </div>}
+          <ListGroupItem className="list-group-item-secondary text-break">
+            <Row>
+              <Col xs={4}>Nickname:</Col>
+              <Col xs={8} className="truncate">{contact.profileName}</Col>
+            </Row>
+          </ListGroupItem>
+        }
+
+
         {contact?.profileAbout &&
-        <div className="row mb-3">
-          <Form.Label className="col-sm-2 col-form-label">About:</Form.Label>
-          <div className="col-sm-10">
-            <Form.Control as={TextareaAutosize}
-              type="text"  
-              value={contact.profileAbout}
-              disabled readOnly
-            />
-            </div>
-        </div>}
-        {contact?.relays &&
-        <div className="row mb-3">
-          <Form.Label className="col-sm-2 col-form-label">Inbox relays:</Form.Label>
-          <div className="col-sm-10">
-            <Form.Control as={TextareaAutosize}
-              type="text"  
-              value={ contact.relays.join('\n') }
-              disabled readOnly
-            />
-          </div>
-        </div>}
-        <div>
-          <div className="mb-3">
-            <Form.Label>Name:</Form.Label>
-            <Form.Control 
-              type="text" 
-              value={nickName}
-              onChange={(event) => { setNickName(event.target.value); setInputError('')}}
-              isInvalid = {!!inputError}
-            />
-            <Form.Control.Feedback type="invalid">
-              {inputError}
-            </Form.Control.Feedback>
-          </div>
-          <Button className="mb-3" variant="primary" onClick={handleSave}>Update</Button>
+          <ListGroupItem className="list-group-item-secondary text-break">
+            <Row>
+              <Col xs={4}>About:</Col>
+              <Col xs={8}>{contact.profileAbout}</Col>
+            </Row>
+          </ListGroupItem>
+        }
+
+        {contact?.relays && contact.relays.length > 0 &&
+          <ListGroupItem className="list-group-item-secondary text-break">
+            <Row>
+              <Col xs={4}>Inbox relays:</Col>
+              <Col xs={8} className="truncate">{contact.relays.map(r => <div>{r}<br/></div>)}</Col>
+            </Row>
+          </ListGroupItem>
+        }
+      </ListGroup>
+
+      <Form>
+        <div className="mb-3">
+          <Form.Label>Name:</Form.Label>
+          <Form.Control
+            type="text"
+            value={nickName}
+            onChange={(event) => { setNickName(event.target.value); setInputError('') }}
+            isInvalid={!!inputError}
+          />
+          <Form.Control.Feedback type="invalid">
+            {inputError}
+          </Form.Control.Feedback>
         </div>
+        <Button className="mb-3" variant="primary" onClick={handleSave}>Update</Button>
+
       </Form>
     </Container>
 

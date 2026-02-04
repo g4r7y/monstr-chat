@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Col, Form, ListGroup, ListGroupItem, Navbar, Row } from 'react-bootstrap';
+import { Button, Col, Form, ListGroup, ListGroupItem, Modal, ModalHeader, Navbar, Row } from 'react-bootstrap';
 import Container from 'react-bootstrap/Container';
 
 import type { ChatContact } from '@core/chatModel';
@@ -19,33 +19,41 @@ function ViewFriend() {
   }
 
   const [contact, setContact] = React.useState<ChatContact | null>(null);
-  const [nickName, setNickName] = React.useState('');
+  const [friendName, setFriendName] = React.useState('');
   const [inputError, setInputError] = React.useState('');
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = React.useState(false);
 
   React.useEffect(() => {
     const c = chatController.getContactByNpub(currentContactNpub);
     if (c) {
       setContact(c);
-      setNickName(c.name);
+      setFriendName(c.name);
     }
   }, []);
 
   const handleSave = async () => {
-    if (nickName.length === 0) {
+    if (friendName.length === 0) {
       setInputError('Name cannot be empty');
-    } else if (nickName !== contact?.name && chatController.getContactByName(nickName) !== null) {
+    } else if (friendName !== contact?.name && chatController.getContactByName(friendName) !== null) {
       setInputError('You already have a friend with the same name');
     }
     else {
       if (contact) {
         const updatedContact = {
           ...contact,
-          name: nickName,
+          name: friendName,
         };
         await chatController.setContact(updatedContact);
+        setContact(updatedContact)
       }
-      handleBack();
+      setIsEditing(false)
     }
+  }
+
+  const handleDelete = async () => {
+    await chatController.deleteContact(currentContactNpub)
+    handleBack()
   }
 
   return (
@@ -100,28 +108,52 @@ function ViewFriend() {
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
               <Col xs={4}>Inbox relays:</Col>
-              <Col xs={8} className="truncate">{contact.relays.map(r => <div>{r}<br/></div>)}</Col>
+              <Col xs={8} className="truncate">{contact.relays.map(r => <div>{r}<br /></div>)}</Col>
             </Row>
           </ListGroupItem>
         }
       </ListGroup>
 
-      <Form>
-        <div className="mb-3">
-          <Form.Label>Name:</Form.Label>
-          <Form.Control
-            type="text"
-            value={nickName}
-            onChange={(event) => { setNickName(event.target.value); setInputError('') }}
-            isInvalid={!!inputError}
-          />
-          <Form.Control.Feedback type="invalid">
-            {inputError}
-          </Form.Control.Feedback>
-        </div>
-        <Button className="mb-3" variant="primary" onClick={handleSave}>Update</Button>
+      {isEditing &&
+        <Form>
+          <div className="mb-3">
+            <Form.Label>Name:</Form.Label>
+            <Form.Control
+              type="text"
+              value={friendName}
+              onChange={(event) => { setFriendName(event.target.value); setInputError('') }}
+              isInvalid={!!inputError}
+            />
+            <Form.Control.Feedback type="invalid">
+              {inputError}
+            </Form.Control.Feedback>
+          </div>
+        </Form>
+      }
+      
+      {isEditing ?
+        <>
+          <Button className="mt-3 me-3" variant="primary" onClick={handleSave}>Save</Button>
+          <Button className="mt-3 me-3" variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+        </>
+        :
+        <>
+          <Button className="mt-3 me-3" variant="primary" onClick={() => setIsEditing(true)}>Edit</Button>
+          <Button className="mt-3" variant="warning" onClick={() => setShowDeleteConfirmation(true)}>Delete</Button>
+        </>
+      }
 
-      </Form>
+      <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
+        <ModalHeader>
+          <Modal.Title>Delete friend</Modal.Title>
+        </ModalHeader>
+        <Modal.Body>Are you sure you want to delete <b>{friendName}</b> from your friends?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>Cancel</Button>
+          <Button variant="warning" onClick={handleDelete}>Delete</Button>
+        </Modal.Footer>
+      </Modal>
+
     </Container>
 
   )

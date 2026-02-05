@@ -78,11 +78,12 @@ function AddFriend() {
           </div>
         </div>
 
-        <FriendProfile contactToLookup={currentContactNpub} onLookupDone={handleContactLookupDone} />
-     
+        <div className="mb-4">
+          <FriendProfile contactToLookup={currentContactNpub} onLookupDone={handleContactLookupDone} />
+        </div>
         {profileLookupComplete &&
         <div>
-          <div className="mb-3">
+          <div className="mb-4">
             <Form.Label>Give your friend a name:</Form.Label>
             <Form.Control 
               type="text" 

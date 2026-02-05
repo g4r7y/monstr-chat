@@ -110,7 +110,7 @@ function FindFriend() {
         <div className="mt-3 mb-3 d-inline-block">
           You can search for a user by their verified Nostr address.<br />
           This is sometimes called a NIP-05 address and looks something like: user@domain<br />
-          Or you can enter their npub key if you have it.
+          Or you can enter their npub key.
         </div>
 
         <div className="row mb-3">
@@ -135,7 +135,7 @@ function FindFriend() {
 
       </Form>
 
-      <div className="mt-3">
+      <div className="mb-4">
         <FriendProfile contactToLookup={contactToLookup} onLookupDone={handleContactLookupDone} />
       </div>
 
@@ -143,7 +143,7 @@ function FindFriend() {
         <Form onSubmit={handleSubmitSave}>
           {!existingContact &&
             <div>
-              <div className="mb-3">
+              <div className="mb-4">
                 <Form.Label>Give your friend a name:</Form.Label>
                 <Form.Control
                   type="text"
@@ -155,11 +155,12 @@ function FindFriend() {
                   {contactNameInputError}
                 </Form.Control.Feedback>
               </div>
-              <Button className="mb-3" variant="primary" disabled={saveDisabled()} onClick={handleSave}>Save</Button>
+              <Button className="mb-3 me-3" variant="primary" disabled={saveDisabled()} onClick={handleSave}>Save</Button>
+              <Button className="mb-3 me-3" variant="secondary" onClick={() => { setContactToLookup(''); setProfileLookupDone(false); }}>Cancel</Button>
             </div>}
 
           {existingContact &&
-            <div className="mt-3 mb-3 row">
+            <div className="mb-4 row">
               <Form.Label className="col-sm-2 col-form-label">Friend name:</Form.Label>
               <div className="col-sm-10">
                 <Form.Control
@@ -171,7 +172,7 @@ function FindFriend() {
             </div>}
 
           {profileLookupDone && existingContact &&
-            <div className="mt-3 mb-3"><b>This user is already in your friends list</b></div>}
+            <div className="mb-4"><b>This user is already in your friends list</b></div>}
 
         </Form>
       }

@@ -3,6 +3,7 @@ import { Col, ListGroup, ListGroupItem, Row } from 'react-bootstrap';
 
 import { isValidNip05Address, isValidNpub } from '@core/validation';
 import { useChatController } from '../chatControllerContext';
+import Nip05Address from './Nip05Address';
 
 
 interface ContactProfileProps {
@@ -66,37 +67,38 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
 
           <ListGroup className="mb-3">
 
-            {findingNpub && contactProfile?.nip05 &&
-              <ListGroupItem className="list-group-item-secondary text-break">
-                <Row>
-                  <Col xs={4}>NIP-05 address:</Col>
-                  <Col xs={8} className="truncate">{contactProfile.nip05}</Col>
-                </Row>
-              </ListGroupItem>}
-
-
-            {findingNip05 && contactNpub &&
-              <ListGroupItem className="list-group-item-secondary text-break">
-                <Row>
-                  <Col xs={4}>Npub:</Col>
-                  <Col xs={8} className="truncate">{contactNpub}</Col>
-                </Row>
-              </ListGroupItem>}
-
-
             {contactProfile?.name &&
               <ListGroupItem className="list-group-item-secondary text-break">
                 <Row>
                   <Col xs={4}>Nickname:</Col>
-                  <Col xs={8}>{contactProfile.name}</Col>
+                  <Col xs={8} className="truncate">{contactProfile.name}</Col>
                 </Row>
               </ListGroupItem>}
 
+
+            {contactProfile?.nip05 &&
+              <ListGroupItem className="list-group-item-secondary text-break">
+                <Row>
+                  <Col xs={4}>NIP-05 address:</Col>
+                  <Col xs={8} className="truncate">
+                    <Nip05Address npub={contactNpub} nip05={contactProfile.nip05} />
+                  </Col>
+                </Row>
+              </ListGroupItem>}
+
+            {contactNpub && (findingNip05 || contactProfile) &&
+              <ListGroupItem className="list-group-item-secondary text-break">
+                <Row>
+                  <Col xs={4}>Npub:</Col>
+                  <Col xs={8}>{contactNpub}</Col>
+                </Row>
+              </ListGroupItem>}
+              
             {contactProfile?.about &&
               <ListGroupItem className="list-group-item-secondary text-break">
                 <Row>
                   <Col xs={4}>About:</Col>
-                  <Col xs={8} className="truncate">{contactProfile.about}</Col>
+                  <Col xs={8}>{contactProfile.about}</Col>
                 </Row>
               </ListGroupItem>}
 

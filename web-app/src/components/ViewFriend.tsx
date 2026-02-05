@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container';
 import type { ChatContact } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
+import Nip05Address from './Nip05Address';
 
 
 
@@ -80,7 +81,9 @@ function ViewFriend() {
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
               <Col xs={4}>NIP-05 address:</Col>
-              <Col xs={8} className="truncate">{contact.nip05}</Col>
+              <Col xs={8} className="truncate">
+                <Nip05Address npub={currentContactNpub} nip05={contact.nip05} />
+              </Col>
             </Row>
           </ListGroupItem>
         }

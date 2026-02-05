@@ -1,22 +1,22 @@
-import type { ChatSettings } from "@core/chatModel";
-import { useChatController } from "../chatControllerContext";
 import React from "react";
-import type { SettingsListener } from "@core/settingsListener";
 import { Col, ListGroup, ListGroupItem, Row } from "react-bootstrap";
+import type { ChatSettings } from "@core/chatModel";
+import type { SettingsListener } from "@core/settingsListener";
+import { useChatController } from "../chatControllerContext";
+import Nip05Address from "./Nip05Address";
 
 function UserProfile() {
   const controller = useChatController();
 
   const [ settings, setSettings ] = React.useState<ChatSettings>( controller.getSettings() );
   
-  React.useEffect(() => {
+  React.useEffect(() => { 
     const listener = new class implements SettingsListener {
       notifySettingsChanged(): void {
         setSettings(controller.getSettings())
       }
     }
-
-    controller.addSettingsListener(listener)
+    controller.addSettingsListener(listener);
 
     return () => {
       controller.removeSettingsListener(listener);
@@ -34,7 +34,7 @@ function UserProfile() {
       <ListGroupItem className="list-group-item-secondary text-break">
         <Row>
           <Col xs={4}>NIP-05 address:</Col>
-          <Col xs={8}>{settings?.nip05 ?? ''}</Col>
+          <Col xs={8}><Nip05Address npub={controller.getNpub()} nip05={settings.nip05} /></Col>
         </Row>
       </ListGroupItem>
       <ListGroupItem className="list-group-item-secondary text-break">

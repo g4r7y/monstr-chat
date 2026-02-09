@@ -1,17 +1,45 @@
+import React from 'react';
 import { Container } from 'react-bootstrap';
-import MainMenu from './MainMenu'
-import Conversation from './Conversation.tsx';
-import AddFriend from './AddFriend.tsx';
+
 import { AppViewProvider } from '../AppViewProvider';
+import { useChatController } from '../chatControllerContext.ts';
 import { useAppView } from '../appViewContext';
+import Start from './Start.tsx';
+import Welcome from './Welcome.tsx'
+import MainMenu from './MainMenu'
+import Conversation from './Conversation';
+import AddFriend from './AddFriend';
 import ViewFriend from './ViewFriend.tsx';
 import FindFriend from './FindFriend.tsx';
 
 
 const MainAppView = () => {
-  const appView = useAppView()
+  const appView = useAppView();
+  const controller = useChatController();
+  const [ initDone, setInitDone ] = React.useState(false)
+
+
+  const initialise = async () => {
+    if (!initDone) {
+      setInitDone(true);
+      const initOk = await controller.init();
+      if (initOk) {
+        console.log('init ok')
+        await controller.connect()
+        appView.switchView('main')
+      } else {
+        // no key, first laucnh
+        appView.switchView('welcome')
+      }
+    }
+  }
+
+  initialise()
+
   return (
     <div>
+      {appView.view === 'start' && <Start />}
+      {appView.view === 'welcome' && <Welcome />}
       {appView.view === 'main' && <MainMenu activeTab='chats'/>}
       {appView.view === 'friends' && <MainMenu activeTab='friends'/>}
       {appView.view === 'settings' && <MainMenu activeTab='settings'/>}
@@ -25,6 +53,9 @@ const MainAppView = () => {
 
 
 function App() {
+
+
+
   return (
     
     <Container>

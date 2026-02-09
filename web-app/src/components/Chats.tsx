@@ -7,7 +7,6 @@ import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
-import { Card } from 'react-bootstrap';
 
 function getContactLabel(npub: string, controller: ChatController): string {
   const contact = controller.getContactByNpub(npub)

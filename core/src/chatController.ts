@@ -107,9 +107,6 @@ export class ChatControllerImpl implements ChatController {
   }
 
   async init() : Promise<boolean> {
-    // load settings, contacts, messages
-    await this.#model.load()
-
     // try and read key from store
     let nsecStr = await this.#keyStore.readKey()
     if (nsecStr) {
@@ -119,12 +116,14 @@ export class ChatControllerImpl implements ChatController {
         this.#pubKey = getPublicKey(this.#privateKey)
       }
     }
-
+    
     if (this.#privateKey.length == 0) {
       // no existing key, go to welcome state
       return false
     }
-
+    
+    // load settings, contacts, messages
+    await this.#model.load()
     return true
   }
     

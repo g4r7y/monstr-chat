@@ -259,7 +259,7 @@ describe('model', async () => {
     // defualt settings
     let s1 = model.settings
     assert.equal(s1.inboxRelays.length, 1)
-    assert.equal(s1.generalRelays.length, 3)
+    assert.equal(s1.generalRelays.length, 4)
     
     // settings object is immutable via getter
     s1.someNewThing = 123

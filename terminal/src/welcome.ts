@@ -30,7 +30,7 @@ async function welcome(context: ViewContext) {
     terminal('You now have a public Nostr key (npub) and a secret Nostr key (nsec).\n' + 
       'Your keys are saved in the Monstr Chat settings.\n' +
       'It is important to keep your nsec key safe and never share it with anybody else.\n' +
-      'Your npub key can be shared with others so that they can send messages to you and read your messages.\n\n')
+      'You should share your npub key with your friends so that they can send messages to you and read your messages.\n\n')
     terminal('Your public Nostr key is: \n')
     terminal.yellow(`${context.chatController.getNpub()}\n\n`)
     await pressToContinue('Continue?')
@@ -43,7 +43,7 @@ async function welcome(context: ViewContext) {
       'You will need this in future if you ever need to restore your Nostr key.\n' +
       'Keep this in a safe place and do not share it with anybody.\n' + 
       'After you press ok, you will never be able to see it again.\n\n' +
-      ' Your memorable recovery phrase is:\n')
+      'Your memorable recovery phrase is:\n')
     terminal.yellow(`${mnemonic}\n\n`)
 
     await pressToContinue('Ready to start?')
@@ -128,7 +128,7 @@ async function welcome(context: ViewContext) {
             await context.chatController.resetKeyFromSeedWords(words)
             terminal.yellow('\nYour key has been restored!\n\n')
             await pressToContinue('Ready to start?')
-          } catch (error) {
+          } catch {
             editing = await showYesNoPrompt('\nFailed to restore your key from recovery phrase. Start again?')
             words = ''
             wordNum = 1

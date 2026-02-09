@@ -86,13 +86,13 @@ function FindFriend() {
   const findDisabled = () => profileLookupDone || findNpubOrNip05.length === 0;
   const handleSubmitFind = (event: React.FormEvent) => {
     event.preventDefault();
-    findDisabled() || handleFind();
+    if (!findDisabled()) handleFind();
   };
 
   const saveDisabled = () => contactName.length === 0;
   const handleSubmitSave = (event: React.FormEvent) => {
     event.preventDefault();
-    saveDisabled() || handleSave();
+    if (!saveDisabled()) handleSave();
   };
 
   return (

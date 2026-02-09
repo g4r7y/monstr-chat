@@ -23,7 +23,7 @@ class ChatDataStore implements DataStore, KeyStore {
       const settings: ChatSettings = JSON.parse(settingsStr);
       const contacts: ChatContact[] = JSON.parse(contactsStr);
       return { settings, contacts };
-    } catch (err) {
+    } catch {
       console.error('Corrupt app data in IndexedDB');
       return null
     }
@@ -43,7 +43,7 @@ class ChatDataStore implements DataStore, KeyStore {
     );
     try {
       return msgStrs.map(str => JSON.parse(str));
-    } catch (err) {
+    } catch {
       console.error('Corrupt message data in IndexedDB');
       return null;
     }

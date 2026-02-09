@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-
+  base: '/monstr-chat/',
   resolve: {
     alias: [
       { find: '@core', replacement: path.resolve(__dirname, '../core/src') }

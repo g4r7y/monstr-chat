@@ -21,6 +21,7 @@ Instructions below assume you are in root of repo.
 ### Build:
 
 ```npm run install```
+
 ```npm run build --workspace=terminal```
 
 ### Run:
@@ -32,6 +33,7 @@ Instructions below assume you are in root of repo.
 ### Build:
 
 ```npm run install```
+
 ```npm run build --workspace=web-app```
 
 ### Run dev server:

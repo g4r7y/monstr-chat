@@ -99,9 +99,9 @@ const Welcome = () => {
               Your keys are saved in the Monstr Chat settings.<br />
               It is important to keep your nsec key safe and never share it with anybody else.<br />
               You should share your npub key with your friends so that they can send messages to you and read your messages.<br /><br />
-              Your public Nostr key is:<br /><br />
-              <div className="text-primary">{controller.getNpub()}</div>
+              Your public Nostr key is:<br />
             </Card.Text>
+            <div className="text-primary">{controller.getNpub()}</div>
             <Button className="mt-3 me-3" onClick={() => setWelcomeState('showMnemonic')}>Continue</Button>
           </Card.Body>
         </Card>
@@ -121,9 +121,9 @@ const Welcome = () => {
               You will need this in future if you ever need to restore your Nostr key.<br />
               Keep this in a safe place and do not share it with anybody.<br /> 
               When you leave this page, you will never be able to see it again.<br /><br />
-              Your memorable recovery phrase is:<br /><br/>
-              <div className="text-primary">{mnemonic}</div>
+              Your memorable recovery phrase is:<br />
             </Card.Text>
+            <div className="text-primary">{mnemonic}</div>
             {welcomeState === 'showMnemonic' &&
             <Button className="mt-3 me-3" onClick={() => setWelcomeState('showMnemonicConfirm')}>Continue</Button> }
             {welcomeState === 'showMnemonicConfirm' &&
@@ -141,7 +141,7 @@ const Welcome = () => {
         <h3 className="mt-3 text-primary">Welcome!</h3>
         <Card className="mt-3">
           <Card.Header>
-            Ready to start using using Monstr Chat
+            Ready to start
           </Card.Header>
           <Card.Body>
             <Card.Text>

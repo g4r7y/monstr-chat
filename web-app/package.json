@@ -1,7 +1,5 @@
 {
-  "name": "web-app",
-  "private": true,
-  "version": "0.0.0",
+  "name": "monstr-chat-web",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +12,7 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "7.1.0",
     "bootstrap": "5.3.8",
+    "monstr-chat-core": "*",
     "react": "19.2.0",
     "react-bootstrap": "2.10.10",
     "react-dom": "19.2.0",

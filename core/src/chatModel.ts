@@ -1,12 +1,16 @@
 import type { DataStore } from './dataStore.js'
 
+export type UserProfile = {
+  name: string | null, //nickname
+  about: string | null,
+  nip05: string | null
+}
+
 export type ChatSettings = {
   inboxRelays: string[],
-  generalRelays: string[]
-  relaysUpdatedAt: number | null
-  nip05: string | null
-  profileName: string | null
-  profileAbout: string | null
+  generalRelays: string[],
+  relaysUpdatedAt: number | null,
+  profile: UserProfile | null
 }
 
 const defaultSettings : ChatSettings = {
@@ -20,18 +24,13 @@ const defaultSettings : ChatSettings = {
     'wss://relay.0xchat.com',
   ],
   relaysUpdatedAt: null,
-  nip05: null,
-  profileName: null,
-  profileAbout: null,
-
+  profile: null
 }
 
 export type ChatContact = {
   name: string, //local name
   npub: string,
-  nip05: string | null,
-  profileName: string | null
-  profileAbout: string | null
+  profile: UserProfile | null,
   relays: string[],
   relaysUpdatedAt: number | null
 }

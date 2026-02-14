@@ -1,5 +1,5 @@
 import tk from 'terminal-kit'
-import type { ChatContact } from '@core/chatModel.js'
+import type { ChatContact, UserProfile } from '@core/chatModel.js'
 import { isValidNpub, isValidNip05Address } from '@core/validation.js'
 import { showPrompt, showYesNoPrompt, showMenu } from './terminalUi.js'
 import type { ViewContext } from './viewRouter.js'
@@ -30,18 +30,18 @@ async function viewContact(context: ViewContext) {
   terminal.white(`${currentContact.name}\n`)
   terminal.yellow('Npub:             ')
   terminal.white(`${currentContact.npub}\n\n`)
-  if (currentContact.nip05) {
+  if (currentContact.profile?.nip05) {
     terminal.yellow('Verified address: ')
-    terminal.white(currentContact.nip05)
+    terminal.white(currentContact.profile.nip05)
     terminal.brightBlue(' ✔\n')
   }
-  if (currentContact.profileName) {
+  if (currentContact.profile?.name) {
     terminal.yellow('Nickname:         ')
-    terminal.white(`${currentContact.profileName}\n`)
+    terminal.white(`${currentContact.profile.name}\n`)
   }
-  if (currentContact.profileAbout) {
+  if (currentContact.profile?.about) {
     terminal.yellow('About:            ')
-    terminal.white(`${currentContact.profileAbout}\n`)
+    terminal.white(`${currentContact.profile.about}\n`)
   }
   terminal.yellow('Inbox relays:     ')
   terminal.white(`${currentContact.relays?.join('\n                  ') ?? 'unknown'}\n`)
@@ -61,7 +61,7 @@ async function viewContact(context: ViewContext) {
 
 async function addContact(context: ViewContext) {
   let npub = context.viewParams.contactNpub ?? ''
-  let contactProfile : Record<string, string> = {}
+  let contactProfile: UserProfile | null = null
 
   let state = npub ? 'addExisting' : 'find'
   while (state) {
@@ -70,7 +70,7 @@ async function addContact(context: ViewContext) {
 
     if (state == 'addExisting') {
         // look up user metadata event from relays
-        contactProfile = await context.chatController.getUserProfile(npub) ?? contactProfile
+        contactProfile = await context.chatController.getUserProfile(npub)
         state = 'found'
     }
     if (state == 'find') {
@@ -88,7 +88,7 @@ async function addContact(context: ViewContext) {
       if (isValidNpub(response)) {
         npub = response
         // look up user metadata event from relays
-        contactProfile = await context.chatController.getUserProfile(npub) ?? contactProfile
+        contactProfile = await context.chatController.getUserProfile(npub)
         state = 'found'
       }
       // if entered user@domain
@@ -104,8 +104,15 @@ async function addContact(context: ViewContext) {
           terminal('Found:\n\n')
           npub = foundNpub
           // look up user metadata from relays
-          contactProfile = await context.chatController.getUserProfile(npub) ?? contactProfile
-          contactProfile.nip05 = contactProfile.nip05 ?? nip05
+          contactProfile = await context.chatController.getUserProfile(npub)
+          // if user profile not found or it is missing nip05
+          if (!contactProfile?.nip05) {
+            // create/overwrite contactProfile with the user-inputted nip05
+            contactProfile = {
+              ...(contactProfile ?? { name: null, about: null, nip05: null, }),
+              nip05
+            }
+          }
           state = 'found'
         }
       } else {
@@ -123,39 +130,24 @@ async function addContact(context: ViewContext) {
         terminal('Contact name:  ')
         terminal.yellow(`${contact.name}\n`)
       }
-      if (contactProfile.nip05) {
+      if (contactProfile?.nip05) {
         terminal('Nostr address: ') 
         terminal.yellow(`${contactProfile.nip05}`)
         terminal.brightBlue(' ✔\n')
       }
-      if (contactProfile.name) {
+      if (contactProfile?.name) {
         terminal('Nickname:      ') 
         terminal.yellow(`${contactProfile.name}\n`)
       }
-      if (contactProfile.about) {
+      if (contactProfile?.about) {
         terminal('About:         ') 
         terminal.yellow(`${contactProfile.about}\n`)
       }
-      
       terminal('Npub: ') 
       terminal.yellow(`${npub}\n\n`)
       
       if (contact) {
         terminal('User is already in your contacts.\n\n') 
-
-        // update it anyway
-        const updatedContact: ChatContact = {
-          ...contact,
-          nip05: contactProfile.nip05 ?? contact.nip05,
-          profileAbout: contactProfile.about ?? contact.profileAbout,
-          profileName: contactProfile.name ?? contact.profileName,
-        };
-        const hasChanged = updatedContact.nip05 !== contact.nip05 ||
-          updatedContact.profileAbout !== contact.profileAbout ||
-          updatedContact.profileName !== contact.profileName;
-        if (hasChanged) {
-          await context.chatController.setContact(updatedContact)
-        }
         const resp = await showYesNoPrompt(`Search again?`)
         if (!resp) {
           break
@@ -170,7 +162,7 @@ async function addContact(context: ViewContext) {
         break
       }
 
-      let contactName = await showPrompt('\nEnter a name for this contact: ', contactProfile.name)
+      let contactName = await showPrompt('\nEnter a name for this contact: ', contactProfile?.name ?? '')
       if (contactName === null) {
         break;
       }
@@ -189,12 +181,12 @@ async function addContact(context: ViewContext) {
         const contact: ChatContact = { 
           name: contactName, 
           npub, 
-          nip05: contactProfile.nip05,
-          profileName: contactProfile.name, 
-          profileAbout: contactProfile.about,
-          relays: [], relaysUpdatedAt: null }
+          profile: contactProfile,
+          relays: [], 
+          relaysUpdatedAt: null 
+        }
         await context.chatController.setContact(contact)
-        
+          
         // new contact, so update subscription so we can get contact's relaylist
         await context.chatController.subscribeToRelayMetadata()
         await context.chatController.subscribeToUserMetadata()

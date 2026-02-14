@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Form, Navbar, Container } from 'react-bootstrap';
 
-import type { ChatContact } from '@core/chatModel';
+import type { ChatContact, UserProfile } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
 import FriendProfile from './FriendProfile';
@@ -17,13 +17,13 @@ function AddFriend() {
   }
  
   
-  const [contactProfile, setContactProfile] = React.useState<Record<string, string> | null>(null);
+  const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);
   const [profileLookupComplete, setProfileLookupDone] = React.useState<boolean>(false)
   const [contactName, setContactName] = React.useState('');
   const [contactNameInputError, setContactNameInputError] = React.useState('');
 
   
-  const handleContactLookupDone = (_: string | null, contactProfile: Record<string, string> | null) => {
+  const handleContactLookupDone = (_: string | null, contactProfile: UserProfile | null) => {
     setProfileLookupDone(true)
     setContactProfile(contactProfile)
     setContactName(contactProfile?.name ?? '')
@@ -38,9 +38,7 @@ function AddFriend() {
       const contact: ChatContact = {
         name: contactName,
         npub: currentContactNpub,
-        nip05: contactProfile?.nip05 ?? null,
-        profileName: contactProfile?.name ?? null,
-        profileAbout: contactProfile?.about ?? null,
+        profile: contactProfile,
         relays: [],
         relaysUpdatedAt: null
       }

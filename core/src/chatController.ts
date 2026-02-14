@@ -12,7 +12,7 @@ import { receiveDms } from './nostrReceiveDm.js'
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata, extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata, extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
 import type { KeyStore } from './keyStore.js'
-import { ChatModel, type ChatMessage, type ChatContact, type ChatSettings } from './chatModel.js'
+import { ChatModel, type ChatMessage, type ChatContact, type ChatSettings, type UserProfile } from './chatModel.js'
 import { isValidNpub } from './validation.js'
 import createRelayMonitor, { type RelayMonitor } from './relayMonitor.js'
 import type { MessageListener } from './messageListener.js'
@@ -56,7 +56,7 @@ export interface ChatController {
   createNewKey() : Promise<string>
   resetKey(nsec: string) : Promise<void>
   resetKeyFromSeedWords(bip39Mnemonic: string) : Promise<void>
-  getUserProfile(npub: string) : Promise<Record<string, string> | null>
+  getUserProfile(npub: string) : Promise<UserProfile | null>
 }
 
 
@@ -307,13 +307,9 @@ export class ChatControllerImpl implements ChatController {
   // Throws if cannot broadcast to any relays
   async broadcastUserMetadata() {
     const settings = this.#model.settings
-    const content: Record<string, string> = {
-      ...(settings.profileName ? {name: settings.profileName} : {}),
-      ...(settings.profileAbout ? {about: settings.profileAbout} : {}),
-      ...(settings.nip05 ? {nip05: settings.nip05} : {}),
-    }
+    const profile = settings.profile ?? { name: null, about: null, nip05: null }
     await publishUserMetadata(this.#pubKey, this.#privateKey,
-      this.#pool, this.#model.settings.generalRelays, content)
+      this.#pool, this.#model.settings.generalRelays, profile)
   }
 
   // Checks that the specified relay URLs are connected.
@@ -372,7 +368,7 @@ export class ChatControllerImpl implements ChatController {
   }
 
   
-  async getUserProfile(npub: string) : Promise<Record<string, string> | null> {
+  async getUserProfile(npub: string) : Promise<UserProfile | null> {
     const userPubKey = decode(npub).data as string
     const userEvent = await getUserMetadata(userPubKey, this.#pool, this.#model.settings.generalRelays)
     if (!userEvent) {
@@ -380,26 +376,30 @@ export class ChatControllerImpl implements ChatController {
     }
     
     const content = extractContentFromUserMetadataEvent(userEvent)
-    console.log('getUserProfile1', npub, userEvent)
     
-    let profile: Record<string, string> = {}
-
+    let nip05 = null
     if (content?.nip05) {
       const foundNpub = await this.lookupNip05Address(content.nip05)
-      console.log('getUserProfile2 lookup nip05 found:', foundNpub)
       if (foundNpub === npub) {
-        profile.nip05 = content.nip05
+        nip05 = content.nip05
       }
     }
-    profile.name = content?.name ?? null
-    profile.about = content?.about ?? null
+    let profile: UserProfile = {
+      name: content?.name ?? null,
+      about: content?.about ?? null,
+      nip05
+    }
     return profile
   }
   
   async lookupNip05Address(nip05: string) : Promise<string | null> {
     const profile =  await queryProfile(nip05)
-    const npub = profile ? npubEncode(profile.pubkey) : null
-    return npub
+    try {
+      const npub = profile ? npubEncode(profile.pubkey) : null
+      return npub
+    } catch {
+      return null
+    }
   }
 
   ///////////////////////////////////////////////////////////
@@ -482,52 +482,46 @@ export class ChatControllerImpl implements ChatController {
 
   // Callback for kind0 user metadata event subscription.
   // Called whenever a subscribed npubs's user metadata changes.
-  // Checks if we have a corresponding contact and updates its details.
+  // Checks if we have a corresponding contact and updates its details
+  // If npub is ourself, updates our own profile in settings.
   async #onUserMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey)
-    // update user metadata for contact
-    const contact = this.#model.getContactByNpub(npub)
-    if (contact ) {
-      // TODO only update contact if event time is newer than last update?
-      const content = extractContentFromUserMetadataEvent(ev)
-      contact.profileName = content?.name ?? contact.profileName
-      contact.profileAbout = content?.about ?? contact.profileAbout
-      if (content?.nip05 !== contact.nip05) {
-        if (!content?.nip05) {
-          contact.nip05 = null
-        } else {
-          const nip05Npub = await this.lookupNip05Address(content.nip05)
+
+    const mergeProfile = async (localProfile: UserProfile | null, remoteProfile: UserProfile) => {
+      localProfile = remoteProfile
+      if (remoteProfile.nip05 !== localProfile?.nip05) {
+        // default to overriding local value with null
+        localProfile.nip05 = null
+        if (remoteProfile.nip05) {
+          // new nip05, so verify it before we save it
+          const nip05Npub = await this.lookupNip05Address(remoteProfile.nip05)
           if (nip05Npub === npub) {
-            // update contact with verified nip05
-            contact.nip05 = content.nip05
+            // update local profile with verified nip05
+            localProfile.nip05 = remoteProfile.nip05
           }
         }
       }
-      console.log(`Updating user profile for contact: ${contact.name}`) 
-      await this.#model.setContact(contact)
     }
-      
-    // update user metadata for self
-    if (ev.pubkey === this.#pubKey) {
-      console.log(`Received user metadata for self`) 
-      const currentSettings = this.#model.settings
-      const content = extractContentFromUserMetadataEvent(ev)
-      currentSettings.profileName = content?.name ?? currentSettings.profileName
-      currentSettings.profileAbout = content?.about ?? currentSettings.profileAbout
-      if (content?.nip05 !== currentSettings.nip05) {
-        if (!content?.nip05) {
-          currentSettings.nip05 = null
-        } else {
-          const nip05Npub = await this.lookupNip05Address(content.nip05)
-          if (nip05Npub === this.getNpub()) {
-            // update our settings with verified nip05
-            currentSettings.nip05 = content.nip05
-          }
-        }
+
+    // TODO only update if event time is newer than last update?
+    const userProfile = extractContentFromUserMetadataEvent(ev)
+    if (userProfile) {
+      // update user metadata for contact
+      const contact = this.#model.getContactByNpub(npub)
+      if (contact ) {
+        await mergeProfile(contact.profile, userProfile)
+        console.log(`Updating user profile for contact: ${contact.name}`) 
+        await this.#model.setContact(contact)
       }
-      console.log(`Updating user profile for self`) 
-      await this.#model.setSettings(currentSettings)
-      this.#settingsListeners.forEach(l => l.notifySettingsChanged())
+
+      // update user metadata for self
+      if (ev.pubkey === this.#pubKey) {
+        const currentSettings = this.#model.settings
+        await mergeProfile(currentSettings.profile, userProfile)
+        console.log(`Updating user profile for self`) 
+        await this.#model.setSettings(currentSettings)
+        this.#settingsListeners.forEach(l => l.notifySettingsChanged())
+      }
     }
   }
 }

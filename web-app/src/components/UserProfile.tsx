@@ -28,19 +28,19 @@ function UserProfile() {
       <ListGroupItem className="list-group-item-secondary text-break">
         <Row>
           <Col xs={4}>Your nickname:</Col>
-          <Col xs={8}>{settings?.profileName ?? ''}</Col>
+          <Col xs={8}>{settings.profile?.name ?? ''}</Col>
         </Row>
       </ListGroupItem>
       <ListGroupItem className="list-group-item-secondary text-break">
         <Row>
           <Col xs={4}>NIP-05 address:</Col>
-          <Col xs={8}><Nip05Address npub={controller.getNpub()} nip05={settings.nip05} /></Col>
+          <Col xs={8}><Nip05Address npub={controller.getNpub()} nip05={settings.profile?.nip05 ?? ''} /></Col>
         </Row>
       </ListGroupItem>
       <ListGroupItem className="list-group-item-secondary text-break">
         <Row>
           <Col xs={4}>About:</Col>
-          <Col xs={8}>{settings?.profileAbout ?? ''}</Col>
+          <Col xs={8}>{settings?.profile?.about ?? ''}</Col>
         </Row>
       </ListGroupItem>
     </ListGroup>

@@ -21,9 +21,7 @@ const someSettings: ChatSettings = {
   inboxRelays: [],
   generalRelays: [],
   relaysUpdatedAt: null,
-  nip05: null,
-  profileName: null,
-  profileAbout: null,
+  profile: null,
 }
 
 let fakeAppData: ChatAppData | null = null
@@ -46,9 +44,7 @@ describe('model', async () => {
     assert(model.settings.generalRelays.length >= 1)
     assert(model.settings.inboxRelays.length >= 1)
     assert.strictEqual(model.settings.relaysUpdatedAt, null)
-    assert.strictEqual(model.settings.nip05, null)
-    assert.strictEqual(model.settings.profileName, null)
-    assert.strictEqual(model.settings.profileAbout, null)
+    assert.strictEqual(model.settings.profile, null)
 
     assert.equal(model.getMessageList().length, 0)
     assert.equal(model.getContactList().length, 0)
@@ -103,9 +99,7 @@ describe('model', async () => {
     const emptyContact = {
       name: null,
       npub: null,
-      nip05: null,
-      profileAbout: null,
-      profileName: null,
+      profile: null,
       relays: [],
       relaysUpdatedAt: null
     }
@@ -201,7 +195,7 @@ describe('model', async () => {
     let model = new ChatModel(fakeDataStore)
 
     // add a contact
-    const c: ChatContact = { name: 'Fred', npub: 'npub456', nip05: null, relays: [], relaysUpdatedAt: null, profileName: null, profileAbout: null  }
+    const c: ChatContact = { name: 'Fred', npub: 'npub456', profile: null, relays: [], relaysUpdatedAt: null }
     await model.setContact(c)
     assert.equal(model.getContactList().length, 1)
     assert.deepEqual(model.getContactList()[0], c)
@@ -239,7 +233,7 @@ describe('model', async () => {
     assert.deepEqual(model.getContactList()[0], c)
     
     // add another contact
-    const c2: ChatContact = { name: 'Pip', npub: 'npub789', nip05: null, relays: [], relaysUpdatedAt: null, profileName: null, profileAbout: null }
+    const c2: ChatContact = { name: 'Pip', npub: 'npub789', profile: null, relays: [], relaysUpdatedAt: null }
     await model.setContact(c2)
     assert.equal(model.getContactList().length, 2)
     assert.deepEqual(model.getContactList()[0], c)

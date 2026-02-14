@@ -1,6 +1,7 @@
 import React from 'react';
 import { Col, ListGroup, ListGroupItem, Row } from 'react-bootstrap';
 
+import type { UserProfile } from '@core/chatModel';
 import { isValidNip05Address, isValidNpub } from '@core/validation';
 import { useChatController } from '../chatControllerContext';
 import Nip05Address from './Nip05Address';
@@ -8,13 +9,13 @@ import Nip05Address from './Nip05Address';
 
 interface ContactProfileProps {
   contactToLookup: string;
-  onLookupDone?: (contactNpub: string | null, contactProfile: Record<string, string> | null) => void;
+  onLookupDone?: (contactNpub: string | null, contactProfile: UserProfile | null) => void;
 }
 
 const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactToLookup, onLookupDone }) => {
   const chatController = useChatController();
 
-  const [contactProfile, setContactProfile] = React.useState<Record<string, string> | null>({});
+  const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);
   const [contactNpub, setContactNpub] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [contactLookupDone, setContactLookupDone] = React.useState(false);
@@ -32,20 +33,20 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
       if (isValidNpub(contactToLookup)) {
         const npub = contactToLookup;
         setLoading(true);
-        const contactProfile = await chatController.getUserProfile(npub);
-        setContactProfile(contactProfile);
+        const profile = await chatController.getUserProfile(npub);
+        setContactProfile(profile);
         setContactNpub(npub);
-        onLookupDone?.(npub, contactProfile);
+        onLookupDone?.(npub, profile);
         setLoading(false);
         setContactLookupDone(true);
       } else if (isValidNip05Address(contactToLookup)) {
         const nip05 = contactToLookup;
         setLoading(true);
         const foundNpub = await chatController.lookupNip05Address(nip05);
-        const contactProfile = foundNpub ? await chatController.getUserProfile(foundNpub) : null;
-        setContactProfile(contactProfile);
+        const profile = foundNpub ? await chatController.getUserProfile(foundNpub) : null;
+        setContactProfile(profile);
         setContactNpub(foundNpub);
-        onLookupDone?.(foundNpub, contactProfile);
+        onLookupDone?.(foundNpub, profile);
         setLoading(false);
         setContactLookupDone(true);
       }

@@ -77,32 +77,32 @@ function ViewFriend() {
           </Row>
         </ListGroupItem>
 
-        {contact?.nip05 &&
+        {contact?.profile?.nip05 &&
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
               <Col xs={4}>NIP-05 address:</Col>
               <Col xs={8} className="truncate">
-                <Nip05Address npub={currentContactNpub} nip05={contact.nip05} />
+                <Nip05Address npub={currentContactNpub} nip05={contact.profile.nip05} />
               </Col>
             </Row>
           </ListGroupItem>
         }
 
-        {contact?.profileName &&
+        {contact?.profile?.name &&
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
               <Col xs={4}>Nickname:</Col>
-              <Col xs={8} className="truncate">{contact.profileName}</Col>
+              <Col xs={8} className="truncate">{contact.profile.name}</Col>
             </Row>
           </ListGroupItem>
         }
 
 
-        {contact?.profileAbout &&
+        {contact?.profile?.about &&
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
               <Col xs={4}>About:</Col>
-              <Col xs={8}>{contact.profileAbout}</Col>
+              <Col xs={8}>{contact.profile.about}</Col>
             </Row>
           </ListGroupItem>
         }
@@ -111,7 +111,7 @@ function ViewFriend() {
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
               <Col xs={4}>Inbox relays:</Col>
-              <Col xs={8} className="truncate">{contact.relays.map(r => <div>{r}<br /></div>)}</Col>
+              <Col xs={8} className="truncate">{contact.relays.map((r,i) => <div key={i}>{r}<br /></div>)}</Col>
             </Row>
           </ListGroupItem>
         }

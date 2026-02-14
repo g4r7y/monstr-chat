@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Form, Navbar, Container } from 'react-bootstrap';
 
-import type { ChatContact } from '@core/chatModel';
+import type { ChatContact, UserProfile } from '@core/chatModel';
 import { isValidNip05Address, isValidNpub } from '@core/validation';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
@@ -35,11 +35,11 @@ function FindFriend() {
 
   // contact state set after successful lookup
   const [contactNpub, setContactNpub] = React.useState<string | null>(null);
-  const [contactProfile, setContactProfile] = React.useState<Record<string, string> | null>(null);
+  const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);
   const [existingContact, setExistingContact] = React.useState<ChatContact | null>(null);
 
 
-  const handleContactLookupDone = (contactNpub: string | null, contactProfile: Record<string, string> | null) => {
+  const handleContactLookupDone = (contactNpub: string | null, contactProfile: UserProfile | null) => {
     setProfileLookupDone(true);
     setContactNpub(contactNpub);
     setContactProfile(contactProfile);
@@ -67,9 +67,7 @@ function FindFriend() {
       const contact: ChatContact = {
         name: contactName,
         npub: contactNpub,
-        nip05: contactProfile?.nip05 ?? null,
-        profileName: contactProfile?.name ?? null,
-        profileAbout: contactProfile?.about ?? null,
+        profile: contactProfile,
         relays: [],
         relaysUpdatedAt: null
       };

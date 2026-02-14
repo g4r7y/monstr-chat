@@ -1,9 +1,10 @@
 import { type Event, finalizeEvent, SimplePool } from "@nostr/tools"
 import type { SubCloser } from "@nostr/tools/abstract-pool"
+import type { UserProfile } from "./chatModel.js"
 
 let subCloser : SubCloser
 
-const publishUserMetadata = async (pubkey: string, nsec: Uint8Array, pool: SimplePool, relays: string[], content: Record<string, string>) => {
+const publishUserMetadata = async (pubkey: string, nsec: Uint8Array, pool: SimplePool, relays: string[], content: UserProfile) => {
 
   const createdTimestamp = Date.now()
 
@@ -73,10 +74,16 @@ const getUserMetadata = async (pubkey: string, pool: SimplePool, relays: string[
   }
 }
 
-const extractContentFromUserMetadataEvent = (event: Event) : Record<string, any> | null => {
+const extractContentFromUserMetadataEvent = (event: Event) : UserProfile | null => {
   try {
+    console.log(event.content)
     const content = JSON.parse(event.content)
-    return content
+    const profile: UserProfile = {
+      name: content.name ?? null,
+      about: content.about ?? null,
+      nip05: content.nip05 ?? null
+    }
+    return profile
   } catch (err) {
     // bad json, return null
   }

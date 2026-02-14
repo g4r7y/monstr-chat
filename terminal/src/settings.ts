@@ -22,16 +22,16 @@ async function settingsProfile(context: ViewContext) {
   terminal.bgGreen('Profile\n\n')
   const settings = context.chatController.getSettings()
   terminal.yellow('Your nickname: ')
-  terminal.white(settings.profileName ?? '')
+  terminal.white(settings.profile?.name ?? '')
   terminal('\n')
   terminal.yellow('About you:     ')
-  terminal.white(settings.profileAbout ?? '')
+  terminal.white(settings.profile?.about ?? '')
   terminal('\n')
   terminal.yellow('Nostr address (NIP-05): ')
-  terminal.white(settings.nip05 ? `${settings.nip05} ` : '')
+  terminal.white(settings.profile?.nip05 ? `${settings.profile?.nip05} ` : '')
   let verified = false
-  if (settings.nip05) {
-    const npub = await context.chatController.lookupNip05Address(settings.nip05)
+  if (settings.profile?.nip05) {
+    const npub = await context.chatController.lookupNip05Address(settings.profile.nip05)
     if (npub && npub === context.chatController.getNpub()) {
       verified = true
     }
@@ -49,33 +49,37 @@ async function settingsProfile(context: ViewContext) {
   menu.set('Edit', () => edit = true)
   await showMenu(menu)
 
-  if (!edit) {
-    return
+  if (edit) {
+    await settingsEditProfile(context)
   }
+}
 
+async function settingsEditProfile(context: ViewContext) {
   terminal.clear()
   terminal.bgGreen('Edit Profile\n\n')
-  let initialText = context.chatController.getSettings().profileName ?? ''
+  const settings = context.chatController.getSettings()
+  let initialText = settings.profile?.name ?? ''
   let profileName = await showPrompt('Your nickname: ',  initialText)
   if (profileName === null) {
     // escape
     return
   }
-  initialText = context.chatController.getSettings().profileAbout ?? ''
+  initialText = settings.profile?.about ?? ''
   let profileAbout = await showPrompt('About you: ',  initialText)
   if (profileAbout === null) {
     // escape
     return
   }
 
-  initialText = context.chatController.getSettings().nip05 ?? ''
+  initialText = settings.profile?.nip05 ?? ''
   let editing = true
   let shouldUpdate = false
+  let nip05 = null
   terminal.saveCursor()
   while (editing) {
     terminal.restoreCursor()
     terminal.eraseDisplayBelow()
-    let nip05 = await showPrompt('Your Nostr NIP-05 address: ',  initialText)
+    nip05 = await showPrompt('Your Nostr NIP-05 address: ',  initialText)
     terminal('\n')
     if (nip05 === null) {
       // escape
@@ -84,12 +88,13 @@ async function settingsProfile(context: ViewContext) {
     initialText = nip05
     if (nip05 === '') {
       // set to empty, don't bother with verification
-      settings.nip05 = null
+      nip05 = null
       shouldUpdate = true
       editing = false
     } else if (!isValidNip05Address(nip05)) {
       editing = await showYesNoPrompt('Invalid address. It should look something like: user@domain. Try again?')
     } else {
+      // verify the entered nip05
       const npub = await context.chatController.lookupNip05Address(nip05)
       if (npub === null) {
         editing = await showYesNoPrompt('Address not found. Try again?')
@@ -97,7 +102,6 @@ async function settingsProfile(context: ViewContext) {
         editing = await showYesNoPrompt('Address does not match your key. Try again?')
       } else {
         await pressToContinue('Your Nostr address has been verified')
-        settings.nip05 = nip05
         shouldUpdate = true
         editing = false
       }
@@ -105,8 +109,7 @@ async function settingsProfile(context: ViewContext) {
   }
 
   if (shouldUpdate) {
-    settings.profileName = profileName
-    settings.profileAbout = profileAbout
+    settings.profile = { name: profileName, about: profileAbout, nip05 }
     await context.chatController.setSettings(settings)
     await context.chatController.broadcastUserMetadata()
     await pressToContinue('Your Nostr profile has been updated')
@@ -169,7 +172,6 @@ async function settingsViewRelays(context: ViewContext) {
   menu.set('Refresh', () => {})
   menu.set('Edit Incoming Relays', () => { context.view.push('editInboxRelays')} )
   menu.set('Edit Discovery Relays', () => { context.view.push('editGeneralRelays') })
-
   await showMenu(menu)
 }
 

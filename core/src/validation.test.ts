@@ -1,6 +1,5 @@
+import { describe, test, expect } from 'vitest'
 import { isValidUrl, isValidNpub, isValidNsec, isValidNip05Address, isValidBip39Word, isValidBip39Phrase } from './validation.js'
-import { describe, test } from 'node:test'
-import assert from 'node:assert'
 
 describe('validation', () => {
   test('url', () => {
@@ -32,7 +31,7 @@ describe('validation', () => {
 
     for(let t of tests) {
       let isValid = t.protocols ? isValidUrl(t.text, t.protocols) :  isValidUrl(t.text)
-      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}` )
+      expect(isValid, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}`).toEqual(t.expected)
     }
 
   })
@@ -63,7 +62,8 @@ describe('validation', () => {
 
     for(let t of tests) {
       let isValid = isValidNpub(t.text)
-      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
+      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected)
+      // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
   })
 
@@ -93,7 +93,8 @@ describe('validation', () => {
 
     for(let t of tests) {
       let isValid = isValidNsec(t.text)
-      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
+      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected)
+      // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
 
   })
@@ -120,7 +121,8 @@ describe('validation', () => {
 
     for(let t of tests) {
       let isValid = isValidNip05Address(t.text)
-      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
+      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected)
+      // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
   })
 
@@ -146,7 +148,8 @@ describe('validation', () => {
 
     for(let t of tests) {
       let isValid = isValidBip39Word(t.text)
-      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
+      expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected)
+      // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
     }
   })
 
@@ -172,7 +175,8 @@ describe('validation', () => {
 
     for(let t of tests) {
       let isValid = isValidBip39Phrase(t.text)
-      assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
+      expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected)
+      // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
     }
   })
 

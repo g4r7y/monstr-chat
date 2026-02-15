@@ -1,14 +1,13 @@
-import { mock, test, describe, beforeEach } from 'node:test'
-import assert from 'node:assert'
+
+import { vi, test, describe, beforeEach, expect } from 'vitest'
+
 import type { ChatMessage, ChatContact, ChatAppData, ChatSettings } from './chatModel.js'
 import type { DataStore } from './dataStore.js'
+import { ChatModel } from './chatModel.js'
 
 
-// lazy load ChatModel so that its mocked dependencies are setup first
-let ChatModel: new(dataStore: DataStore)=>any
-
-const writeAppDataMock = mock.fn()
-const writeMessagesMock = mock.fn()
+const writeAppDataMock = vi.fn()
+const writeMessagesMock = vi.fn()
 
 let fakeDataStore : DataStore = {
   readAppData: async () => fakeAppData, 
@@ -31,7 +30,7 @@ let fakeMessages: ChatMessage[] | null = null
 describe('model', async () => {
 
   beforeEach(async (t) => {
-    ({ ChatModel } = await import('./chatModel.js'))
+    // ({ ChatModel } = await import('./chatModel.js'))
   })
 
   test('first load, without any app data', async () => {
@@ -41,13 +40,13 @@ describe('model', async () => {
     await model.load()
 
     //has some default settings
-    assert(model.settings.generalRelays.length >= 1)
-    assert(model.settings.inboxRelays.length >= 1)
-    assert.strictEqual(model.settings.relaysUpdatedAt, null)
-    assert.strictEqual(model.settings.profile, null)
+    expect(model.settings.generalRelays.length >= 1)
+    expect(model.settings.inboxRelays.length >= 1)
+    expect(model.settings.relaysUpdatedAt).toStrictEqual(null)
+    expect(model.settings.profile).toStrictEqual(null)
 
-    assert.equal(model.getMessageList().length, 0)
-    assert.equal(model.getContactList().length, 0)
+    expect(model.getMessageList().length).toBe(0)
+    expect(model.getContactList().length).toBe(0)
   })
 
   
@@ -89,10 +88,10 @@ describe('model', async () => {
     await model.load()
 
     const msgs = model.getMessageList()
-    assert.equal(msgs.length, 3)
-    assert.equal(msgs[0].text, 'conversation1 hello')
-    assert.equal(msgs[1].text, 'conversation1 middle')
-    assert.equal(msgs[2].text, 'conversation1 goodbye')
+    expect(msgs.length).toBe(3)
+    expect(msgs[0].text).toBe('conversation1 hello')
+    expect(msgs[1].text).toBe('conversation1 middle')
+    expect(msgs[2].text).toBe('conversation1 goodbye')
   })
 
   test('load contacts', async () => {
@@ -129,19 +128,19 @@ describe('model', async () => {
     await model.load()
 
     const contacts = model.getContactList()
-    assert.equal(contacts.length, 3)
-    assert.deepEqual(contacts[0], { ...emptyContact, name: 'Rod', npub: 'npub123'})
-    assert.deepEqual(contacts[1], { ...emptyContact, name: 'Freddy', npub: 'npub456'})
-    assert.deepEqual(contacts[2], { ...emptyContact, name: 'Jane', npub: 'npub789'})
+    expect(contacts.length).toBe(3)
+    expect(contacts[0]).toEqual({ ...emptyContact, name: 'Rod', npub: 'npub123'})
+    expect(contacts[1]).toEqual({ ...emptyContact, name: 'Freddy', npub: 'npub456'})
+    expect(contacts[2]).toEqual({ ...emptyContact, name: 'Jane', npub: 'npub789'})
 
     const foundContact = model.getContactByName('Freddy')
-    assert.deepEqual(foundContact, { ...emptyContact, name: 'Freddy', npub: 'npub456'})
+    expect(foundContact).toEqual({ ...emptyContact, name: 'Freddy', npub: 'npub456'})
     const notFoundContact = model.getContactByName('zippy')
-    assert.equal(notFoundContact, null)
+    expect(notFoundContact).toBe(null)
   })
 
   test('add message', async () => {
-    writeMessagesMock.mock.resetCalls()
+    writeMessagesMock.mockReset()
       
     let model = new ChatModel(fakeDataStore)
 
@@ -155,124 +154,124 @@ describe('model', async () => {
       state: 'tx'
     }
     await model.setMessage(msg.id, msg)
-    assert.equal(model.getMessageList().length, 1)
-    assert.deepEqual(model.getMessageList()[0], msg)
+    expect(model.getMessageList().length).toBe(1)
+    expect(model.getMessageList()[0]).toEqual(msg)
 
     // messages is saved
-    assert.equal(writeMessagesMock.mock.callCount(), 1)
-    let messagesWrittenToMock = writeMessagesMock.mock.calls[0].arguments[0]
-    assert.deepEqual(messagesWrittenToMock[0], msg)
+    expect(writeMessagesMock.mock.calls.length).toBe(1)
+    let messagesWrittenToMock = writeMessagesMock.mock.calls[0][0]
+    expect(messagesWrittenToMock[0]).toEqual(msg)
 
     // get message
     let m_got = model.getMessage('bad_id')
-    assert.ok(m_got === null)
+    expect(m_got === null).toBeTruthy()
     m_got = model.getMessage('12345')
-    assert.deepEqual(m_got, msg)
+    expect(m_got).toEqual(msg)
 
     // can't mutate messae via getter
-    m_got.text = 'mutated greetings'
+    m_got!.text = 'mutated greetings'
     let m_got2 = model.getMessage('12345')
-    assert.deepEqual(m_got2.text, 'Greetings')
+    expect(m_got2!.text).toEqual('Greetings')
 
 
     // add another message
     const msg2 = {...msg, id: '67890'}
     await model.setMessage(msg2.id, msg2)
-    assert.equal(model.getMessageList().length, 2)
-    assert.deepEqual(model.getMessageList()[0], msg)
-    assert.deepEqual(model.getMessageList()[1], msg2)
+    expect(model.getMessageList().length).toBe(2)
+    expect(model.getMessageList()[0]).toEqual(msg)
+    expect(model.getMessageList()[1]).toEqual(msg2)
 
     // both messages are saved
-    assert.equal(writeMessagesMock.mock.callCount(), 2)
-    messagesWrittenToMock = writeMessagesMock.mock.calls[1].arguments[0]
-    assert.deepEqual(messagesWrittenToMock[0], msg)
-    assert.deepEqual(messagesWrittenToMock[1], msg2)
+    expect(writeMessagesMock.mock.calls.length).toBe(2)
+    messagesWrittenToMock = writeMessagesMock.mock.calls[1][0]
+    expect(messagesWrittenToMock[0]).toEqual(msg)
+    expect(messagesWrittenToMock[1]).toEqual(msg2)
   })
 
   test('add/get/edit/delete contact', async () => {
-    writeAppDataMock.mock.resetCalls()
+    writeAppDataMock.mockReset()
       
     let model = new ChatModel(fakeDataStore)
 
     // add a contact
     const c: ChatContact = { name: 'Fred', npub: 'npub456', profile: null, relays: [], relaysUpdatedAt: null }
     await model.setContact(c)
-    assert.equal(model.getContactList().length, 1)
-    assert.deepEqual(model.getContactList()[0], c)
+    expect(model.getContactList().length).toBe(1)
+    expect(model.getContactList()[0]).toEqual(c)
 
     // data is saved
-    assert.equal(writeAppDataMock.mock.callCount(), 1)
-    assert.deepEqual(writeAppDataMock.mock.calls[0].arguments[0].contacts[0], c)
+    expect(writeAppDataMock.mock.calls.length).toBe(1)
+    expect(writeAppDataMock.mock.calls[0][0].contacts[0]).toEqual(c)
 
     // get contact by name
     let c_got = model.getContactByName('Non-existant')
-    assert.equal(c_got, null)
+    expect(c_got).toBe(null)
     c_got = model.getContactByName('Fred')
-    assert.deepEqual(c_got, c)
+    expect(c_got).toEqual(c)
 
     // cannot mutate original via getter
-    c_got.npub = 'Mutated npub'
+    c_got!.npub = 'Mutated npub'
     let c_orig = model.getContactByName('Fred')
-    assert.deepEqual(c_orig, c)
+    expect(c_orig).toEqual(c)
 
     // get contact by name
     c_got = model.getContactByNpub('Non-existant')
-    assert.equal(c_got, null)
+    expect(c_got).toBe(null)
     c_got = model.getContactByNpub('npub456')
-    assert.deepEqual(c_got, c)
+    expect(c_got).toEqual(c)
 
     // cannot mutate original via getter
-    c_got.name = 'Mutated Fred'
+    c_got!.name = 'Mutated Fred'
     c_orig = model.getContactByNpub('npub456')
-    assert.deepEqual(c_orig, c)
+    expect(c_orig).toEqual(c)
 
     // edit cotact
     c.name = 'Bob'
     await model.setContact(c)
-    assert.equal(model.getContactList().length, 1)
-    assert.deepEqual(model.getContactList()[0], c)
+    expect(model.getContactList().length).toBe(1)
+    expect(model.getContactList()[0]).toEqual(c)
     
     // add another contact
     const c2: ChatContact = { name: 'Pip', npub: 'npub789', profile: null, relays: [], relaysUpdatedAt: null }
     await model.setContact(c2)
-    assert.equal(model.getContactList().length, 2)
-    assert.deepEqual(model.getContactList()[0], c)
-    assert.deepEqual(model.getContactList()[1], c2)
+    expect(model.getContactList().length).toBe(2)
+    expect(model.getContactList()[0]).toEqual(c)
+    expect(model.getContactList()[1]).toEqual(c2)
 
     // delete contact
     await model.deleteContact(c.npub)
-    assert.equal(model.getContactList().length, 1)
-    assert.deepEqual(model.getContactList()[0], c2)
+    expect(model.getContactList().length).toBe(1)
+    expect(model.getContactList()[0]).toEqual(c2)
   })
 
   test('get/set settings', async () => {
-    writeAppDataMock.mock.resetCalls()
+    writeAppDataMock.mockReset()
 
     let model = new ChatModel(fakeDataStore)
 
     // defualt settings
-    let s1 = model.settings
-    assert.equal(s1.inboxRelays.length, 1)
-    assert.equal(s1.generalRelays.length, 4)
+    let s1 = model.settings as any
+    expect(s1.inboxRelays.length).toBe(1)
+    expect(s1.generalRelays.length).toBe(4)
     
     // settings object is immutable via getter
     s1.someNewThing = 123
-    let s2 = model.settings
-    assert.ok(s2.someNewThing === undefined)
+    let s2 = model.settings as any
+    expect(s2.someNewThing === undefined).toBeTruthy()
 
     // set settings
     s1.inboxRelays.push('http://newrelay')
     model.setSettings(s1)
 
     // model is updated
-    let s3 = model.settings
-    assert.equal(s3.inboxRelays.length, 2)
-    assert.equal(s3.inboxRelays[1], 'http://newrelay')
-    assert.equal(s3.someNewThing, 123)
+    let s3 = model.settings as any
+    expect(s3.inboxRelays.length).toBe(2)
+    expect(s3.inboxRelays[1]).toEqual('http://newrelay')
+    expect(s3.someNewThing).toBe(123)
 
     // and data is saved
-    assert.equal(writeAppDataMock.mock.callCount(), 1)
-    assert.deepEqual(writeAppDataMock.mock.calls[0].arguments[0].settings, s3)
+    expect(writeAppDataMock.mock.calls.length).toBe(1)
+    expect(writeAppDataMock.mock.calls[0][0].settings).toEqual(s3)
 
   })
 

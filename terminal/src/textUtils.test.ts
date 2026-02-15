@@ -1,5 +1,4 @@
-import { test } from 'node:test'
-import assert from 'node:assert'
+import { test, expect } from 'vitest'
 import { wrapText } from './textUtils.js'
 
 test('word wrap', () => {
@@ -40,7 +39,7 @@ test('word wrap', () => {
 
   for(let t of tests) {
     const lines = wrapText(t.text, t.width)
-    assert.deepEqual(lines, t.expected, `Incorrect result for text "${t.text}" with width ${t.width}`)
+    expect(lines, `Incorrect wrap for text "${t.text}" with width ${t.width}`).toEqual(t.expected)
   }
 
 })

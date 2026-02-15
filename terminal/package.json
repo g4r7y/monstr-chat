@@ -1,7 +1,7 @@
 {
   "name": "monstr-chat-terminal",
   "scripts": {
-    "test": "npx tsc --noemit && node --experimental-test-module-mocks --import tsx --test **/*.test.ts",
+    "test": "vitest --run src/**",
     "build": "npx tsc && npx tsc-alias",
     "start": "node dist/terminal/src/main.js"
   },
@@ -16,7 +16,8 @@
   },
   "devDependencies": {
     "@types/node": "22.15.30",
-    "tsc-alias": "^1.8.16",
-    "typescript": "5.9.3"
+    "tsc-alias": "1.8.16",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
   }
 }

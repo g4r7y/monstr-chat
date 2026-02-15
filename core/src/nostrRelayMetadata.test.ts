@@ -1,5 +1,4 @@
-import { test, describe } from 'node:test'
-import assert from 'node:assert';
+import { expect, test, describe } from 'vitest'
 import { generateSecretKey, finalizeEvent, type EventTemplate  } from '@nostr/tools'
 import { extractReadRelaysFromNip65 } from './nostrRelayMetadata.js'
 
@@ -25,7 +24,7 @@ describe('relay metadata', () => {
     const ev = finalizeEvent(tempEv, nsec)
 
     const extractedReadRelays = extractReadRelaysFromNip65(ev)
-    assert.deepEqual(extractedReadRelays, 
+    expect(extractedReadRelays).toEqual(
       ['wss://read-me.lol', 'wss://read-relay.com', 'wss://nostr-read-relay.example.com']
     )
   })

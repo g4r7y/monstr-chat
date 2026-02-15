@@ -76,7 +76,6 @@ const getUserMetadata = async (pubkey: string, pool: SimplePool, relays: string[
 
 const extractContentFromUserMetadataEvent = (event: Event) : UserProfile | null => {
   try {
-    console.log(event.content)
     const content = JSON.parse(event.content)
     const profile: UserProfile = {
       name: content.name ?? null,

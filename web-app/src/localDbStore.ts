@@ -1,7 +1,7 @@
-import type { ChatAppData, ChatContact, ChatMessage, ChatSettings } from '@core/chatModel'
-import type { DataStore } from '@core/dataStore'
+import type { ChatAppData, ChatContact, ChatMessage, ChatSettings } from '@core/chatModel';
+import type { DataStore } from '@core/dataStore';
 import type { KeyStore } from '@core/keyStore';
-import { openDB } from 'idb'
+import { openDB } from 'idb';
 
 class ChatDataStore implements DataStore, KeyStore {
   private dbPromise;
@@ -11,7 +11,7 @@ class ChatDataStore implements DataStore, KeyStore {
         db.createObjectStore('appData');
         db.createObjectStore('messages');
         db.createObjectStore('keys');
-      },
+      }
     });
   }
 
@@ -25,7 +25,7 @@ class ChatDataStore implements DataStore, KeyStore {
       return { settings, contacts };
     } catch {
       console.error('Corrupt app data in IndexedDB');
-      return null
+      return null;
     }
   }
 
@@ -38,9 +38,7 @@ class ChatDataStore implements DataStore, KeyStore {
   async readMessages(): Promise<ChatMessage[] | null> {
     const db = await this.dbPromise;
     const keys = await db.getAllKeys('messages');
-    const msgStrs = await Promise.all(
-      keys.map( msgId => db.get('messages', msgId) )
-    );
+    const msgStrs = await Promise.all(keys.map(msgId => db.get('messages', msgId)));
     try {
       return msgStrs.map(str => JSON.parse(str));
     } catch {
@@ -51,11 +49,8 @@ class ChatDataStore implements DataStore, KeyStore {
 
   async writeMessages(msgs: ChatMessage[]): Promise<void> {
     const db = await this.dbPromise;
-    await Promise.all(
-      msgs.map( msg => db.put('messages', JSON.stringify(msg), msg.id) )
-    );
+    await Promise.all(msgs.map(msg => db.put('messages', JSON.stringify(msg), msg.id)));
   }
-
 
   async readKey(): Promise<string | null> {
     const db = await this.dbPromise;

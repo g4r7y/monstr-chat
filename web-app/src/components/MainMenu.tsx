@@ -4,14 +4,13 @@ import Chats from './Chats';
 import Friends from './Friends';
 import Settings from './Settings';
 
-
-const MainMenu  = ({ activeTab } : { activeTab: string }) => {
+const MainMenu = ({ activeTab }: { activeTab: string }) => {
   return (
     <Container>
-      <Navbar bg="light" >
+      <Navbar bg="light">
         <Navbar.Brand>Monstr Chat</Navbar.Brand>
       </Navbar>
-      <Tabs defaultActiveKey={activeTab ?? "chats"}className="mb-3">
+      <Tabs defaultActiveKey={activeTab ?? 'chats'} className="mb-3">
         <Tab eventKey="chats" title="Chats">
           <Chats />
         </Tab>
@@ -23,8 +22,7 @@ const MainMenu  = ({ activeTab } : { activeTab: string }) => {
         </Tab>
       </Tabs>
     </Container>
-)
-}
+  );
+};
 
-export default MainMenu
-
+export default MainMenu;

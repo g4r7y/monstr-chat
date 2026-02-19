@@ -6,7 +6,6 @@ import { isValidNip05Address, isValidNpub } from '@core/validation';
 import { useChatController } from '../chatControllerContext';
 import Nip05Address from './Nip05Address';
 
-
 interface ContactProfileProps {
   contactToLookup: string;
   onLookupDone?: (contactNpub: string | null, contactProfile: UserProfile | null) => void;
@@ -24,7 +23,6 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
   const findingNip05 = isValidNip05Address(contactToLookup);
 
   React.useEffect(() => {
-
     const lookupContactProfile = async () => {
       setContactLookupDone(false);
       if (!contactToLookup) {
@@ -50,34 +48,38 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
         setLoading(false);
         setContactLookupDone(true);
       }
-    }
+    };
 
     lookupContactProfile();
   }, [contactToLookup]);
 
-
   return (
     <div>
       {loading && <div className="mb-3">Looking for Nostr user...</div>}
-      {contactLookupDone &&
+      {contactLookupDone && (
         <div>
-          {findingNip05 && contactNpub === null && <div className="mb-3"><b>Could not verify this address</b></div>}
+          {findingNip05 && contactNpub === null && (
+            <div className="mb-3">
+              <b>Could not verify this address</b>
+            </div>
+          )}
           {findingNip05 && contactNpub && <div className="mb-3">Found Nostr user:</div>}
           {findingNpub && !contactProfile && <div className="mb-3">Couldn't find a profile for this Nostr user</div>}
           {findingNpub && contactProfile && <div className="mb-3">Found Nostr user:</div>}
 
           <ListGroup className="mb-3">
-
-            {contactProfile?.name &&
+            {contactProfile?.name && (
               <ListGroupItem className="list-group-item-secondary text-break">
                 <Row>
                   <Col xs={4}>Nickname:</Col>
-                  <Col xs={8} className="truncate">{contactProfile.name}</Col>
+                  <Col xs={8} className="truncate">
+                    {contactProfile.name}
+                  </Col>
                 </Row>
-              </ListGroupItem>}
+              </ListGroupItem>
+            )}
 
-
-            {contactProfile?.nip05 &&
+            {contactProfile?.nip05 && (
               <ListGroupItem className="list-group-item-secondary text-break">
                 <Row>
                   <Col xs={4}>NIP-05 address:</Col>
@@ -85,30 +87,31 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
                     <Nip05Address npub={contactNpub} nip05={contactProfile.nip05} />
                   </Col>
                 </Row>
-              </ListGroupItem>}
+              </ListGroupItem>
+            )}
 
-            {contactNpub && (findingNip05 || contactProfile) &&
+            {contactNpub && (findingNip05 || contactProfile) && (
               <ListGroupItem className="list-group-item-secondary text-break">
                 <Row>
                   <Col xs={4}>Npub:</Col>
                   <Col xs={8}>{contactNpub}</Col>
                 </Row>
-              </ListGroupItem>}
-              
-            {contactProfile?.about &&
+              </ListGroupItem>
+            )}
+
+            {contactProfile?.about && (
               <ListGroupItem className="list-group-item-secondary text-break">
                 <Row>
                   <Col xs={4}>About:</Col>
                   <Col xs={8}>{contactProfile.about}</Col>
                 </Row>
-              </ListGroupItem>}
-
+              </ListGroupItem>
+            )}
           </ListGroup>
-
-        </div>}
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
-
-export default FriendProfile
+export default FriendProfile;

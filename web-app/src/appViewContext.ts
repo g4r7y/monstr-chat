@@ -1,6 +1,15 @@
 import { createContext, useContext } from 'react';
 
-export type AppViewNameType = 'start' | 'welcome' | 'main' | 'friends' | 'settings' | 'conversation' | 'add-friend' | 'view-friend' | 'find-friend';
+export type AppViewNameType =
+  | 'start'
+  | 'welcome'
+  | 'main'
+  | 'friends'
+  | 'settings'
+  | 'conversation'
+  | 'add-friend'
+  | 'view-friend'
+  | 'find-friend';
 
 // Define the type to be used with the context
 interface AppViewContextType {
@@ -9,12 +18,12 @@ interface AppViewContextType {
   switchView: (view: AppViewNameType, currentContactNpub?: string) => void;
 }
 
-// The context object 
+// The context object
 const AppViewContext = createContext<AppViewContextType | null>(null);
 
 // Returns the app view object from the context
 // This can be used to check the current view or to switch to another view.
-const useAppView = () : AppViewContextType => {
+const useAppView = (): AppViewContextType => {
   const contextValue = useContext(AppViewContext);
   if (!contextValue) {
     throw new Error('AppViewContext does not have a value. useAppView() must be used within an AppViewProvider');

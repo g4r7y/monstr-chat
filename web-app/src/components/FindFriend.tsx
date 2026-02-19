@@ -8,20 +8,19 @@ import { useAppView } from '../appViewContext';
 import FriendProfile from './FriendProfile';
 
 function FindFriend() {
-
   const chatController = useChatController();
 
   const { switchView } = useAppView();
 
   const handleBack = () => {
     switchView('friends');
-  }
+  };
 
   const handleTryAgain = () => {
     setProfileLookupDone(false);
     setContactToLookup('');
     setFindNpubOrNip05('');
-  }
+  };
 
   // state for input fields
   const [findNpubOrNip05, setFindNpubOrNip05] = React.useState('');
@@ -38,14 +37,13 @@ function FindFriend() {
   const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);
   const [existingContact, setExistingContact] = React.useState<ChatContact | null>(null);
 
-
   const handleContactLookupDone = (contactNpub: string | null, contactProfile: UserProfile | null) => {
     setProfileLookupDone(true);
     setContactNpub(contactNpub);
     setContactProfile(contactProfile);
     setContactName(contactProfile?.name ?? '');
     setExistingContact(contactNpub ? chatController.getContactByNpub(contactNpub) : null);
-  }
+  };
 
   const handleFind = async () => {
     if (findNpubOrNip05.length === 0) {
@@ -55,8 +53,7 @@ function FindFriend() {
     } else {
       setContactToLookup(findNpubOrNip05);
     }
-  }
-
+  };
 
   const handleSave = async () => {
     if (contactName.length === 0) {
@@ -79,7 +76,7 @@ function FindFriend() {
 
       handleBack();
     }
-  }
+  };
 
   const findDisabled = () => profileLookupDone || findNpubOrNip05.length === 0;
   const handleSubmitFind = (event: React.FormEvent) => {
@@ -95,7 +92,7 @@ function FindFriend() {
 
   return (
     <Container>
-      <Navbar bg="light" >
+      <Navbar bg="light">
         <div className="d-flex align-items-center">
           <Button className="me-3" onClick={handleBack} variant="outline-secondary">
             <i className="fas fa-chevron-left"></i> Back
@@ -106,8 +103,10 @@ function FindFriend() {
 
       <Form onSubmit={handleSubmitFind}>
         <div className="mt-3 mb-3 d-inline-block">
-          You can search for a user by their verified Nostr address.<br />
-          This is sometimes called a NIP-05 address and looks something like: user@domain<br />
+          You can search for a user by their verified Nostr address.
+          <br />
+          This is sometimes called a NIP-05 address and looks something like: user@domain
+          <br />
           Or you can enter their npub key.
         </div>
 
@@ -117,72 +116,85 @@ function FindFriend() {
             <Form.Control
               type="text"
               value={findNpubOrNip05}
-              onChange={(event) => { setFindNpubOrNip05(event.target.value); setFindInputError('') }}
+              onChange={event => {
+                setFindNpubOrNip05(event.target.value);
+                setFindInputError('');
+              }}
               disabled={profileLookupDone}
               isInvalid={!!findInputError}
             />
-            <Form.Control.Feedback type="invalid">
-              {findInputError}
-            </Form.Control.Feedback>
+            <Form.Control.Feedback type="invalid">{findInputError}</Form.Control.Feedback>
           </div>
         </div>
 
-        {!contactToLookup &&
-          <Button className="mb-3" variant="primary" disabled={findDisabled()} onClick={handleFind}>Find</Button>
-        }
-
+        {!contactToLookup && (
+          <Button className="mb-3" variant="primary" disabled={findDisabled()} onClick={handleFind}>
+            Find
+          </Button>
+        )}
       </Form>
 
       <div className="mb-4">
         <FriendProfile contactToLookup={contactToLookup} onLookupDone={handleContactLookupDone} />
       </div>
 
-      {profileLookupDone && contactNpub &&
+      {profileLookupDone && contactNpub && (
         <Form onSubmit={handleSubmitSave}>
-          {!existingContact &&
+          {!existingContact && (
             <div>
               <div className="mb-4">
                 <Form.Label>Give your friend a name:</Form.Label>
                 <Form.Control
                   type="text"
                   value={contactName}
-                  onChange={(event) => { setContactName(event.target.value); setNameInputError('') }}
+                  onChange={event => {
+                    setContactName(event.target.value);
+                    setNameInputError('');
+                  }}
                   isInvalid={!!contactNameInputError}
                 />
-                <Form.Control.Feedback type="invalid">
-                  {contactNameInputError}
-                </Form.Control.Feedback>
+                <Form.Control.Feedback type="invalid">{contactNameInputError}</Form.Control.Feedback>
               </div>
-              <Button className="mb-3 me-3" variant="primary" disabled={saveDisabled()} onClick={handleSave}>Save</Button>
-              <Button className="mb-3 me-3" variant="secondary" onClick={() => { setContactToLookup(''); setProfileLookupDone(false); }}>Cancel</Button>
-            </div>}
+              <Button className="mb-3 me-3" variant="primary" disabled={saveDisabled()} onClick={handleSave}>
+                Save
+              </Button>
+              <Button
+                className="mb-3 me-3"
+                variant="secondary"
+                onClick={() => {
+                  setContactToLookup('');
+                  setProfileLookupDone(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
 
-          {existingContact &&
+          {existingContact && (
             <div className="mb-4 row">
               <Form.Label className="col-sm-2 col-form-label">Friend name:</Form.Label>
               <div className="col-sm-10">
-                <Form.Control
-                  type="text"
-                  value={existingContact.name}
-                  disabled readOnly
-                />
+                <Form.Control type="text" value={existingContact.name} disabled readOnly />
               </div>
-            </div>}
+            </div>
+          )}
 
-          {profileLookupDone && existingContact &&
-            <div className="mb-4"><b>This user is already in your friends list</b></div>}
-
+          {profileLookupDone && existingContact && (
+            <div className="mb-4">
+              <b>This user is already in your friends list</b>
+            </div>
+          )}
         </Form>
-      }
+      )}
 
-      {profileLookupDone && (!contactNpub || existingContact) &&
-        <Button className="mb-3" variant="primary" onClick={handleTryAgain}>Try again</Button>
-      }
-
+      {profileLookupDone && (!contactNpub || existingContact) && (
+        <Button className="mb-3" variant="primary" onClick={handleTryAgain}>
+          Try again
+        </Button>
+      )}
     </Container>
-
-  )
+  );
 }
 
-export default FindFriend
-
+export default FindFriend;

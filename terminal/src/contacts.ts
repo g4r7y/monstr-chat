@@ -1,263 +1,262 @@
-import tk from 'terminal-kit'
-import type { ChatContact, UserProfile } from '@core/chatModel.js'
-import { isValidNpub, isValidNip05Address } from '@core/validation.js'
-import { showPrompt, showYesNoPrompt, showMenu } from './terminalUi.js'
-import type { ViewContext } from './viewRouter.js'
+import tk from 'terminal-kit';
+import type { ChatContact, UserProfile } from '@core/chatModel.js';
+import { isValidNpub, isValidNip05Address } from '@core/validation.js';
+import { showPrompt, showYesNoPrompt, showMenu } from './terminalUi.js';
+import type { ViewContext } from './viewRouter.js';
 
-const { terminal } = tk
+const { terminal } = tk;
 
 async function contactsMenu(context: ViewContext) {
-  terminal.clear()
-  terminal.bgGreen('Contacts\n')
-  const menu = new Map()
-  menu.set('Back',  () => context.view.pop())
-  menu.set('Add New Contact', () => { context.view.push('addContact'); delete context.viewParams.contactNpub })
-  
-  context.chatController.getContactList()
+  terminal.clear();
+  terminal.bgGreen('Contacts\n');
+  const menu = new Map();
+  menu.set('Back', () => context.view.pop());
+  menu.set('Add New Contact', () => {
+    context.view.push('addContact');
+    delete context.viewParams.contactNpub;
+  });
+
+  context.chatController
+    .getContactList()
     .sort((a: ChatContact, b: ChatContact) => a.name.localeCompare(b.name))
     .forEach((c: ChatContact) => {
-      menu.set(c.name, () => { context.view.push('viewContact'); context.viewParams.contactNpub = c.npub })
-    })
-  await showMenu(menu)
+      menu.set(c.name, () => {
+        context.view.push('viewContact');
+        context.viewParams.contactNpub = c.npub;
+      });
+    });
+  await showMenu(menu);
 }
 
 async function viewContact(context: ViewContext) {
-  terminal.clear()
-  terminal.bgGreen('View Contact\n\n')
-  const { contactNpub } = context.viewParams
-  const currentContact = context.chatController.getContactByNpub(contactNpub)!
-  terminal.yellow('Name:             ')
-  terminal.white(`${currentContact.name}\n`)
-  terminal.yellow('Npub:             ')
-  terminal.white(`${currentContact.npub}\n\n`)
+  terminal.clear();
+  terminal.bgGreen('View Contact\n\n');
+  const { contactNpub } = context.viewParams;
+  const currentContact = context.chatController.getContactByNpub(contactNpub)!;
+  terminal.yellow('Name:             ');
+  terminal.white(`${currentContact.name}\n`);
+  terminal.yellow('Npub:             ');
+  terminal.white(`${currentContact.npub}\n\n`);
   if (currentContact.profile?.nip05) {
-    terminal.yellow('Verified address: ')
-    terminal.white(currentContact.profile.nip05)
-    terminal.brightBlue(' ✔\n')
+    terminal.yellow('Verified address: ');
+    terminal.white(currentContact.profile.nip05);
+    terminal.brightBlue(' ✔\n');
   }
   if (currentContact.profile?.name) {
-    terminal.yellow('Nickname:         ')
-    terminal.white(`${currentContact.profile.name}\n`)
+    terminal.yellow('Nickname:         ');
+    terminal.white(`${currentContact.profile.name}\n`);
   }
   if (currentContact.profile?.about) {
-    terminal.yellow('About:            ')
-    terminal.white(`${currentContact.profile.about}\n`)
+    terminal.yellow('About:            ');
+    terminal.white(`${currentContact.profile.about}\n`);
   }
-  terminal.yellow('Inbox relays:     ')
-  terminal.white(`${currentContact.relays?.join('\n                  ') ?? 'unknown'}\n`)
-  terminal('\n')
-  
-  const menu = new Map()
-  menu.set('Back', () => context.view.pop())
-  menu.set('Messages', () => { 
+  terminal.yellow('Inbox relays:     ');
+  terminal.white(`${currentContact.relays?.join('\n                  ') ?? 'unknown'}\n`);
+  terminal('\n');
+
+  const menu = new Map();
+  menu.set('Back', () => context.view.pop());
+  menu.set('Messages', () => {
     // context.view.splice(1-context.view.length) //back up to top menu
-    context.view.push('viewConversation')
-  })
-  menu.set('Edit', () =>  context.view.push('editContact') )
-  menu.set('Delete', () => context.view.push('deleteContact'))
-  await showMenu(menu)
+    context.view.push('viewConversation');
+  });
+  menu.set('Edit', () => context.view.push('editContact'));
+  menu.set('Delete', () => context.view.push('deleteContact'));
+  await showMenu(menu);
 }
 
-
 async function addContact(context: ViewContext) {
-  let npub = context.viewParams.contactNpub ?? ''
-  let contactProfile: UserProfile | null = null
+  let npub = context.viewParams.contactNpub ?? '';
+  let contactProfile: UserProfile | null = null;
 
-  let state = npub ? 'addExisting' : 'find'
+  let state = npub ? 'addExisting' : 'find';
   while (state) {
-    terminal.clear()
-    terminal.bgGreen('Add Contact\n\n')
+    terminal.clear();
+    terminal.bgGreen('Add Contact\n\n');
 
     if (state == 'addExisting') {
-        // look up user metadata event from relays
-        contactProfile = await context.chatController.lookupUserProfile(npub)
-        state = 'found'
+      // look up user metadata event from relays
+      contactProfile = await context.chatController.lookupUserProfile(npub);
+      state = 'found';
     }
     if (state == 'find') {
-      terminal('You can search for a user by their verified Nostr address.\n')
-      terminal('This is sometimes called a NIP-05 address and looks something like: user@domain\n')
-      terminal('Or you can enter their npub key if you have it.\n\n')
+      terminal('You can search for a user by their verified Nostr address.\n');
+      terminal('This is sometimes called a NIP-05 address and looks something like: user@domain\n');
+      terminal('Or you can enter their npub key if you have it.\n\n');
 
-      const response = await showPrompt('Find user: ')
-      terminal('\n')
+      const response = await showPrompt('Find user: ');
+      terminal('\n');
       if (!response) {
-        break
+        break;
       }
 
       // if entered an npub
       if (isValidNpub(response)) {
-        npub = response
+        npub = response;
         // look up user metadata event from relays
-        contactProfile = await context.chatController.lookupUserProfile(npub)
-        state = 'found'
+        contactProfile = await context.chatController.lookupUserProfile(npub);
+        state = 'found';
       }
       // if entered user@domain
       else if (isValidNip05Address(response)) {
-        const nip05 = response
-        const foundNpub = await context.chatController.lookupNip05Address(nip05)
+        const nip05 = response;
+        const foundNpub = await context.chatController.lookupNip05Address(nip05);
         if (foundNpub === null) {
-          const resp = await showYesNoPrompt('Nostr address not found. Try again?')
+          const resp = await showYesNoPrompt('Nostr address not found. Try again?');
           if (!resp) {
-            break
+            break;
           }
         } else {
-          terminal('Found:\n\n')
-          npub = foundNpub
+          terminal('Found:\n\n');
+          npub = foundNpub;
           // look up user metadata from relays
-          contactProfile = await context.chatController.lookupUserProfile(npub)
+          contactProfile = await context.chatController.lookupUserProfile(npub);
           // if user profile not found or it is missing nip05
           if (!contactProfile?.nip05) {
             // create/overwrite contactProfile with the user-inputted nip05
             contactProfile = {
-              ...(contactProfile ?? { name: null, about: null, nip05: null, }),
+              ...(contactProfile ?? { name: null, about: null, nip05: null }),
               nip05
-            }
+            };
           }
-          state = 'found'
+          state = 'found';
         }
       } else {
-        const resp = await showYesNoPrompt('Not a valid Nostr address or npub. Try again?')
+        const resp = await showYesNoPrompt('Not a valid Nostr address or npub. Try again?');
         if (!resp) {
-          break
+          break;
         }
       }
     }
-    
+
     if (state == 'found') {
-      const contact = context.chatController.getContactByNpub(npub)
+      const contact = context.chatController.getContactByNpub(npub);
 
       if (contact) {
-        terminal('Contact name:  ')
-        terminal.yellow(`${contact.name}\n`)
+        terminal('Contact name:  ');
+        terminal.yellow(`${contact.name}\n`);
       }
       if (contactProfile?.nip05) {
-        terminal('Nostr address: ') 
-        terminal.yellow(`${contactProfile.nip05}`)
-        terminal.brightBlue(' ✔\n')
+        terminal('Nostr address: ');
+        terminal.yellow(`${contactProfile.nip05}`);
+        terminal.brightBlue(' ✔\n');
       }
       if (contactProfile?.name) {
-        terminal('Nickname:      ') 
-        terminal.yellow(`${contactProfile.name}\n`)
+        terminal('Nickname:      ');
+        terminal.yellow(`${contactProfile.name}\n`);
       }
       if (contactProfile?.about) {
-        terminal('About:         ') 
-        terminal.yellow(`${contactProfile.about}\n`)
+        terminal('About:         ');
+        terminal.yellow(`${contactProfile.about}\n`);
       }
-      terminal('Npub: ') 
-      terminal.yellow(`${npub}\n\n`)
-      
+      terminal('Npub: ');
+      terminal.yellow(`${npub}\n\n`);
+
       if (contact) {
-        terminal('User is already in your contacts.\n\n') 
-        const resp = await showYesNoPrompt(`Search again?`)
+        terminal('User is already in your contacts.\n\n');
+        const resp = await showYesNoPrompt(`Search again?`);
         if (!resp) {
-          break
+          break;
         }
-        state = 'find'
-        continue
-      }
-      
-      // Proceed to add as a new contact
-      const resp = await showYesNoPrompt('Add to contacts?')
-      if (!resp) {
-        break
+        state = 'find';
+        continue;
       }
 
-      let contactName = await showPrompt('\nEnter a name for this contact: ', contactProfile?.name ?? '')
+      // Proceed to add as a new contact
+      const resp = await showYesNoPrompt('Add to contacts?');
+      if (!resp) {
+        break;
+      }
+
+      let contactName = await showPrompt('\nEnter a name for this contact: ', contactProfile?.name ?? '');
       if (contactName === null) {
         break;
       }
       if (!contactName) {
-        const resp = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
+        const resp = await showYesNoPrompt('Contact name cannot be empty. Continue editing?');
         if (!resp) {
-          break
+          break;
         }
       } else if (context.chatController.getContactByName(contactName) !== null) {
-        const resp = await showYesNoPrompt('Another contact already exists with this name. Continue editing?')
+        const resp = await showYesNoPrompt('Another contact already exists with this name. Continue editing?');
         if (!resp) {
-          break
+          break;
         }
       } else {
         // valid, so write the contact
-        const contact: ChatContact = { 
-          name: contactName, 
-          npub, 
+        const contact: ChatContact = {
+          name: contactName,
+          npub,
           profile: contactProfile,
-          relays: [], 
-          relaysUpdatedAt: null 
-        }
-        await context.chatController.setContact(contact)
-          
+          relays: [],
+          relaysUpdatedAt: null
+        };
+        await context.chatController.setContact(contact);
+
         // new contact, so update subscription so we can get contact's relaylist
-        await context.chatController.subscribeToRelayMetadata()
-        await context.chatController.subscribeToUserMetadata()
-        break
+        await context.chatController.subscribeToRelayMetadata();
+        await context.chatController.subscribeToUserMetadata();
+        break;
       }
     }
   }
-  context.view.pop()  
+  context.view.pop();
 }
 
 async function editContact(context: ViewContext) {
-  let { contactNpub } = context.viewParams
-  let contact = context.chatController.getContactByNpub(contactNpub)
+  let { contactNpub } = context.viewParams;
+  let contact = context.chatController.getContactByNpub(contactNpub);
   if (!contact) {
-    context.view.pop()
-    return
+    context.view.pop();
+    return;
   }
 
-  let origName = contact.name
-  let defaultName = contact.name
-  let editing = true
+  let origName = contact.name;
+  let defaultName = contact.name;
+  let editing = true;
   while (editing) {
-    terminal.clear()
-    terminal.bgGreen('Edit Contact\n\n')
+    terminal.clear();
+    terminal.bgGreen('Edit Contact\n\n');
 
-    terminal.white('Npub:         ')
-    terminal.yellow(`${contact.npub}\n\n`)
-    
-    let name = await showPrompt('Contact name: ', defaultName)
-    
+    terminal.white('Npub:         ');
+    terminal.yellow(`${contact.npub}\n\n`);
+
+    let name = await showPrompt('Contact name: ', defaultName);
+
     if (name === null) {
-      editing = false
+      editing = false;
       // exit
     } else if (name === '') {
-      editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?')
+      editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?');
     } else if (name !== origName && context.chatController.getContactByName(name) !== null) {
-      editing = await showYesNoPrompt('Another contact already exists with this name. Continue editing?')
-      defaultName = name
+      editing = await showYesNoPrompt('Another contact already exists with this name. Continue editing?');
+      defaultName = name;
     } else {
       // valid, so write the contact
       contact = { ...contact, name };
-      await context.chatController.setContact(contact)
-      editing = false
+      await context.chatController.setContact(contact);
+      editing = false;
     }
   }
-  context.view.pop()
+  context.view.pop();
 }
 
 async function deleteContact(context: ViewContext) {
-  let { contactNpub } = context.viewParams
-  let contact = context.chatController.getContactByNpub(contactNpub)
+  let { contactNpub } = context.viewParams;
+  let contact = context.chatController.getContactByNpub(contactNpub);
   if (!contact) {
-    context.view.pop()
-    return
+    context.view.pop();
+    return;
   }
 
-  terminal('\n')
-  let confirmed = await showYesNoPrompt(`Delete ${contact.name}. Are you sure?`)
+  terminal('\n');
+  let confirmed = await showYesNoPrompt(`Delete ${contact.name}. Are you sure?`);
   if (confirmed) {
-    await context.chatController.deleteContact(contactNpub)
+    await context.chatController.deleteContact(contactNpub);
     // need to pop twice, to exit the contacts view also
-    context.view.pop()
+    context.view.pop();
   }
-  context.view.pop()
+  context.view.pop();
 }
 
-
-export {
-  contactsMenu,
-  viewContact,
-  addContact,
-  editContact,
-  deleteContact
-}
+export { contactsMenu, viewContact, addContact, editContact, deleteContact };

@@ -2,7 +2,8 @@
   "name": "monstr-chat-core",
   "version": "1.0.0",
   "scripts": {
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "prettier": "prettier --write ."
   },
   "type": "module",
   "dependencies": {
@@ -11,6 +12,7 @@
   },
   "devDependencies": {
     "@types/node": "22.15.30",
+    "prettier": "3.8.1",
     "tsx": "4.20.3",
     "typescript": "5.9.3",
     "vitest": "4.0.18"

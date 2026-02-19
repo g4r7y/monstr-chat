@@ -1,28 +1,28 @@
+import { SimplePool, type SubCloser } from '@nostr/tools/pool';
 
-import { SimplePool, type SubCloser } from "@nostr/tools/pool"
-
-let subCloser: SubCloser
+let subCloser: SubCloser;
 
 // simple subscription request. to be used as ping / heartbeat for relay connection monitoring
-const sendReq = (pool: SimplePool, relays: string[], callback: ()=>void ) => {
+const sendReq = (pool: SimplePool, relays: string[], callback: () => void) => {
   try {
     if (subCloser) {
-      subCloser.close()
+      subCloser.close();
     }
 
     subCloser = pool.subscribe(
       relays,
       {
         kinds: [1],
-        limit: 1,
-      }, 
+        limit: 1
+      },
       {
         id: 'simple-req-sub-id', // always use fixed sub id
         onevent: () => callback()
-      })
+      }
+    );
   } catch (err) {
     // ignore errors, we don't care
   }
-}
+};
 
-export { sendReq }
+export { sendReq };

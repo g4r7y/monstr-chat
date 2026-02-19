@@ -1,10 +1,10 @@
 import { Accordion, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { useChatController } from '../chatControllerContext'
+import { useChatController } from '../chatControllerContext';
 import UserProfile from './UserProfile';
 import Relays from './Relays';
 
 function Settings() {
-  const controller = useChatController()
+  const controller = useChatController();
   return (
     <Accordion>
       <Accordion.Item eventKey="0">
@@ -27,11 +27,11 @@ function Settings() {
             <ListGroup className="mb-3">
               <ListGroupItem className="list-group-item-secondary text-break">{controller.getNpub()}</ListGroupItem>
             </ListGroup>
-            </div>
+          </div>
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
-  )
+  );
 }
 
-export default Settings
+export default Settings;

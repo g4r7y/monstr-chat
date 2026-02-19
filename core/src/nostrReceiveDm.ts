@@ -8,10 +8,10 @@ import type { ChatMessage } from "./chatModel.js"
 let subCloser: SubCloser
 
 // NIP17
-const onReceiveDm = async (pubkey: string, nsec: Uint8Array, event: NostrEvent) : Promise<ChatMessage | null> => {
+const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrEvent) : Promise<ChatMessage | null> => {
   try {
     type PlainEventWithId = UnsignedEvent & { id: string }
-    const plainEvent : PlainEventWithId = await unwrapEvent(event, nsec)
+    const plainEvent : PlainEventWithId = await unwrapEvent(event, privateKey)
     let createdDate = new Date(0)
     createdDate.setUTCSeconds(plainEvent.created_at)
 
@@ -49,7 +49,7 @@ const onReceiveDm = async (pubkey: string, nsec: Uint8Array, event: NostrEvent) 
   }
 }
 
-const receiveDms = async (npub: string, nsec: Uint8Array, pool: SimplePool, relays: string[], onMessage: (msg: ChatMessage)=>Promise<void>) => {
+const receiveDms = async (pubkey: string, privateKey: Uint8Array, pool: SimplePool, relays: string[], onMessage: (msg: ChatMessage)=>Promise<void>) => {
   if (subCloser) {
     subCloser.close()
   }
@@ -58,13 +58,13 @@ const receiveDms = async (npub: string, nsec: Uint8Array, pool: SimplePool, rela
     relays,
     {
       kinds: [1059], //nip17 giftwrapped
-      '#p': [npub],
+      '#p': [pubkey],
     }, 
     {
       id: 'incoming-dm-sub-id', // always use fixed sub id
       async onevent (event) {
         if (event.kind === 1059) { // possible giftwrapped NIP17 DM
-          const msg = await onReceiveDm(npub, nsec, event)
+          const msg = await onReceiveDm(pubkey, privateKey, event)
           if (msg) {
             await onMessage(msg)
           }

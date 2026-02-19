@@ -1,12 +1,11 @@
-import type { ChatAppData, ChatMessage } from "./chatModel.js";
+import type { ChatAppData, ChatMessage } from './chatModel.js';
 
 export interface DataStore {
+  readAppData(): Promise<ChatAppData | null>;
 
-  readAppData() : Promise<ChatAppData | null>;
+  writeAppData(appData: ChatAppData): void;
 
-  writeAppData(appData: ChatAppData) : void;
+  readMessages(): Promise<ChatMessage[] | null>;
 
-  readMessages() : Promise<ChatMessage[] | null> 
-
-  writeMessages(msgs: ChatMessage[]) : void
+  writeMessages(msgs: ChatMessage[]): void;
 }

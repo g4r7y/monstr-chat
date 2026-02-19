@@ -1,40 +1,48 @@
-import { describe, test, expect } from 'vitest'
-import { isValidUrl, isValidNpub, isValidNsec, isValidNip05Address, isValidBip39Word, isValidBip39Phrase } from './validation.js'
+import { describe, test, expect } from 'vitest';
+import {
+  isValidUrl,
+  isValidNpub,
+  isValidNsec,
+  isValidNip05Address,
+  isValidBip39Word,
+  isValidBip39Phrase
+} from './validation.js';
 
 describe('validation', () => {
   test('url', () => {
     const tests = [
-      { 
-        text: 'http://www.example.com:777/a/b?c=d&e=f#g', 
-        expected: true 
+      {
+        text: 'http://www.example.com:777/a/b?c=d&e=f#g',
+        expected: true
       },
-      { 
+      {
         text: 'invalid url',
-        expected: false 
+        expected: false
       },
-      { 
+      {
         text: 'ftp://www.example.com/hello',
-        protocols: [], 
-        expected: true 
+        protocols: [],
+        expected: true
       },
-      { 
+      {
         text: 'ws://www.example.com:777/a/b?c=d&e=f#g',
-        protocols: ['http','https'], 
-        expected: false 
+        protocols: ['http', 'https'],
+        expected: false
       },
-      { 
+      {
         text: 'ws://www.example.com:777/a/b?c=d&e=f#g',
-        protocols: ['http','ws'], 
-        expected: true 
-      },
-    ]
+        protocols: ['http', 'ws'],
+        expected: true
+      }
+    ];
 
-    for(let t of tests) {
-      let isValid = t.protocols ? isValidUrl(t.text, t.protocols) :  isValidUrl(t.text)
-      expect(isValid, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}`).toEqual(t.expected)
+    for (let t of tests) {
+      let isValid = t.protocols ? isValidUrl(t.text, t.protocols) : isValidUrl(t.text);
+      expect(isValid, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}`).toEqual(
+        t.expected
+      );
     }
-
-  })
+  });
 
   test('npub', () => {
     const tests = [
@@ -57,15 +65,15 @@ describe('validation', () => {
       {
         text: '9999999999999',
         expected: false
-      },
-    ]
+      }
+    ];
 
-    for(let t of tests) {
-      let isValid = isValidNpub(t.text)
-      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected)
+    for (let t of tests) {
+      let isValid = isValidNpub(t.text);
+      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
-  })
+  });
 
   test('nsec', () => {
     const tests = [
@@ -88,16 +96,15 @@ describe('validation', () => {
       {
         text: '9999999999999',
         expected: false
-      },
-    ]
+      }
+    ];
 
-    for(let t of tests) {
-      let isValid = isValidNsec(t.text)
-      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected)
+    for (let t of tests) {
+      let isValid = isValidNsec(t.text);
+      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
-
-  })
+  });
 
   test('nip05 address', () => {
     const tests = [
@@ -117,14 +124,14 @@ describe('validation', () => {
         text: 'blahblah',
         expected: false
       }
-    ]
+    ];
 
-    for(let t of tests) {
-      let isValid = isValidNip05Address(t.text)
-      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected)
+    for (let t of tests) {
+      let isValid = isValidNip05Address(t.text);
+      expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
-  })
+  });
 
   test('bip39 mnemonic, individual word', () => {
     const tests = [
@@ -144,14 +151,14 @@ describe('validation', () => {
         text: 'blahblah',
         expected: false
       }
-    ]
+    ];
 
-    for(let t of tests) {
-      let isValid = isValidBip39Word(t.text)
-      expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected)
+    for (let t of tests) {
+      let isValid = isValidBip39Word(t.text);
+      expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
     }
-  })
+  });
 
   test('bip39 mnemonic, full phrase', () => {
     const tests = [
@@ -171,13 +178,12 @@ describe('validation', () => {
         text: '',
         expected: false
       }
-    ]
+    ];
 
-    for(let t of tests) {
-      let isValid = isValidBip39Phrase(t.text)
-      expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected)
+    for (let t of tests) {
+      let isValid = isValidBip39Phrase(t.text);
+      expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
     }
-  })
-
-})
+  });
+});

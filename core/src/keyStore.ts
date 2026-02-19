@@ -1,8 +1,5 @@
 export interface KeyStore {
+  readKey(): Promise<string | null>;
 
-  readKey() : Promise<string | null>;
-
-  writeKey(keyStr: string) : void;
-
+  writeKey(keyStr: string): void;
 }
-  

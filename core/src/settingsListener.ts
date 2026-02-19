@@ -1,3 +1,3 @@
 export interface SettingsListener {
-  notifySettingsChanged(): void
+  notifySettingsChanged(): void;
 }

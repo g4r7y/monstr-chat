@@ -3,19 +3,21 @@
   "scripts": {
     "test": "vitest --run src/**",
     "build": "npx tsc && npx tsc-alias",
-    "start": "node dist/terminal/src/main.js"
+    "start": "node dist/terminal/src/main.js",
+    "prettier": "prettier --write ."
   },
   "bin": {
     "monstr-chat": "./dist/terminal/main.js"
   },
   "type": "module",
   "dependencies": {
-    "monstr-chat-core": "*",
     "@types/terminal-kit": "2.5.7",
+    "monstr-chat-core": "*",
     "terminal-kit": "3.1.2"
   },
   "devDependencies": {
     "@types/node": "22.15.30",
+    "prettier": "3.8.1",
     "tsc-alias": "1.8.16",
     "typescript": "5.9.3",
     "vitest": "4.0.18"

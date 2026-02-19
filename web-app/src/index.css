@@ -9,14 +9,12 @@ navbar {
 .navbar-brand {
   font-size: 1.5rem;
   font-weight: bold;
-  color: green
+  color: green;
 }
-
 
 .navbar-brand:hover {
   color: #2a8e18;
 }
-
 
 .nav-link {
   color: #342b2b;
@@ -36,6 +34,3 @@ navbar {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-
-

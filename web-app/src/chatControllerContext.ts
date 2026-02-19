@@ -5,12 +5,14 @@ import type { ChatController } from '@core/chatController';
 const ChatControllerContext = createContext<ChatController | null>(null);
 
 // Returns the chat controller from the context
-const useChatController = () : ChatController => {
+const useChatController = (): ChatController => {
   const contextValue = useContext(ChatControllerContext);
   if (!contextValue) {
-    throw new Error('ChatControllerContext does not have a value. useChatController() must be used within a ChatControllerContext.Provider');
+    throw new Error(
+      'ChatControllerContext does not have a value. useChatController() must be used within a ChatControllerContext.Provider'
+    );
   }
   return contextValue;
 };
 
-export { ChatControllerContext, useChatController }
+export { ChatControllerContext, useChatController };

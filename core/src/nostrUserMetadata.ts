@@ -1,12 +1,17 @@
-import { type Event, finalizeEvent, SimplePool } from "@nostr/tools"
-import type { SubCloser } from "@nostr/tools/abstract-pool"
-import type { UserProfile } from "./chatModel.js"
+import { type Event, finalizeEvent, SimplePool } from '@nostr/tools';
+import type { SubCloser } from '@nostr/tools/abstract-pool';
+import type { UserProfile } from './chatModel.js';
 
-let subCloser : SubCloser
+let subCloser: SubCloser;
 
-const publishUserMetadata = async (pubkey: string, nsec: Uint8Array, pool: SimplePool, relays: string[], content: UserProfile) => {
-
-  const createdTimestamp = Date.now()
+const publishUserMetadata = async (
+  pubkey: string,
+  nsec: Uint8Array,
+  pool: SimplePool,
+  relays: string[],
+  content: UserProfile
+) => {
+  const createdTimestamp = Date.now();
 
   // Create kind0 event
   const eventTemplate = {
@@ -19,74 +24,76 @@ const publishUserMetadata = async (pubkey: string, nsec: Uint8Array, pool: Simpl
 
   try {
     // this assigns the pubkey, calculates the event id and signs the event in a single step
-    const signedEvent = finalizeEvent(eventTemplate, nsec)
-    await Promise.any(pool.publish(relays, signedEvent))
+    const signedEvent = finalizeEvent(eventTemplate, nsec);
+    await Promise.any(pool.publish(relays, signedEvent));
   } catch (err) {
-    console.log('Failed to send user metadata event', err)
-    throw new Error('Failed to send user metadata event')
+    console.log('Failed to send user metadata event', err);
+    throw new Error('Failed to send user metadata event');
   }
-}
+};
 
-const subscribeToUserMetadata = async (pubkeyList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>Promise<void> ) => {
+const subscribeToUserMetadata = async (
+  pubkeyList: string[],
+  pool: SimplePool,
+  relays: string[],
+  callback: (event: Event) => Promise<void>
+) => {
   if (subCloser) {
-    subCloser.close()
+    subCloser.close();
   }
   try {
     subCloser = pool.subscribe(
-      relays, 
+      relays,
       {
         kinds: [0],
-        authors: pubkeyList,
+        authors: pubkeyList
       },
       {
-        id: 'user-metadata-sub-id',  // always use fixed sub id
-        async onevent (event: any) {
+        id: 'user-metadata-sub-id', // always use fixed sub id
+        async onevent(event: any) {
           if (event.kind === 0) {
-            await callback(event)
+            await callback(event);
           }
         }
-      })
+      }
+    );
   } catch (err) {
-    console.log('Failed to subscribe to user metadata events', err)
-    throw new Error('Failed to subscribe to user metadata events')
+    console.log('Failed to subscribe to user metadata events', err);
+    throw new Error('Failed to subscribe to user metadata events');
   }
-}
+};
 
-const getUserMetadata = async (pubkey: string, pool: SimplePool, relays: string[]) : Promise<Event | undefined> => {
+const getUserMetadata = async (pubkey: string, pool: SimplePool, relays: string[]): Promise<Event | undefined> => {
   try {
-    const events = await pool.querySync(
-      relays, 
-      {
-        kinds: [0],
-        authors: [pubkey],
-      },
-    )
+    const events = await pool.querySync(relays, {
+      kinds: [0],
+      authors: [pubkey]
+    });
     if (events) {
       // may be events from multiple relays, so take the latest
-      const latest = events.sort((a,b)=> b.created_at - a.created_at)[0]
-      return latest
+      const latest = events.sort((a, b) => b.created_at - a.created_at)[0];
+      return latest;
     }
-    return undefined
-
+    return undefined;
   } catch (err) {
-    console.log('Failed to get user metadata for npub', err)
-    throw new Error('Failed to get user metadata')
+    console.log('Failed to get user metadata for npub', err);
+    throw new Error('Failed to get user metadata');
   }
-}
+};
 
-const extractContentFromUserMetadataEvent = (event: Event) : UserProfile | null => {
+const extractContentFromUserMetadataEvent = (event: Event): UserProfile | null => {
   try {
-    const content = JSON.parse(event.content)
+    const content = JSON.parse(event.content);
     const profile: UserProfile = {
       name: content.name ?? null,
       about: content.about ?? null,
       nip05: content.nip05 ?? null
-    }
-    return profile
+    };
+    return profile;
   } catch (err) {
     // bad json, return null
   }
-  return null
-}
+  return null;
+};
 
-export { publishUserMetadata, subscribeToUserMetadata, getUserMetadata, extractContentFromUserMetadataEvent }
+export { publishUserMetadata, subscribeToUserMetadata, getUserMetadata, extractContentFromUserMetadataEvent };

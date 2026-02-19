@@ -1,91 +1,98 @@
-import { type Event, finalizeEvent, SimplePool } from "@nostr/tools"
-import type { SubCloser } from "@nostr/tools/abstract-pool"
+import { type Event, finalizeEvent, SimplePool } from '@nostr/tools';
+import type { SubCloser } from '@nostr/tools/abstract-pool';
 
-let subCloser : SubCloser
+let subCloser: SubCloser;
 
-const publishRelayListMetadata = async (pubkey: string, nsec: Uint8Array, pool: SimplePool, relays: string[], inboxRelayList: string[]) => {
-
+const publishRelayListMetadata = async (
+  pubkey: string,
+  nsec: Uint8Array,
+  pool: SimplePool,
+  relays: string[],
+  inboxRelayList: string[]
+) => {
   // Define all the relays we expect to READ messages from, i.e. our inbox relays.
   // Other people will need to send DM to these relays to reach us.
-  const relayTags = []
+  const relayTags = [];
   for (let relayUrl of inboxRelayList) {
-    relayTags.push(["r", relayUrl, "read"])
+    relayTags.push(['r', relayUrl, 'read']);
   }
 
-  const createdTimestamp = Date.now()
+  const createdTimestamp = Date.now();
 
   // Create NIP-65 event
   const eventTemplate = {
     kind: 10002,
     created_at: Math.floor(createdTimestamp / 1000),
     tags: relayTags,
-    content: "",
+    content: '',
     pubkey
   };
 
   try {
     // this assigns the pubkey, calculates the event id and signs the event in a single step
-    const signedEvent = finalizeEvent(eventTemplate, nsec)
-    await Promise.any(pool.publish(relays, signedEvent))
+    const signedEvent = finalizeEvent(eventTemplate, nsec);
+    await Promise.any(pool.publish(relays, signedEvent));
   } catch (err) {
-    console.log('Failed to send nip65 relay list metadata', err)
-    throw new Error('Failed to send nip65')
+    console.log('Failed to send nip65 relay list metadata', err);
+    throw new Error('Failed to send nip65');
   }
-}
+};
 
-const subscribeToRelayListMetadata = async (pubkeyList: string[], pool: SimplePool, relays: string[], callback: (event: Event)=>Promise<void> ) => {
+const subscribeToRelayListMetadata = async (
+  pubkeyList: string[],
+  pool: SimplePool,
+  relays: string[],
+  callback: (event: Event) => Promise<void>
+) => {
   if (subCloser) {
-    subCloser.close()
+    subCloser.close();
   }
   try {
     subCloser = pool.subscribe(
-      relays, 
+      relays,
       {
         kinds: [10002],
-        authors: pubkeyList,
+        authors: pubkeyList
       },
       {
-        id: 'relaylist-metadata-sub-id',  // always use fixed sub id
-        async onevent (event: any) {
+        id: 'relaylist-metadata-sub-id', // always use fixed sub id
+        async onevent(event: any) {
           if (event.kind === 10002) {
-            await callback(event)
+            await callback(event);
           }
         }
-      })
+      }
+    );
   } catch (err) {
-    console.log('Failed to subscribe to nip65 relay list metadata', err)
-    throw new Error('Failed to subscribe to nip65')
+    console.log('Failed to subscribe to nip65 relay list metadata', err);
+    throw new Error('Failed to subscribe to nip65');
   }
-}
+};
 
-const getRelayListMetadata = async (pubkey: string, pool: SimplePool, relays: string[]) : Promise<Event | undefined> => {
+const getRelayListMetadata = async (pubkey: string, pool: SimplePool, relays: string[]): Promise<Event | undefined> => {
   try {
-    const events = await pool.querySync(
-      relays, 
-      {
-        kinds: [10002],
-        authors: [pubkey],
-      },
-    )
+    const events = await pool.querySync(relays, {
+      kinds: [10002],
+      authors: [pubkey]
+    });
     if (events) {
       // may be events from multiple relays, so take the latest
-      const latest = events.sort((a,b)=> b.created_at - a.created_at)[0]
-      return latest
+      const latest = events.sort((a, b) => b.created_at - a.created_at)[0];
+      return latest;
     }
-    return undefined
-
+    return undefined;
   } catch (err) {
-    console.log('Failed to get nip65 relay list metadata for npub', err)
-    throw new Error('Failed to get nip65')
+    console.log('Failed to get nip65 relay list metadata for npub', err);
+    throw new Error('Failed to get nip65');
   }
-}
+};
 
-const extractReadRelaysFromNip65 = (ev: Event) : string[] => {
+const extractReadRelaysFromNip65 = (ev: Event): string[] => {
   const relays: string[] = ev.tags
-    .filter((tag :string[]) => tag[0]==='r')
-    .filter((tag :string[]) => tag.length==2 || tag[2]==='read')
-    .map((tag: string[]) => tag[1])
-  return relays
-}
+    .filter((tag: string[]) => tag[0] === 'r')
+    .filter((tag: string[]) => tag.length == 2 || tag[2] === 'read')
+    .map((tag: string[]) => tag[1]);
+  return relays;
+};
 
-export { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata, extractReadRelaysFromNip65 }
+export { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata, extractReadRelaysFromNip65 };

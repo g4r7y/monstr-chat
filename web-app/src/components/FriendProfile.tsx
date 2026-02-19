@@ -33,7 +33,7 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
       if (isValidNpub(contactToLookup)) {
         const npub = contactToLookup;
         setLoading(true);
-        const profile = await chatController.getUserProfile(npub);
+        const profile = await chatController.lookupUserProfile(npub);
         setContactProfile(profile);
         setContactNpub(npub);
         onLookupDone?.(npub, profile);
@@ -43,7 +43,7 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
         const nip05 = contactToLookup;
         setLoading(true);
         const foundNpub = await chatController.lookupNip05Address(nip05);
-        const profile = foundNpub ? await chatController.getUserProfile(foundNpub) : null;
+        const profile = foundNpub ? await chatController.lookupUserProfile(foundNpub) : null;
         setContactProfile(profile);
         setContactNpub(foundNpub);
         onLookupDone?.(foundNpub, profile);

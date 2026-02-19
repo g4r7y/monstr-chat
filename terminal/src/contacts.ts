@@ -70,7 +70,7 @@ async function addContact(context: ViewContext) {
 
     if (state == 'addExisting') {
         // look up user metadata event from relays
-        contactProfile = await context.chatController.getUserProfile(npub)
+        contactProfile = await context.chatController.lookupUserProfile(npub)
         state = 'found'
     }
     if (state == 'find') {
@@ -88,7 +88,7 @@ async function addContact(context: ViewContext) {
       if (isValidNpub(response)) {
         npub = response
         // look up user metadata event from relays
-        contactProfile = await context.chatController.getUserProfile(npub)
+        contactProfile = await context.chatController.lookupUserProfile(npub)
         state = 'found'
       }
       // if entered user@domain
@@ -104,7 +104,7 @@ async function addContact(context: ViewContext) {
           terminal('Found:\n\n')
           npub = foundNpub
           // look up user metadata from relays
-          contactProfile = await context.chatController.getUserProfile(npub)
+          contactProfile = await context.chatController.lookupUserProfile(npub)
           // if user profile not found or it is missing nip05
           if (!contactProfile?.nip05) {
             // create/overwrite contactProfile with the user-inputted nip05

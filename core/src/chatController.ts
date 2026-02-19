@@ -56,7 +56,7 @@ export interface ChatController {
   createNewKey() : Promise<string>
   resetKey(nsec: string) : Promise<void>
   resetKeyFromSeedWords(bip39Mnemonic: string) : Promise<void>
-  getUserProfile(npub: string) : Promise<UserProfile | null>
+  lookupUserProfile(npub: string) : Promise<UserProfile | null>
 }
 
 
@@ -288,16 +288,16 @@ export class ChatControllerImpl implements ChatController {
   // General (aka discovery) relays are used for the subscription
   async subscribeToUserMetadata() {
     // subscribing for all of our contacts
-    let npubs = this.#model.getContactList()
+    let pubkeys = this.#model.getContactList()
       .map(c => c.npub)
       .filter(npub => isValidNpub(npub))
       .map(npub => decode(npub).data as string)
-      
+
     // subscribe for self too
-    npubs.push(this.#pubKey)
+    pubkeys.push(this.#pubKey)
 
     console.log(`Subscribing to user metadata for contacts: ${this.#model.getContactList().map(c=>c.name)} + self`)
-    await subscribeToUserMetadata(npubs, this.#pool, 
+    await subscribeToUserMetadata(pubkeys, this.#pool, 
       this.#model.settings.generalRelays, 
       async (ev: Event) => await this.#onUserMetadata(ev)
     )
@@ -328,10 +328,16 @@ export class ChatControllerImpl implements ChatController {
   }
 
   getNpub() : string {
+    if (this.#pubKey.length === 0) {
+      throw('Keys not initialised')
+    }
     return npubEncode(this.#pubKey)
   }
-
+  
   getNsec() : string {
+    if (this.#privateKey.length === 0) {
+      throw('Keys not initialised')
+    }
     return nsecEncode(this.#privateKey)
   }
 
@@ -368,7 +374,7 @@ export class ChatControllerImpl implements ChatController {
   }
 
   
-  async getUserProfile(npub: string) : Promise<UserProfile | null> {
+  async lookupUserProfile(npub: string) : Promise<UserProfile | null> {
     const userPubKey = decode(npub).data as string
     const userEvent = await getUserMetadata(userPubKey, this.#pool, this.#model.settings.generalRelays)
     if (!userEvent) {
@@ -487,40 +493,41 @@ export class ChatControllerImpl implements ChatController {
   async #onUserMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey)
 
-    const mergeProfile = async (localProfile: UserProfile | null, remoteProfile: UserProfile) => {
-      localProfile = remoteProfile
+    const mergeProfile = async (localProfile: UserProfile | null, remoteProfile: UserProfile) : Promise<UserProfile> => {
+      let merged = { ...remoteProfile};
       if (remoteProfile.nip05 !== localProfile?.nip05) {
         // default to overriding local value with null
-        localProfile.nip05 = null
+        merged.nip05 = null
         if (remoteProfile.nip05) {
           // new nip05, so verify it before we save it
           const nip05Npub = await this.lookupNip05Address(remoteProfile.nip05)
           if (nip05Npub === npub) {
             // update local profile with verified nip05
-            localProfile.nip05 = remoteProfile.nip05
+            merged.nip05 = remoteProfile.nip05
           }
         }
       }
+      return merged;
     }
 
     // TODO only update if event time is newer than last update?
-    const userProfile = extractContentFromUserMetadataEvent(ev)
+    const userProfile = extractContentFromUserMetadataEvent(ev);
     if (userProfile) {
       // update user metadata for contact
-      const contact = this.#model.getContactByNpub(npub)
+      const contact = this.#model.getContactByNpub(npub);
       if (contact ) {
-        await mergeProfile(contact.profile, userProfile)
-        console.log(`Updating user profile for contact: ${contact.name}`) 
-        await this.#model.setContact(contact)
+        contact.profile = await mergeProfile(contact.profile, userProfile);
+        console.log(`Updating user profile for contact: ${contact.name}`);
+        await this.#model.setContact(contact);
       }
 
       // update user metadata for self
       if (ev.pubkey === this.#pubKey) {
-        const currentSettings = this.#model.settings
-        await mergeProfile(currentSettings.profile, userProfile)
-        console.log(`Updating user profile for self`) 
-        await this.#model.setSettings(currentSettings)
-        this.#settingsListeners.forEach(l => l.notifySettingsChanged())
+        const currentSettings = this.#model.settings;
+        currentSettings.profile = await mergeProfile(currentSettings.profile, userProfile);
+        console.log('Updating user profile for self');
+        await this.#model.setSettings(currentSettings);
+        this.#settingsListeners.forEach(l => l.notifySettingsChanged());
       }
     }
   }

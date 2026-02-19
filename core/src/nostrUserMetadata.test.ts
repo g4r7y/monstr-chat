@@ -3,15 +3,15 @@ import { generateSecretKey, finalizeEvent, type EventTemplate  } from '@nostr/to
 import { extractContentFromUserMetadataEvent } from './nostrUserMetadata.js'
 
 const createEvent = (content: string) : any => {
-  const nsec = generateSecretKey(); // test private key
-    const tempEv: EventTemplate = {
-      created_at: Math.floor(Date.now() / 1000),
-      kind: 0,
-      tags: [],
-      content,
-    };
-    const event = finalizeEvent(tempEv, nsec)
-    return event
+  const privateKey = generateSecretKey();
+  const tempEv: EventTemplate = {
+    created_at: Math.floor(Date.now() / 1000),
+    kind: 0,
+    tags: [],
+    content,
+  };
+  const event = finalizeEvent(tempEv, privateKey)
+  return event
 }
 
 describe('user metadata', () => {

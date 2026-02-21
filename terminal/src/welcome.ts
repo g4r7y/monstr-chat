@@ -8,18 +8,18 @@ async function welcome(context: ViewContext) {
   terminal.clear();
   terminal.bgGreen('Monstr Chat\n\n');
   terminal.green('Welcome to Monstr Chat!\n\n');
-  terminal.yellow('[Messaging On Nostr]\n\n');
+  terminal.yellow('Get started\n\n');
   terminal(
-    'To get started all you need is your own Nostr key.\n\n' +
+    'Monstr Chat is a messaging app built on Nostr.\n\n' +
+      'To get started all you need is your own Nostr key.\n\n' +
       'This is an identifier which is unique to you and allows you to securely send and receive encrypted messages.\n' +
-      'No need to sign up for an account, or give out your phone number or email address.\n' +
-      'Your Nostr key will also work with any other app that is built on Nostr.\n\n' +
-      'You can create your own key now or, if you already have a Nostr key, you can choose to restore it.\n'
+      'It will also work with any other app that is built on Nostr.\n\n' +
+      'You can create your own key now or, if you already have a Nostr key, you can use that.\n'
   );
   let option = '';
   const menu1 = new Map();
-  menu1.set('Create new key', () => (option = 'create'));
-  menu1.set('Restore existing key', () => (option = 'restore'));
+  menu1.set('Create a key', () => (option = 'create'));
+  menu1.set('I have a key', () => (option = 'restore'));
   await showMenu(menu1);
 
   if (option === 'create') {
@@ -27,12 +27,12 @@ async function welcome(context: ViewContext) {
     terminal.clear();
     terminal.bgGreen('Monstr Chat\n\n');
     terminal.green('Welcome to Monstr Chat!\n\n');
-    terminal.yellow('Your new Nostr key has been created!\n\n');
+    terminal.yellow('Your new Nostr key has been created\n\n');
     terminal(
-      'You now have a public Nostr key (npub) and a secret Nostr key (nsec).\n' +
-        'Your keys are saved in the Monstr Chat settings.\n' +
-        'It is important to keep your nsec key safe and never share it with anybody else.\n' +
-        'You should share your npub key with your friends so that they can send messages to you and read your messages.\n\n'
+      'You now have a public Nostr key and a secret Nostr key.\n' +
+        'Your keys are saved in the Monstr Chat settings.\n\n' +
+        'Your public key starts with npub. You should share your public key with your friends so that they can chat with you.\n\n' +
+        'Your secret key starts with nsec. Never share your secret key with anybody!\n\n'
     );
     terminal('Your public Nostr key is: \n');
     terminal.yellow(`${context.chatController.getNpub()}\n\n`);
@@ -43,11 +43,12 @@ async function welcome(context: ViewContext) {
     terminal.green('Welcome to Monstr Chat!\n\n');
     terminal.yellow('Save your recovery phrase!\n\n');
     terminal(
-      'A 12 word recovery phrase has been generated for you.\n' +
-        'You will need this in future if you ever need to restore your Nostr key.\n' +
-        'Keep this in a safe place and do not share it with anybody.\n' +
+      'A 12-word recovery phrase has been generated for you.\n\n' +
+        'You can use this in future to restore your Nostr key.\n' +
+        'You may need to do this if you reset your device or if you wish to access your messages on another device.\n\n' +
+        'Write it down and keep it in a safe place. Do not share it with anybody.\n' +
         'After you press ok, you will never be able to see it again.\n\n' +
-        'Your memorable recovery phrase is:\n'
+        'Your recovery phrase is:\n'
     );
     terminal.yellow(`${mnemonic}\n\n`);
 
@@ -63,12 +64,12 @@ async function welcome(context: ViewContext) {
     terminal.bgGreen('Monstr Chat\n\n');
     terminal.green('Welcome to Monstr Chat!\n\n');
     terminal.yellow('Restore your key\n\n');
-    terminal('There are two ways to restore your key.\n');
     terminal(
-      'You can use your Nostr secret key (nsec).\n' +
-        "It starts with 'nsec' and is 63 characters long.\n" +
-        'Or you can use your memorable recovery phrase.\n' +
-        'This is the 12 word phrase that you hopefully stored safely when you created your key.\n'
+      'There are two ways to restore your key.\n\n' +
+        'You can use your Nostr secret key (nsec).\n' +
+        "It starts with 'nsec' and is 63 characters long.\n\n" +
+        'Or you can use your recovery phrase.\n' +
+        'This is the 12-word phrase that you hopefully stored safely when you created your key.\n'
     );
     terminal('How would you like to restore your key?\n');
     const menu2 = new Map();

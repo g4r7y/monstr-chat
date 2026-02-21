@@ -4,7 +4,7 @@
     "test": "vitest --run src/**",
     "build": "npx tsc && npx tsc-alias",
     "start": "node dist/terminal/src/main.js",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --ignore-path ../.gitignore --write ."
   },
   "bin": {
     "monstr-chat": "./dist/terminal/main.js"

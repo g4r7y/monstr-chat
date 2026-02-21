@@ -7,11 +7,11 @@ import { getDisplayableMessageContact, getDisplayableMessageTimestamp, handleSen
 const { terminal } = tk;
 
 async function viewConversation(context: ViewContext) {
-  const strangerLabel = 'Unknown';
+  const strangerLabel = 'Stranger';
   const { contactNpub } = context.viewParams;
-  const contactLabel = context.chatController.getContactByNpub(contactNpub)?.name ?? 'Unknown';
+  const contactLabel = context.chatController.getContactByNpub(contactNpub)?.name ?? strangerLabel;
   terminal.clear();
-  terminal.bgGreen('Conversation with ');
+  terminal.bgGreen('Chat with ');
   terminal.bgGreen.brightYellow(`${contactLabel}\n`);
   terminal('\n');
 
@@ -29,15 +29,17 @@ async function viewConversation(context: ViewContext) {
       });
       menu.set('Send Message', () => (state = 'send'));
       if (contactLabel === strangerLabel) {
-        menu.set('Add To Contacts', () => {
+        menu.set('Add To Friends', () => {
           context.view.push('addContact');
         });
       } else {
-        menu.set('View Contact', () => {
+        menu.set('View Friend', () => {
           context.view.push('viewContact');
         });
       }
-      menu.set('Delete Conversation', () => (state = 'delete'));
+      // TODO not yet implemented
+      // menu.set('Delete Conversation', () => (state = 'delete'));
+
       state = 'exit'; // default, may be overridden by menu choice
       await showHorizontalMenu(menu);
     }

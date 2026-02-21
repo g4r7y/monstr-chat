@@ -8,10 +8,10 @@ const { terminal } = tk;
 
 async function contactsMenu(context: ViewContext) {
   terminal.clear();
-  terminal.bgGreen('Contacts\n');
+  terminal.bgGreen('Friends\n');
   const menu = new Map();
   menu.set('Back', () => context.view.pop());
-  menu.set('Add New Contact', () => {
+  menu.set('Find Friend', () => {
     context.view.push('addContact');
     delete context.viewParams.contactNpub;
   });
@@ -30,7 +30,7 @@ async function contactsMenu(context: ViewContext) {
 
 async function viewContact(context: ViewContext) {
   terminal.clear();
-  terminal.bgGreen('View Contact\n\n');
+  terminal.bgGreen('View Friend\n\n');
   const { contactNpub } = context.viewParams;
   const currentContact = context.chatController.getContactByNpub(contactNpub)!;
   terminal.yellow('Name:             ');
@@ -56,8 +56,7 @@ async function viewContact(context: ViewContext) {
 
   const menu = new Map();
   menu.set('Back', () => context.view.pop());
-  menu.set('Messages', () => {
-    // context.view.splice(1-context.view.length) //back up to top menu
+  menu.set('Chats', () => {
     context.view.push('viewConversation');
   });
   menu.set('Edit', () => context.view.push('editContact'));
@@ -70,16 +69,19 @@ async function addContact(context: ViewContext) {
   let contactProfile: UserProfile | null = null;
 
   let state = npub ? 'addExisting' : 'find';
-  while (state) {
+  while (true) {
     terminal.clear();
-    terminal.bgGreen('Add Contact\n\n');
+    let found = false;
 
     if (state == 'addExisting') {
+      terminal.bgGreen('Add Friend\n\n');
       // look up user metadata event from relays
+      terminal('Looking up user...\n\n');
       contactProfile = await context.chatController.lookupUserProfile(npub);
-      state = 'found';
+      found = true;
     }
     if (state == 'find') {
+      terminal.bgGreen('Find Friend\n\n');
       terminal('You can search for a user by their verified Nostr address.\n');
       terminal('This is sometimes called a NIP-05 address and looks something like: user@domain\n');
       terminal('Or you can enter their npub key if you have it.\n\n');
@@ -94,8 +96,9 @@ async function addContact(context: ViewContext) {
       if (isValidNpub(response)) {
         npub = response;
         // look up user metadata event from relays
+        terminal('Looking up user...\n\n');
         contactProfile = await context.chatController.lookupUserProfile(npub);
-        state = 'found';
+        found = true;
       }
       // if entered user@domain
       else if (isValidNip05Address(response)) {
@@ -107,9 +110,9 @@ async function addContact(context: ViewContext) {
             break;
           }
         } else {
-          terminal('Found:\n\n');
           npub = foundNpub;
           // look up user metadata from relays
+          terminal('Looking up user...\n\n');
           contactProfile = await context.chatController.lookupUserProfile(npub);
           // if user profile not found or it is missing nip05
           if (!contactProfile?.nip05) {
@@ -119,7 +122,8 @@ async function addContact(context: ViewContext) {
               nip05
             };
           }
-          state = 'found';
+          terminal('Found:\n\n');
+          found = true;
         }
       } else {
         const resp = await showYesNoPrompt('Not a valid Nostr address or npub. Try again?');
@@ -129,11 +133,11 @@ async function addContact(context: ViewContext) {
       }
     }
 
-    if (state == 'found') {
+    if (found) {
       const contact = context.chatController.getContactByNpub(npub);
 
       if (contact) {
-        terminal('Contact name:  ');
+        terminal('Name:  ');
         terminal.yellow(`${contact.name}\n`);
       }
       if (contactProfile?.nip05) {
@@ -153,32 +157,32 @@ async function addContact(context: ViewContext) {
       terminal.yellow(`${npub}\n\n`);
 
       if (contact) {
-        terminal('User is already in your contacts.\n\n');
+        terminal('User is already in your friends.\n\n');
         const resp = await showYesNoPrompt(`Search again?`);
         if (!resp) {
           break;
         }
-        state = 'find';
+        // reiterate
         continue;
       }
 
       // Proceed to add as a new contact
-      const resp = await showYesNoPrompt('Add to contacts?');
+      const resp = await showYesNoPrompt('Add to friends?');
       if (!resp) {
         break;
       }
 
-      let contactName = await showPrompt('\nEnter a name for this contact: ', contactProfile?.name ?? '');
+      let contactName = await showPrompt('\nGive your friend a name: ', contactProfile?.name ?? '');
       if (contactName === null) {
         break;
       }
       if (!contactName) {
-        const resp = await showYesNoPrompt('Contact name cannot be empty. Continue editing?');
+        const resp = await showYesNoPrompt('Name cannot be empty. Continue editing?');
         if (!resp) {
           break;
         }
       } else if (context.chatController.getContactByName(contactName) !== null) {
-        const resp = await showYesNoPrompt('Another contact already exists with this name. Continue editing?');
+        const resp = await showYesNoPrompt('You already have a friend with the same name. Continue editing?');
         if (!resp) {
           break;
         }
@@ -196,6 +200,7 @@ async function addContact(context: ViewContext) {
         // new contact, so update subscription so we can get contact's relaylist
         await context.chatController.subscribeToRelayMetadata();
         await context.chatController.subscribeToUserMetadata();
+        // done
         break;
       }
     }
@@ -216,20 +221,20 @@ async function editContact(context: ViewContext) {
   let editing = true;
   while (editing) {
     terminal.clear();
-    terminal.bgGreen('Edit Contact\n\n');
+    terminal.bgGreen('Edit Friend\n\n');
 
     terminal.white('Npub:         ');
     terminal.yellow(`${contact.npub}\n\n`);
 
-    let name = await showPrompt('Contact name: ', defaultName);
+    let name = await showPrompt('Name: ', defaultName);
 
     if (name === null) {
       editing = false;
       // exit
     } else if (name === '') {
-      editing = await showYesNoPrompt('Contact name cannot be empty. Continue editing?');
+      editing = await showYesNoPrompt('Name cannot be empty. Continue editing?');
     } else if (name !== origName && context.chatController.getContactByName(name) !== null) {
-      editing = await showYesNoPrompt('Another contact already exists with this name. Continue editing?');
+      editing = await showYesNoPrompt('You already have a friend with the same name. Continue editing?');
       defaultName = name;
     } else {
       // valid, so write the contact

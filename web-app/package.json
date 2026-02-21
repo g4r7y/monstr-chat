@@ -6,7 +6,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --ignore-path ../.gitignore --write ."
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "7.1.0",

@@ -7,7 +7,7 @@ const { terminal } = tk;
 
 async function viewInbox(context: ViewContext) {
   terminal.clear();
-  terminal.bgGreen('Messages\n');
+  terminal.bgGreen('Chats\n');
 
   const menu = new Map();
   menu.set('Back', () => context.view.pop());

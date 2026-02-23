@@ -4,7 +4,7 @@ import Chats from './Chats';
 import Friends from './Friends';
 import Settings from './Settings';
 
-const MainMenu = ({ activeTab }: { activeTab: string }) => {
+const MainMenu = ({ activeTab, activeSetting }: { activeTab: string; activeSetting?: string }) => {
   return (
     <Container>
       <Navbar bg="light">
@@ -18,7 +18,7 @@ const MainMenu = ({ activeTab }: { activeTab: string }) => {
           <Friends />
         </Tab>
         <Tab eventKey="settings" title="Settings">
-          <Settings />
+          <Settings activeKey={activeSetting ?? ''} />
         </Tab>
       </Tabs>
     </Container>

@@ -2,24 +2,33 @@ import { Accordion, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { useChatController } from '../chatControllerContext';
 import UserProfile from './UserProfile';
 import Relays from './Relays';
+import React from 'react';
+import type { AccordionEventKey } from 'react-bootstrap/esm/AccordionContext';
 
-function Settings() {
+type SettingsProps = {
+  activeKey: string;
+};
+
+function Settings(props: SettingsProps) {
   const controller = useChatController();
+
+  const [activeKey, setActiveKey] = React.useState<AccordionEventKey>(props.activeKey);
+
   return (
-    <Accordion>
-      <Accordion.Item eventKey="0">
+    <Accordion activeKey={activeKey} onSelect={key => setActiveKey(key)}>
+      <Accordion.Item eventKey="profile">
         <Accordion.Header>Profile</Accordion.Header>
         <Accordion.Body>
           <UserProfile />
         </Accordion.Body>
       </Accordion.Item>
-      <Accordion.Item eventKey="1">
+      <Accordion.Item eventKey="relays">
         <Accordion.Header>Relays</Accordion.Header>
         <Accordion.Body>
           <Relays />
         </Accordion.Body>
       </Accordion.Item>
-      <Accordion.Item eventKey="2">
+      <Accordion.Item eventKey="keys">
         <Accordion.Header>Keys</Accordion.Header>
         <Accordion.Body>
           <div>

@@ -6,10 +6,12 @@ export type AppViewNameType =
   | 'main'
   | 'friends'
   | 'settings'
+  | 'settings#profile'
   | 'conversation'
   | 'add-friend'
   | 'view-friend'
-  | 'find-friend';
+  | 'find-friend'
+  | 'edit-profile';
 
 // Define the type to be used with the context
 interface AppViewContextType {

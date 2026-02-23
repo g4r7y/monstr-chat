@@ -11,6 +11,7 @@ import Conversation from './Conversation';
 import AddFriend from './AddFriend';
 import ViewFriend from './ViewFriend.tsx';
 import FindFriend from './FindFriend.tsx';
+import EditProfile from './EditProfile.tsx';
 
 const MainAppView = () => {
   const appView = useAppView();
@@ -41,10 +42,12 @@ const MainAppView = () => {
       {appView.view === 'main' && <MainMenu activeTab="chats" />}
       {appView.view === 'friends' && <MainMenu activeTab="friends" />}
       {appView.view === 'settings' && <MainMenu activeTab="settings" />}
+      {appView.view === 'settings#profile' && <MainMenu activeTab="settings" activeSetting="profile" />}
       {appView.view === 'conversation' && <Conversation />}
       {appView.view === 'add-friend' && <AddFriend />}
       {appView.view === 'view-friend' && <ViewFriend />}
       {appView.view === 'find-friend' && <FindFriend />}
+      {appView.view === 'edit-profile' && <EditProfile />}
     </div>
   );
 };

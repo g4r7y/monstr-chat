@@ -8,9 +8,13 @@ import { useAppView } from '../appViewContext';
 import Nip05Address from './Nip05Address';
 
 function ViewFriend() {
-  const chatController = useChatController();
+  const controller = useChatController();
+  // memoise
+  const controllerRef = React.useRef(controller);
 
   const { switchView, currentContactNpub } = useAppView();
+    // memoise current contact (only changes when view changes)
+  const currentContactNpubRef = React.useRef(currentContactNpub);
 
   const handleBack = () => {
     switchView('friends');
@@ -23,7 +27,7 @@ function ViewFriend() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = React.useState(false);
 
   React.useEffect(() => {
-    const c = chatController.getContactByNpub(currentContactNpub);
+    const c = controllerRef.current.getContactByNpub(currentContactNpubRef.current);
     if (c) {
       setContact(c);
       setFriendName(c.name);
@@ -33,7 +37,7 @@ function ViewFriend() {
   const handleSave = async () => {
     if (friendName.length === 0) {
       setInputError('Name cannot be empty');
-    } else if (friendName !== contact?.name && chatController.getContactByName(friendName) !== null) {
+    } else if (friendName !== contact?.name && controller.getContactByName(friendName) !== null) {
       setInputError('You already have a friend with the same name');
     } else {
       if (contact) {
@@ -41,7 +45,7 @@ function ViewFriend() {
           ...contact,
           name: friendName
         };
-        await chatController.setContact(updatedContact);
+        await controller.setContact(updatedContact);
         setContact(updatedContact);
       }
       setIsEditing(false);
@@ -49,7 +53,7 @@ function ViewFriend() {
   };
 
   const handleDelete = async () => {
-    await chatController.deleteContact(currentContactNpub);
+    await controller.deleteContact(currentContactNpub);
     handleBack();
   };
 

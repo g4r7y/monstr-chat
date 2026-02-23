@@ -8,20 +8,25 @@ import { useAppView } from '../appViewContext';
 
 function UserProfile() {
   const controller = useChatController();
+  // memoise
+  const controllerRef = React.useRef(controller);
 
   const [settings, setSettings] = React.useState<ChatSettings>(controller.getSettings());
 
   const { switchView } = useAppView();
+  
   React.useEffect(() => {
     const listener = new (class implements SettingsListener {
       notifySettingsChanged(): void {
-        setSettings(controller.getSettings());
+        setSettings(controllerRef.current.getSettings());
       }
     })();
-    controller.addSettingsListener(listener);
+
+    const curController = controllerRef.current;
+    curController.addSettingsListener(listener);
 
     return () => {
-      controller.removeSettingsListener(listener);
+      curController.removeSettingsListener(listener);
     };
   }, []);
 

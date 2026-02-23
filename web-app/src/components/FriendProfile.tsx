@@ -12,7 +12,13 @@ interface ContactProfileProps {
 }
 
 const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactToLookup, onLookupDone }) => {
-  const chatController = useChatController();
+  const controller = useChatController();
+  // memoise controller
+  const controllerRef = React.useRef(controller);
+  // memoise callback
+  const onLookupDoneRef = React.useRef((npub: string | null, profile: UserProfile | null) =>
+    onLookupDone?.(npub, profile)
+  );
 
   const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);
   const [contactNpub, setContactNpub] = React.useState<string | null>(null);
@@ -31,20 +37,20 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
       if (isValidNpub(contactToLookup)) {
         const npub = contactToLookup;
         setLoading(true);
-        const profile = await chatController.lookupUserProfile(npub);
+        const profile = await controllerRef.current.lookupUserProfile(npub);
         setContactProfile(profile);
         setContactNpub(npub);
-        onLookupDone?.(npub, profile);
+        onLookupDoneRef.current(npub, profile);
         setLoading(false);
         setContactLookupDone(true);
       } else if (isValidNip05Address(contactToLookup)) {
         const nip05 = contactToLookup;
         setLoading(true);
-        const foundNpub = await chatController.lookupNip05Address(nip05);
-        const profile = foundNpub ? await chatController.lookupUserProfile(foundNpub) : null;
+        const foundNpub = await controllerRef.current.lookupNip05Address(nip05);
+        const profile = foundNpub ? await controllerRef.current.lookupUserProfile(foundNpub) : null;
         setContactProfile(profile);
         setContactNpub(foundNpub);
-        onLookupDone?.(foundNpub, profile);
+        onLookupDoneRef.current(foundNpub, profile);
         setLoading(false);
         setContactLookupDone(true);
       }

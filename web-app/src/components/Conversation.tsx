@@ -7,8 +7,8 @@ import { type ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';
 
-function getContactLabel(npub: string, chatController: ChatController): string {
-  const contact = chatController.getContactByNpub(npub);
+function getContactLabel(npub: string, controller: ChatController): string {
+  const contact = controller.getContactByNpub(npub);
   return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`;
 }
 
@@ -21,22 +21,26 @@ function getDisplayableMessageTimestamp(msg: ChatMessage): string {
 
 // The conversation view component
 function Conversation() {
-  const chatController = useChatController();
-  const [conversations, setConversations] = React.useState(chatController.getConversations());
+  const controller = useChatController();
+  // memoise controller
+  const controllerRef = React.useRef(controller);
+
+  const [conversations, setConversations] = React.useState(controller.getConversations());
   const [msgText, setMsgText] = React.useState('');
 
   React.useEffect(() => {
     const myListener = new (class implements MessageListener {
       notifyMessage() {
         // TODO check if message is part of this conversation
-        setConversations(chatController.getConversations());
+        setConversations(controllerRef.current.getConversations());
       }
     })();
 
-    chatController.addMessageListener(myListener);
+    const curController = controllerRef.current
+    curController.addMessageListener(myListener);
 
     return () => {
-      chatController.removeMessageListener(myListener);
+      curController.removeMessageListener(myListener);
     };
   }, []);
 
@@ -60,7 +64,7 @@ function Conversation() {
   };
 
   const handleSend = () => {
-    chatController.sendDmToNpub(currentContactNpub, msgText);
+    controller.sendDmToNpub(currentContactNpub, msgText);
     setMsgText('');
   };
 
@@ -73,11 +77,11 @@ function Conversation() {
           </Button>
           <Navbar.Brand>
             Chat with{' '}
-            {chatController.getContactByNpub(currentContactNpub)
-              ? getContactLabel(currentContactNpub, chatController)
+            {controller.getContactByNpub(currentContactNpub)
+              ? getContactLabel(currentContactNpub, controller)
               : 'Stranger'}
           </Navbar.Brand>
-          {chatController.getContactByNpub(currentContactNpub) !== null && (
+          {controller.getContactByNpub(currentContactNpub) !== null && (
             <Button onClick={handleViewFriend} size="lg" variant="link" className="info-button text-info">
               <i className="fas fa-address-card"></i>
             </Button>
@@ -85,7 +89,7 @@ function Conversation() {
         </div>
       </Navbar>
 
-      {chatController.getContactByNpub(currentContactNpub) === null && (
+      {controller.getContactByNpub(currentContactNpub) === null && (
         <Card className="mb-3 d-inline-block">
           <Card.Body>
             <Card.Text>
@@ -119,7 +123,7 @@ function Conversation() {
       </Form>
       <ListGroup>
         {conversations.get(currentContactNpub)?.map((msg: ChatMessage, i: number) => {
-          const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, chatController);
+          const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, controller);
           return (
             <ListGroup.Item key={i} action as="li" className="d-flex justify-content-between align-items-start">
               <div className="ms-2 me-auto">

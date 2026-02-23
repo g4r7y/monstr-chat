@@ -16,22 +16,28 @@ function getContactLabel(npub: string, controller: ChatController): string {
 // The main inbox for all chats
 function Chats() {
   const controller = useChatController();
+  // memoise controller
+  const controllerRef = React.useRef(controller);
+
   const [conversations, setConversations] = React.useState(controller.getConversations());
 
   React.useEffect(() => {
+    
     const updateConversations = () => {
-      setConversations(controller.getConversations());
+      setConversations(controllerRef.current.getConversations());
     };
-
+    
     const myListener = new (class implements MessageListener {
       notifyMessage() {
         updateConversations();
       }
     })();
-    controller.addMessageListener(myListener);
+    
+    const curController = controllerRef.current;
+    curController.addMessageListener(myListener);
 
     return () => {
-      controller.removeMessageListener(myListener);
+      curController.removeMessageListener(myListener);
     };
   }, []);
 

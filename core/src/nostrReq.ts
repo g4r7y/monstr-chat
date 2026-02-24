@@ -20,8 +20,8 @@ const sendReq = (pool: SimplePool, relays: string[], callback: () => void) => {
         onevent: () => callback()
       }
     );
-  } catch (err) {
-    // ignore errors, we don't care
+  } catch (_) {
+    // we don't care about error
   }
 };
 

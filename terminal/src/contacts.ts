@@ -68,7 +68,7 @@ async function addContact(context: ViewContext) {
   let npub = context.viewParams.contactNpub ?? '';
   let contactProfile: UserProfile | null = null;
 
-  let state = npub ? 'addExisting' : 'find';
+  const state = npub ? 'addExisting' : 'find';
   while (true) {
     terminal.clear();
     let found = false;
@@ -172,7 +172,7 @@ async function addContact(context: ViewContext) {
         break;
       }
 
-      let contactName = await showPrompt('\nGive your friend a name: ', contactProfile?.name ?? '');
+      const contactName = await showPrompt('\nGive your friend a name: ', contactProfile?.name ?? '');
       if (contactName === null) {
         break;
       }
@@ -209,14 +209,14 @@ async function addContact(context: ViewContext) {
 }
 
 async function editContact(context: ViewContext) {
-  let { contactNpub } = context.viewParams;
+  const { contactNpub } = context.viewParams;
   let contact = context.chatController.getContactByNpub(contactNpub);
   if (!contact) {
     context.view.pop();
     return;
   }
 
-  let origName = contact.name;
+  const origName = contact.name;
   let defaultName = contact.name;
   let editing = true;
   while (editing) {
@@ -226,7 +226,7 @@ async function editContact(context: ViewContext) {
     terminal.white('Npub:         ');
     terminal.yellow(`${contact.npub}\n\n`);
 
-    let name = await showPrompt('Name: ', defaultName);
+    const name = await showPrompt('Name: ', defaultName);
 
     if (name === null) {
       editing = false;
@@ -247,15 +247,15 @@ async function editContact(context: ViewContext) {
 }
 
 async function deleteContact(context: ViewContext) {
-  let { contactNpub } = context.viewParams;
-  let contact = context.chatController.getContactByNpub(contactNpub);
+  const { contactNpub } = context.viewParams;
+  const contact = context.chatController.getContactByNpub(contactNpub);
   if (!contact) {
     context.view.pop();
     return;
   }
 
   terminal('\n');
-  let confirmed = await showYesNoPrompt(`Delete ${contact.name}. Are you sure?`);
+  const confirmed = await showYesNoPrompt(`Delete ${contact.name}. Are you sure?`);
   if (confirmed) {
     await context.chatController.deleteContact(contactNpub);
     // need to pop twice, to exit the contacts view also

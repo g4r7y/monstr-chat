@@ -1,8 +1,8 @@
 import { test, describe, expect } from 'vitest';
-import { generateSecretKey, finalizeEvent, type EventTemplate } from '@nostr/tools';
+import { generateSecretKey, finalizeEvent, type EventTemplate, type Event } from '@nostr/tools';
 import { extractContentFromUserMetadataEvent } from './nostrUserMetadata.js';
 
-const createEvent = (content: string): any => {
+const createEvent = (content: string): Event => {
   const privateKey = generateSecretKey();
   const tempEv: EventTemplate = {
     created_at: Math.floor(Date.now() / 1000),

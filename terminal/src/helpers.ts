@@ -5,7 +5,7 @@ import type { ViewContext } from './viewRouter.js';
 
 const { terminal } = tk;
 
-async function handleSendError(err: any): Promise<boolean> {
+async function handleSendError(err: Error | unknown): Promise<boolean> {
   const sendError =
     err instanceof Error && err.message === 'NoRelay'
       ? "Send failed, cannot find the recipient's inbox relay on any discovery relays"

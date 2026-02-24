@@ -57,7 +57,7 @@ export class ChatModel {
   }
 
   async load() {
-    let data = await this.#dataStore.readAppData();
+    const data = await this.#dataStore.readAppData();
     if (data != null) {
       const { contacts, settings } = data;
       if (contacts) {
@@ -79,7 +79,7 @@ export class ChatModel {
       await this.#syncAppDataToStorage();
     }
 
-    let msgs = await this.#dataStore.readMessages();
+    const msgs = await this.#dataStore.readMessages();
     if (msgs != null) {
       // write messages to Map object, where keys are the message id
       this.#messages = new Map();
@@ -118,7 +118,7 @@ export class ChatModel {
   }
 
   getContactByName(name: string): ChatContact | null {
-    for (let c of this.#contacts.values()) {
+    for (const c of this.#contacts.values()) {
       if (c.name === name) {
         return structuredClone(c);
       }

@@ -30,7 +30,7 @@ describe('send dm', () => {
         relays: ['wss://relay']
       }
     ];
-    await sendDm(senderPrivateKey, recipients, simplePoolMock as any, 'My message');
+    await sendDm(senderPrivateKey, recipients, simplePoolMock as SimplePool, 'My message');
 
     // just one recipient so expect one call to SimplePool.publish()
     expect(mockPoolPublish.mock.calls.length).toBe(1);
@@ -68,13 +68,13 @@ describe('send dm', () => {
       pubKey,
       relays: [`wss://relay${i}`]
     }));
-    await sendDm(senderPrivateKey, recipients, simplePoolMock as any, 'My group message');
+    await sendDm(senderPrivateKey, recipients, simplePoolMock as SimplePool, 'My group message');
 
     // SimplePool.publish() called for each recipient
     expect(mockPoolPublish.mock.calls.length).toBe(3);
 
     // check each call to SimplePool publish
-    for (let i in recipients) {
+    for (const i in recipients) {
       const callArgs = mockPoolPublish.mock.calls[i];
       const relaysUsedForPublish = callArgs[0];
       expect(relaysUsedForPublish).toEqual(recipients[i].relays);

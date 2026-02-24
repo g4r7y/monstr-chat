@@ -59,7 +59,7 @@ vi.mock('./nostrRelayMetadata.js', async importOriginal => {
     publishRelayListMetadata: vi.fn(),
     subscribeToRelayListMetadata: vi.fn(),
     getRelayListMetadata: vi.fn(),
-    extractReadRelaysFromNip65: (og as any).extractReadRelaysFromNip65
+    extractReadRelaysFromNip65: (og as any).extractReadRelaysFromNip65 // eslint-disable-line @typescript-eslint/no-explicit-any
   };
 });
 
@@ -69,7 +69,7 @@ vi.mock('./nostrUserMetadata.js', async importOriginal => {
     publishUserMetadata: vi.fn(),
     subscribeToUserMetadata: vi.fn(),
     getUserMetadata: vi.fn(),
-    extractContentFromUserMetadataEvent: (og as any).extractContentFromUserMetadataEvent
+    extractContentFromUserMetadataEvent: (og as any).extractContentFromUserMetadataEvent // eslint-disable-line @typescript-eslint/no-explicit-any
   };
 });
 
@@ -91,14 +91,14 @@ describe('chat controller', () => {
     });
 
     test('initialise fails because no key', async () => {
-      let initResult = await controller.init();
+      const initResult = await controller.init();
       expect(initResult).toBe(false);
     });
 
     test('create a new key', async () => {
       expect(() => controller.getNpub()).toThrowError('Keys not initialised');
       expect(() => controller.getNsec()).toThrowError('Keys not initialised');
-      let bip39words = await controller.createNewKey();
+      const bip39words = await controller.createNewKey();
       expect(bip39words.split(' ').length).toBe(12);
       expect(controller.getNpub()).toMatch(/npub1[0-9a-z]{43}/);
       expect(controller.getNsec()).toMatch(/nsec1[0-9a-z]{43}/);
@@ -107,7 +107,7 @@ describe('chat controller', () => {
     });
 
     test('init succeeds after key creation', async () => {
-      let initResult = await controller.init();
+      const initResult = await controller.init();
       expect(initResult).toBe(true);
       expect(model.load).toBeCalledTimes(1);
     });
@@ -128,7 +128,7 @@ describe('chat controller', () => {
     });
 
     test('initialise', async () => {
-      let initResult = await controller.init();
+      const initResult = await controller.init();
       expect(initResult).toBe(true);
       expect(model.load).toBeCalledTimes(1);
     });
@@ -918,7 +918,7 @@ describe('chat controller', () => {
         ],
         content: ''
       };
-      let nip65Event = finalizeEvent(event1, friendPrivateKey);
+      const nip65Event = finalizeEvent(event1, friendPrivateKey);
       await onRelayMetadataCallback(nip65Event);
       // contact should update
       expect(controller.getContactByName('Steve')?.relays).toEqual(['wss://relay1.com', 'wss://relay111.lol']);

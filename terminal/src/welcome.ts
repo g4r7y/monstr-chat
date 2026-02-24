@@ -86,7 +86,7 @@ async function welcome(context: ViewContext) {
     while (editing) {
       terminal.restoreCursor();
       terminal.eraseDisplayBelow();
-      let nsec = await showPrompt('Enter your private key: ', initialText);
+      const nsec = await showPrompt('Enter your private key: ', initialText);
       if (nsec === null) {
         editing = false;
       } else if (!isValidNsec(nsec)) {
@@ -113,7 +113,7 @@ async function welcome(context: ViewContext) {
       terminal.eraseDisplayBelow();
       terminal.yellow(`Recovery phrase: ${words}\n`);
       if (wordNum <= 12) {
-        let word = await showPrompt(`Enter word ${wordNum}: `, initialText);
+        const word = await showPrompt(`Enter word ${wordNum}: `, initialText);
         initialText = '';
         if (word === null) {
           editing = false;

@@ -25,7 +25,9 @@ class LocalStore implements KeyStore, DataStore {
       if (typeof data === 'string') {
         return data;
       }
-    } catch (_) {}
+    } catch (_) {
+      // any file read error, just fall through and return null
+    }
 
     // couldn't find file or bad contents
     return null;
@@ -36,7 +38,7 @@ class LocalStore implements KeyStore, DataStore {
     try {
       await fs.mkdir(path, { recursive: true });
       await fs.writeFile(`${path}/key`, keyStr, { encoding: 'utf8' });
-    } catch (err) {
+    } catch (_) {
       throw new Error(`Couldn't write private key to file: ${path}/key`);
     }
   }
@@ -58,7 +60,7 @@ class LocalStore implements KeyStore, DataStore {
     try {
       await fs.mkdir(path, { recursive: true });
       await fs.writeFile(`${path}/data`, JSON.stringify(appData), { encoding: 'utf8' });
-    } catch (err) {
+    } catch (_) {
       throw new Error(`Couldn't write app data key to file: ${path}/data`);
     }
   }
@@ -67,7 +69,9 @@ class LocalStore implements KeyStore, DataStore {
     try {
       const str = await fs.readFile(`${os.homedir()}/${appFolder}/msgs`, { encoding: 'utf8' });
       return JSON.parse(str);
-    } catch (_) {}
+    } catch (_) {
+      // any file read error, just fall through and return null
+    }
 
     // couldn't find file or invalid json
     return null;
@@ -78,7 +82,7 @@ class LocalStore implements KeyStore, DataStore {
     try {
       await fs.mkdir(path, { recursive: true });
       await fs.writeFile(`${path}/msgs`, JSON.stringify(msgs), { encoding: 'utf8' });
-    } catch (err) {
+    } catch (_) {
       throw new Error(`Couldn't write messages to file: ${path}/msgs`);
     }
   }

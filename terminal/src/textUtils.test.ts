@@ -45,7 +45,7 @@ test('word wrap', () => {
     }
   ];
 
-  for (let t of tests) {
+  for (const t of tests) {
     const lines = wrapText(t.text, t.width);
     expect(lines, `Incorrect wrap for text "${t.text}" with width ${t.width}`).toEqual(t.expected);
   }

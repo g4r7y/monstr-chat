@@ -12,7 +12,7 @@ async function sendNewMessage(context: ViewContext) {
   while (editing) {
     terminal.clear();
     terminal.bgGreen('Send Message\n\n');
-    let result = await showDialog(['Recipient', 'Message'], [recipient, text]);
+    const result = await showDialog(['Recipient', 'Message'], [recipient, text]);
     editing = false;
     if (result) {
       [recipient, text] = result;

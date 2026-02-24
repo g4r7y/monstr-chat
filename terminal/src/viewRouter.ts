@@ -41,7 +41,7 @@ class ViewRouter implements MessageListener {
     this.#view = [initialView];
     const context = this.#getViewContext();
     while (this.#view.length > 0) {
-      const views: Record<string, (context: ViewContext) => Promise<any>> = {
+      const views: Record<string, (context: ViewContext) => Promise<void>> = {
         welcome: welcome,
         offline: offlinePrompt,
         main: mainMenu,

@@ -57,13 +57,13 @@ async function settingsEditProfile(context: ViewContext) {
   terminal.bgGreen('Edit Profile\n\n');
   const settings = context.chatController.getSettings();
   let initialText = settings.profile?.name ?? '';
-  let profileName = await showPrompt('Your nickname: ', initialText);
+  const profileName = await showPrompt('Your nickname: ', initialText);
   if (profileName === null) {
     // escape
     return;
   }
   initialText = settings.profile?.about ?? '';
-  let profileAbout = await showPrompt('About you: ', initialText);
+  const profileAbout = await showPrompt('About you: ', initialText);
   if (profileAbout === null) {
     // escape
     return;
@@ -140,7 +140,7 @@ async function settingsViewRelays(context: ViewContext) {
   }
 
   let connectedRelays = context.chatController.checkConnectedRelays(relays);
-  for (let relay of relays) {
+  for (const relay of relays) {
     if (connectedRelays.includes(relay)) {
       terminal.brightGreen('✔');
     } else {
@@ -158,7 +158,7 @@ async function settingsViewRelays(context: ViewContext) {
     terminal.white('[None]');
   }
   connectedRelays = context.chatController.checkConnectedRelays(relays);
-  for (let relay of relays) {
+  for (const relay of relays) {
     if (connectedRelays.includes(relay)) {
       terminal.brightGreen('✔');
     } else {
@@ -192,7 +192,7 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
   terminal.bgGreen('Edit Relays\n\n');
 
   const editRelayList = async (relays: string[]): Promise<string[] | null> => {
-    let results = [];
+    const results = [];
     let done = false;
     for (let i = 0; !done; i++) {
       let isValid = false;
@@ -203,14 +203,14 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
         if (i < relays.length) {
           relayUrl = relays[i];
         } else {
-          let addAnother = await showYesNoPrompt('Add another relay?');
+          const addAnother = await showYesNoPrompt('Add another relay?');
           if (!addAnother) {
             done = true;
             break;
           }
         }
 
-        let resp = await showPrompt(`Relay ${i + 1}: `, relayUrl);
+        const resp = await showPrompt(`Relay ${i + 1}: `, relayUrl);
         terminal.eraseLineAfter();
         if (resp == null) {
           // cancelled
@@ -243,8 +243,8 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
       return;
     }
     const updateTimestampUtc = Date.now();
-    ((currentSettings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000)),
-      (currentSettings.inboxRelays = newInboxRelays));
+    currentSettings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000);
+    currentSettings.inboxRelays = newInboxRelays;
   } else if (relayType === 'general') {
     terminal.yellow('\nDiscovery relays:\n\n');
     const newGeneralRelays = await editRelayList(currentSettings.generalRelays);
@@ -264,7 +264,7 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
     await context.chatController.broadcastRelayList();
     // also,  while we are at it, broadcast kind0 user metadata to the potentially new relays
     await context.chatController.broadcastUserMetadata();
-  } catch (err) {
+  } catch (_) {
     terminal('\n');
     const continueEditing = await showYesNoPrompt(
       'Could not connect to discovery relays to broadcast your relay settings. Try again?'

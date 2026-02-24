@@ -22,17 +22,16 @@ function Chats() {
   const [conversations, setConversations] = React.useState(controller.getConversations());
 
   React.useEffect(() => {
-    
     const updateConversations = () => {
       setConversations(controllerRef.current.getConversations());
     };
-    
+
     const myListener = new (class implements MessageListener {
       notifyMessage() {
         updateConversations();
       }
     })();
-    
+
     const curController = controllerRef.current;
     curController.addMessageListener(myListener);
 

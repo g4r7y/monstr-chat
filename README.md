@@ -2,11 +2,29 @@
 
 Messaging On Nostr!
 
-Chat app built on the Nostr protocol.
-
-Two apps for the price of one: web app and command line app.
 
 ## Overview
+
+Monstr Chat is a messaging app, built on the [Nostr](https://nostr.com/) protocol.
+Using Nostr means it is decentralised, using public relay servers to securely transmit and persist your encrypted messages.
+You can choose which relay servers you want to use or even run your own. 
+No need to sign up for an account with a third-party or use your email address or phone number as your identity.
+With Nostr, your crytographic key pair is your identity, and you can use it with any other Nostr app.
+Also, because Monstr Chat uses standard Nostr protocols it is inter-operable with other Nostr clients that support the same direct messaging protocols.
+
+This project gives you two apps for the price of one:
+* web-app - is a responsive single page app. Local copies of your conversations and other metadata are stored in the browser (using IndexedDB). Try it out here: [monstr-chat](https://monstr-chat.vercel.app/)
+* terminal app - provides the same functionality but on the command line, storing local data in your home directory. Follow the instructions lower down to build and run it locally.
+
+### Nostr protocol
+
+Monstr chat uses the following [NIPs](https://github.com/nostr-protocol/nips):
+
+* NIP-17, NIP-44, NIP-59 - secure encypted private direct messages. DM events are sealed and giftwrapped to avoid leaking metadata.
+* NIP-05 - maps Nostr keys to DNS-based internet identifiers
+
+
+## Development
 
 This repo is divided into workspaces:
 
@@ -14,44 +32,59 @@ This repo is divided into workspaces:
 * terminal - command line app. Uses terminal-kit for a pleasant text-based UI.  
 * web-app - Vite project, using React and Bootstrap.
 
-Instructions below assume you are in root of repo.
+Instructions below assume you are in the root of the repo.
 
-## Terminal app
+### Requirements
 
-### Build:
+node 22+
+
+if using older node version (without native websocket support) then you need to install ws and call useWebSocketImplementation() from nostr-tools
+
+
+### Terminal app
+
+#### Build:
 
 ```npm run install```
 
 ```npm run build --workspace=terminal```
 
-### Run:
+#### Run:
 
 ```npm run start --workspace=terminal```
 
-## Web app
+### Web app
 
-### Build:
+#### Build:
 
 ```npm run install```
 
 ```npm run build --workspace=web-app```
 
-### Run dev server:
+#### Run:
+
+```npm run preview --workspace=web-app```
+
+#### Run dev server:
 
 ```npm run dev --workspace=web-app```
 
-## Tests
+### General
+
+#### Run all tests:
 
 ```npm run test```
 
+#### Lint:
 
-## Requires:
+```npm run lint```
 
-node 22
+#### Format code:
 
-if using older node version (without native websocket support) then you need to install ws and call useWebSocketImplementation() from nostr-tools
+```npm run prettier```
 
-### Use local nostr server:
+#### Use a local nostr relay:
 
 Check out: [nostream](https://github.com/Cameri/nostream).
 Set your message relay in Settings to localhost (e.g. ws://localhost:8008)
+

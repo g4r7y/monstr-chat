@@ -13,7 +13,7 @@ function ViewFriend() {
   const controllerRef = React.useRef(controller);
 
   const { switchView, currentContactNpub } = useAppView();
-    // memoise current contact (only changes when view changes)
+  // memoise current contact (only changes when view changes)
   const currentContactNpubRef = React.useRef(currentContactNpub);
 
   const handleBack = () => {

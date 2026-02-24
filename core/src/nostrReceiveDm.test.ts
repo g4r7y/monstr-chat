@@ -46,12 +46,12 @@ describe('receive DMs', () => {
     };
 
     // subscribe
-    receiveDms(selfPubKey, selfPrivateKey, simplePoolMock as any, ['wss://myrelay'], messageReceivedCallback);
+    receiveDms(selfPubKey, selfPrivateKey, simplePoolMock as SimplePool, ['wss://myrelay'], messageReceivedCallback);
 
     expect(onEventHandler!).toBeTruthy();
     // fake an incoming event from friend to ourself
     const event = createEvent('my message', friendPrivateKey, selfPubKey, [selfPubKey]);
-    await onEventHandler!(event as any);
+    await onEventHandler!(event);
 
     expect(receivedMessage).not.toBe(null);
     expect(receivedMessage!.text).toBe('my message');
@@ -76,12 +76,12 @@ describe('receive DMs', () => {
     };
 
     // subscribe
-    receiveDms(selfPubKey, selfPrivateKey, simplePoolMock as any, ['wss://myrelay'], messageReceivedCallback);
+    receiveDms(selfPubKey, selfPrivateKey, simplePoolMock as SimplePool, ['wss://myrelay'], messageReceivedCallback);
 
     expect(onEventHandler!).toBeTruthy();
     // fake a sent message event from self to friend + self
     const event = createEvent('my message', selfPrivateKey, selfPubKey, [friendPubKey, selfPubKey]);
-    await onEventHandler!(event as any);
+    await onEventHandler!(event);
 
     expect(receivedMessage).not.toBe(null);
     expect(receivedMessage!.text).toBe('my message');

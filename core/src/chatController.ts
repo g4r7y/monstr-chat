@@ -108,7 +108,7 @@ export class ChatControllerImpl implements ChatController {
 
   async init(): Promise<boolean> {
     // try and read key from store
-    let nsecStr = await this.#keyStore.readKey();
+    const nsecStr = await this.#keyStore.readKey();
     if (nsecStr) {
       const decoded = decode(nsecStr);
       if (decoded.type === 'nsec' && decoded.data) {
@@ -128,7 +128,7 @@ export class ChatControllerImpl implements ChatController {
   }
 
   async connect(): Promise<boolean> {
-    let subscribedOk = await this.#subscribeToRelays();
+    const subscribedOk = await this.#subscribeToRelays();
 
     // allow time for inbox relays to start
     const delay = async (milliseconds: number) => {
@@ -178,9 +178,9 @@ export class ChatControllerImpl implements ChatController {
     const sortedMessages = Array.from(this.#model.getMessageList());
     // sort descending (i.e. head will be newest)
     sortedMessages.sort((a: ChatMessage, b: ChatMessage) => b.time.getTime() - a.time.getTime());
-    for (let msg of sortedMessages) {
+    for (const msg of sortedMessages) {
       const key = msg.state === 'tx' ? msg.receiver : msg.sender;
-      let msgList = convs.has(key) ? convs.get(key)! : new Array();
+      const msgList = convs.has(key) ? convs.get(key)! : [];
       msgList.push(msg);
       convs.set(key, msgList);
     }
@@ -271,7 +271,7 @@ export class ChatControllerImpl implements ChatController {
   // General (aka discovery) relays are used for the subscription
   async subscribeToRelayMetadata() {
     // subscribing for all of our contacts
-    let npubs = this.#model
+    const npubs = this.#model
       .getContactList()
       .map(c => c.npub)
       .filter(npub => isValidNpub(npub))
@@ -306,7 +306,7 @@ export class ChatControllerImpl implements ChatController {
   // General (aka discovery) relays are used for the subscription
   async subscribeToUserMetadata() {
     // subscribing for all of our contacts
-    let pubkeys = this.#model
+    const pubkeys = this.#model
       .getContactList()
       .map(c => c.npub)
       .filter(npub => isValidNpub(npub))
@@ -341,7 +341,7 @@ export class ChatControllerImpl implements ChatController {
   // @return List of relay urls that are in the pool and connected
   checkConnectedRelays(relayUrls: string[]): string[] {
     const allRelays = this.#pool.listConnectionStatus();
-    let result: string[] = [];
+    const result: string[] = [];
     relayUrls.forEach(r => {
       const url = normalizeURL(r);
       if (allRelays.has(url) && allRelays.get(url) === true) {
@@ -369,7 +369,7 @@ export class ChatControllerImpl implements ChatController {
   // @return string: bip39 word list
   async createNewKey(): Promise<string> {
     const words = generateSeedWords();
-    let { publicKey, privateKey } = accountFromSeedWords(words);
+    const { publicKey, privateKey } = accountFromSeedWords(words);
     this.#privateKey = privateKey;
     this.#pubKey = publicKey;
     await this.#keyStore.writeKey(nsecEncode(this.#privateKey));
@@ -390,7 +390,7 @@ export class ChatControllerImpl implements ChatController {
 
   // Reset key from bip39
   async resetKeyFromSeedWords(bip39Mnemonic: string) {
-    let { publicKey, privateKey } = accountFromSeedWords(bip39Mnemonic);
+    const { publicKey, privateKey } = accountFromSeedWords(bip39Mnemonic);
     this.#privateKey = privateKey;
     this.#pubKey = publicKey;
     await this.#keyStore.writeKey(nsecEncode(this.#privateKey));
@@ -413,7 +413,7 @@ export class ChatControllerImpl implements ChatController {
         nip05 = content.nip05;
       }
     }
-    let profile: UserProfile = {
+    const profile: UserProfile = {
       name: content?.name ?? null,
       about: content?.about ?? null,
       nip05
@@ -515,7 +515,7 @@ export class ChatControllerImpl implements ChatController {
     const npub = npubEncode(ev.pubkey);
 
     const mergeProfile = async (localProfile: UserProfile | null, remoteProfile: UserProfile): Promise<UserProfile> => {
-      let merged = {
+      const merged = {
         ...remoteProfile
       };
       if (remoteProfile.nip05 !== localProfile?.nip05) {

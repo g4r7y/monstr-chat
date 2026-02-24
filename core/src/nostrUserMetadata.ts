@@ -50,7 +50,7 @@ const subscribeToUserMetadata = async (
       },
       {
         id: 'user-metadata-sub-id', // always use fixed sub id
-        async onevent(event: any) {
+        async onevent(event) {
           if (event.kind === 0) {
             await callback(event);
           }
@@ -90,8 +90,8 @@ const extractContentFromUserMetadataEvent = (event: Event): UserProfile | null =
       nip05: content.nip05 ?? null
     };
     return profile;
-  } catch (err) {
-    // bad json, return null
+  } catch (_) {
+    // ignore error, assume bad json and return null
   }
   return null;
 };

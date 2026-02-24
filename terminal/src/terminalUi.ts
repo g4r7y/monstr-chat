@@ -32,8 +32,7 @@ export async function pressToContinue(question: string): Promise<void> {
  */
 export async function showMenu(menuChoices: Map<string, () => void>, options = {}) {
   const menuItems = Array.from(menuChoices.keys());
-  let response;
-  response = await terminal.singleColumnMenu(menuItems, { oneLineItem: true, ...options }).promise;
+  const response = await terminal.singleColumnMenu(menuItems, { oneLineItem: true, ...options }).promise;
   if (menuChoices.has(response.selectedText)) {
     // get the corresponding synchronous action function for the selected key
     const fn = menuChoices.get(response.selectedText);
@@ -46,8 +45,7 @@ export async function showMenu(menuChoices: Map<string, () => void>, options = {
 
 export async function showHorizontalMenu(menuChoices: Map<string, () => void>) {
   const menuItems = Array.from(menuChoices.keys());
-  let response;
-  response = await terminal.singleLineMenu(menuItems, {
+  const response = await terminal.singleLineMenu(menuItems, {
     selectedStyle: terminal.inverse
   }).promise;
   if (menuChoices.has(response.selectedText)) {
@@ -71,7 +69,7 @@ export async function showDialog(questions: string[], defaultAnswers: string[]):
   }
   // move cursor back up and iterate through each question prompt
   terminal.restoreCursor();
-  const responses = new Array();
+  const responses = [];
   for (let q = 0; q < questions.length; q++) {
     const defaultAnswer = defaultAnswers[q] ? defaultAnswers[q] : '';
     terminal.saveCursor();
@@ -90,14 +88,14 @@ export async function showDialog(questions: string[], defaultAnswers: string[]):
 }
 
 export async function startScrollPane(lines: string[], headerHeight: number, footerHeight: number) {
-  let contentHeight = lines.length;
+  const contentHeight = lines.length;
   const maxScrollY = contentHeight + headerHeight + footerHeight - terminal.height;
   let scrollY = 0;
   if (maxScrollY > 0) {
     scrollY = maxScrollY;
   }
 
-  let buffer = new ScreenBuffer({
+  const buffer = new ScreenBuffer({
     dst: terminal,
     width: terminal.width + 1,
     height: contentHeight + 1,
@@ -116,7 +114,7 @@ export async function startScrollPane(lines: string[], headerHeight: number, foo
   }
 
   function renderBuffer() {
-    let clipRect = new Rect({
+    const clipRect = new Rect({
       x: 1,
       y: 1 + headerHeight,
       width: terminal.width,
@@ -134,7 +132,9 @@ export async function startScrollPane(lines: string[], headerHeight: number, foo
   for (let i = 0; i < contentHeight; i++) {
     const text = lines[i];
     const padChars = Math.max(0, terminal.width - lengthWithoutMarkup(text));
-    buffer.put({ x: 1, y: i + 1, markup: true } as any, text + ' '.repeat(padChars));
+    // @types/terminal-kit is not quite up-to-date
+    type ScreenBufferPutOptionsNew = tk.ScreenBuffer.PutOptions & { markup: boolean };
+    buffer.put({ x: 1, y: i + 1, markup: true } as ScreenBufferPutOptionsNew, text + ' '.repeat(padChars));
   }
 
   renderBuffer();

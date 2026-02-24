@@ -6,12 +6,13 @@ import { wordlist } from '@scure/bip39/wordlists/english';
 const isValidUrl = (str: string, protocols: string[] = []): boolean => {
   try {
     const URL = globalThis.URL;
-    let url = new URL(str);
+    const url = new URL(str);
     if (protocols.length > 0 && url.protocol) {
       return protocols.map(x => `${x.toLowerCase()}:`).includes(url.protocol);
     }
     return true;
-  } catch (err) {
+  } catch (_) {
+    // don't care which error, just assume it is invalid
     return false;
   }
 };
@@ -20,7 +21,8 @@ const isValidNpub = (npub: string): boolean => {
   try {
     const decoded = decode(npub);
     return decoded.type === 'npub';
-  } catch (error) {
+  } catch (_) {
+    // don't care which error, just assume it is invalid
     return false;
   }
 };
@@ -29,7 +31,8 @@ const isValidNsec = (nsec: string): boolean => {
   try {
     const decoded = decode(nsec);
     return decoded.type === 'nsec';
-  } catch (error) {
+  } catch (_) {
+    // don't care which error, just assume it is invalid
     return false;
   }
 };

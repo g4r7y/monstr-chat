@@ -1,7 +1,7 @@
 const wrapText = (text: string, targetWidth: number): string[] => {
-  let lines = new Array();
+  const lines = [];
   // split on single whitespace (consecutive spaces will be treated as zero-length 'words'
-  let words = text.split(/\s/);
+  const words = text.split(/\s/);
   let currentLine = '';
   const iterator = words[Symbol.iterator]();
   let iterResult = iterator.next();

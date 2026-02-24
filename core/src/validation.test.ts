@@ -36,8 +36,8 @@ describe('validation', () => {
       }
     ];
 
-    for (let t of tests) {
-      let isValid = t.protocols ? isValidUrl(t.text, t.protocols) : isValidUrl(t.text);
+    for (const t of tests) {
+      const isValid = t.protocols ? isValidUrl(t.text, t.protocols) : isValidUrl(t.text);
       expect(isValid, `Should return ${t.expected} for text ${t.text} and protocols ${t.protocols}`).toEqual(
         t.expected
       );
@@ -68,8 +68,8 @@ describe('validation', () => {
       }
     ];
 
-    for (let t of tests) {
-      let isValid = isValidNpub(t.text);
+    for (const t of tests) {
+      const isValid = isValidNpub(t.text);
       expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
@@ -99,8 +99,8 @@ describe('validation', () => {
       }
     ];
 
-    for (let t of tests) {
-      let isValid = isValidNsec(t.text);
+    for (const t of tests) {
+      const isValid = isValidNsec(t.text);
       expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
@@ -126,8 +126,8 @@ describe('validation', () => {
       }
     ];
 
-    for (let t of tests) {
-      let isValid = isValidNip05Address(t.text);
+    for (const t of tests) {
+      const isValid = isValidNip05Address(t.text);
       expect(isValid, `Should return ${t.expected} for text ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for text ${t.text}` )
     }
@@ -153,8 +153,8 @@ describe('validation', () => {
       }
     ];
 
-    for (let t of tests) {
-      let isValid = isValidBip39Word(t.text);
+    for (const t of tests) {
+      const isValid = isValidBip39Word(t.text);
       expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
     }
@@ -180,8 +180,8 @@ describe('validation', () => {
       }
     ];
 
-    for (let t of tests) {
-      let isValid = isValidBip39Phrase(t.text);
+    for (const t of tests) {
+      const isValid = isValidBip39Phrase(t.text);
       expect(isValid, `Should return ${t.expected} for word ${t.text}`).toEqual(t.expected);
       // assert.strictEqual(isValid, t.expected, `Should return ${t.expected} for word ${t.text}` )
     }

@@ -13,7 +13,7 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
       id: string;
     };
     const plainEvent: PlainEventWithId = await unwrapEvent(event, privateKey);
-    let createdDate = new Date(0);
+    const createdDate = new Date(0);
     createdDate.setUTCSeconds(plainEvent.created_at);
 
     const pTags = plainEvent.tags.filter(tag => tag.length > 1 && tag[0] == 'p');

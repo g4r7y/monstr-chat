@@ -14,7 +14,7 @@ function UserProfile() {
   const [settings, setSettings] = React.useState<ChatSettings>(controller.getSettings());
 
   const { switchView } = useAppView();
-  
+
   React.useEffect(() => {
     const listener = new (class implements SettingsListener {
       notifySettingsChanged(): void {

@@ -3,12 +3,24 @@
   "version": "1.0.0",
   "scripts": {
     "test": "npm run test --workspace=core && npm run test --workspace=terminal",
-    "build": "npm run build --workspace=terminal && npm run build --workspace=web-app"
+    "build": "npm run build --workspace=terminal && npm run build --workspace=web-app",
+    "lint": "npm run lint --workspaces",
+    "prettier": "npm run prettier --workspaces"
   },
   "workspaces": [
     "core",
     "web-app",
     "terminal"
   ],
+  "devDependencies": {
+    "@eslint/js": "9.39.3",
+    "@types/node": "24.10.4",
+    "eslint": "9.39.3",
+    "globals": "16.5.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.56.0",
+    "vitest": "4.0.18"
+  },
   "license": "Apache-2.0"
 }

@@ -103,12 +103,12 @@ function updateConversationView(context: ViewContext) {
   const footerHeight = 6;
 
   const { contactNpub } = context.viewParams;
-  let lines = new Array();
+  const lines = [];
   const convs = context.chatController.getConversations();
   if (convs.has(contactNpub)) {
     const msgs = convs.get(contactNpub)!.reverse();
     msgs.forEach((msg: ChatMessage) => {
-      let msgLines = wrapText(msg.text, terminal.width);
+      const msgLines = wrapText(msg.text, terminal.width);
       const timestamp = getDisplayableMessageTimestamp(msg);
       let msgColour;
       let contactName;
@@ -131,7 +131,7 @@ function updateConversationView(context: ViewContext) {
         const padding = terminal.width - contactLabel.length - timestamp.length;
         lines.push(`^${msgColour.toUpperCase()}${contactLabel}${' '.repeat(padding)}^/^K${timestamp}`);
       }
-      for (let msgLine of msgLines) {
+      for (const msgLine of msgLines) {
         lines.push(`^${msgColour}${msgLine}`);
       }
       lines.push('');

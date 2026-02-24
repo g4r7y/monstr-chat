@@ -13,7 +13,7 @@ const publishRelayListMetadata = async (
   // Define all the relays we expect to READ messages from, i.e. our inbox relays.
   // Other people will need to send DM to these relays to reach us.
   const relayTags = [];
-  for (let relayUrl of inboxRelayList) {
+  for (const relayUrl of inboxRelayList) {
     relayTags.push(['r', relayUrl, 'read']);
   }
 
@@ -56,7 +56,7 @@ const subscribeToRelayListMetadata = async (
       },
       {
         id: 'relaylist-metadata-sub-id', // always use fixed sub id
-        async onevent(event: any) {
+        async onevent(event) {
           if (event.kind === 10002) {
             await callback(event);
           }

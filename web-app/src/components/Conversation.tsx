@@ -36,7 +36,7 @@ function Conversation() {
       }
     })();
 
-    const curController = controllerRef.current
+    const curController = controllerRef.current;
     curController.addMessageListener(myListener);
 
     return () => {

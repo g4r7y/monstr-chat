@@ -26,8 +26,8 @@ describe('relay monitor', () => {
     // load the thing we are testing (after module mocking)
     const { default: createRelayMonitor } = await import('./relayMonitor.js');
 
-    let stateChangeCallback = vi.fn();
-    let monitor = createRelayMonitor(new SimplePool());
+    const stateChangeCallback = vi.fn();
+    const monitor = createRelayMonitor(new SimplePool());
     monitor.start(['r1', 'r2'], stateChangeCallback);
     expect(monitor.isOnline()).equals(false);
 

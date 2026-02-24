@@ -46,8 +46,8 @@ try {
   terminal.fullscreen(true);
   await main();
   terminal.fullscreen(false);
-} catch (err: any) {
+} catch (err) {
   terminal.fullscreen(false); // need to do this before logging error to stdout
-  terminal(`Error: ${err.message}\nExiting.\n`);
+  terminal(`Error: ${err instanceof Error ? err.message : err}\nExiting.\n`);
 }
 terminal.processExit(0);

@@ -1,4 +1,4 @@
-import { vi, test, describe, beforeEach, expect } from 'vitest';
+import { vi, test, describe, expect } from 'vitest';
 
 import type { ChatMessage, ChatContact, ChatAppData, ChatSettings } from './chatModel.js';
 import type { DataStore } from './dataStore.js';
@@ -7,7 +7,7 @@ import { ChatModel } from './chatModel.js';
 const writeAppDataMock = vi.fn();
 const writeMessagesMock = vi.fn();
 
-let fakeDataStore: DataStore = {
+const fakeDataStore: DataStore = {
   readAppData: async () => fakeAppData,
   writeAppData: writeAppDataMock,
   readMessages: async () => fakeMessages,
@@ -25,14 +25,10 @@ let fakeAppData: ChatAppData | null = null;
 let fakeMessages: ChatMessage[] | null = null;
 
 describe('model', async () => {
-  beforeEach(async t => {
-    // ({ ChatModel } = await import('./chatModel.js'))
-  });
-
   test('first load, without any app data', async () => {
     fakeAppData = null;
     fakeMessages = null;
-    let model = new ChatModel(fakeDataStore);
+    const model = new ChatModel(fakeDataStore);
     await model.load();
 
     //has some default settings
@@ -79,7 +75,7 @@ describe('model', async () => {
     ];
 
     //
-    let model = new ChatModel(fakeDataStore);
+    const model = new ChatModel(fakeDataStore);
     await model.load();
 
     const msgs = model.getMessageList();
@@ -119,7 +115,7 @@ describe('model', async () => {
       settings: someSettings
     };
 
-    let model = new ChatModel(fakeDataStore);
+    const model = new ChatModel(fakeDataStore);
     await model.load();
 
     const contacts = model.getContactList();
@@ -153,7 +149,7 @@ describe('model', async () => {
   test('add message', async () => {
     writeMessagesMock.mockReset();
 
-    let model = new ChatModel(fakeDataStore);
+    const model = new ChatModel(fakeDataStore);
 
     // add a message
     const msg: ChatMessage = {
@@ -181,7 +177,7 @@ describe('model', async () => {
 
     // can't mutate messae via getter
     m_got!.text = 'mutated greetings';
-    let m_got2 = model.getMessage('12345');
+    const m_got2 = model.getMessage('12345');
     expect(m_got2!.text).toEqual('Greetings');
 
     // add another message
@@ -204,7 +200,7 @@ describe('model', async () => {
   test('add/get/edit/delete contact', async () => {
     writeAppDataMock.mockReset();
 
-    let model = new ChatModel(fakeDataStore);
+    const model = new ChatModel(fakeDataStore);
 
     // add a contact
     const c: ChatContact = {
@@ -271,17 +267,18 @@ describe('model', async () => {
 
   test('get/set settings', async () => {
     writeAppDataMock.mockReset();
+    type ChatSettingsMutant = ChatSettings & { someNewThing: number };
 
-    let model = new ChatModel(fakeDataStore);
+    const model = new ChatModel(fakeDataStore);
 
     // defualt settings
-    let s1 = model.settings as any;
+    const s1 = model.settings as ChatSettingsMutant;
     expect(s1.inboxRelays.length).toBe(1);
     expect(s1.generalRelays.length).toBe(4);
 
     // settings object is immutable via getter
     s1.someNewThing = 123;
-    let s2 = model.settings as any;
+    const s2 = model.settings as ChatSettingsMutant;
     expect(s2.someNewThing === undefined).toBeTruthy();
 
     // set settings
@@ -289,7 +286,7 @@ describe('model', async () => {
     model.setSettings(s1);
 
     // model is updated
-    let s3 = model.settings as any;
+    const s3 = model.settings as ChatSettingsMutant;
     expect(s3.inboxRelays.length).toBe(2);
     expect(s3.inboxRelays[1]).toEqual('http://newrelay');
     expect(s3.someNewThing).toBe(123);

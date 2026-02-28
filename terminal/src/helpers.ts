@@ -8,7 +8,7 @@ const { terminal } = tk;
 async function handleSendError(err: Error | unknown): Promise<boolean> {
   const sendError =
     err instanceof Error && err.message === 'NoRelay'
-      ? "Send failed, cannot find the recipient's inbox relay on any discovery relays"
+      ? "Send failed, cannot find the recipient's DM relay on any discovery relays"
       : 'Send failed';
   terminal('\n');
   return await showYesNoPrompt(`${sendError}. Try again?`);

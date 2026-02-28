@@ -130,7 +130,7 @@ async function settingsKeys(context: ViewContext) {
 async function settingsViewRelays(context: ViewContext) {
   terminal.clear();
   terminal.bgGreen('Relays\n\n');
-  terminal.yellow('Inbox relays:\n\n');
+  terminal.yellow('Message relays:\n\n');
   terminal.white(
     'These relays are used to receive your incoming messages.\nIt is recommended to have up to 3 of these.\n\n'
   );
@@ -151,7 +151,7 @@ async function settingsViewRelays(context: ViewContext) {
 
   terminal.yellow('\nDiscovery relays:\n\n');
   terminal.white(
-    'These relays are used to broadcast your relay information so that your contacts know how to send messages to you.\nThey are also used to discover information about your contacts so that you can send messages to them.\nIt is recommended to use several popular nostr relays.\n\n'
+    'These relays are used to broadcast your profile and relay information so that your friends can send messages to you.\nThey are also used to discover information about your friends so that you can send messages to them.\nIt is recommended to use several popular nostr relays.\n\n'
   );
   relays = context.chatController.getSettings().generalRelays;
   if (relays.length == 0) {
@@ -170,7 +170,7 @@ async function settingsViewRelays(context: ViewContext) {
   const menu = new Map();
   menu.set('Back', () => context.view.pop());
   menu.set('Refresh', () => {});
-  menu.set('Edit Incoming Relays', () => {
+  menu.set('Edit Message Relays', () => {
     context.view.push('editInboxRelays');
   });
   menu.set('Edit Discovery Relays', () => {
@@ -180,14 +180,14 @@ async function settingsViewRelays(context: ViewContext) {
 }
 
 async function settingsEditInboxRelays(context: ViewContext) {
-  await settingsEditRelays('inbox', context);
+  await settingsEditRelays('message', context);
 }
 
 async function settingsEditGeneralRelays(context: ViewContext) {
   await settingsEditRelays('general', context);
 }
 
-async function settingsEditRelays(relayType: string, context: ViewContext) {
+async function settingsEditRelays(relayType: 'message' | 'general', context: ViewContext) {
   terminal.clear();
   terminal.bgGreen('Edit Relays\n\n');
 
@@ -235,8 +235,8 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
 
   const currentSettings = context.chatController.getSettings();
 
-  if (relayType === 'inbox') {
-    terminal.yellow('Inbox relays:\n\n');
+  if (relayType === 'message') {
+    terminal.yellow('Message relays:\n\n');
     const newInboxRelays = await editRelayList(currentSettings.inboxRelays);
     if (newInboxRelays == null) {
       context.view.pop();
@@ -259,7 +259,7 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
 
   await context.chatController.setSettings(currentSettings);
 
-  // send out updated nip65, whether changing inbox or general relays
+  // send out updated realy list event, whether changing inbox or general relays
   try {
     await context.chatController.broadcastRelayList();
     // also,  while we are at it, broadcast kind0 user metadata to the potentially new relays
@@ -275,8 +275,8 @@ async function settingsEditRelays(relayType: string, context: ViewContext) {
     return;
   }
 
-  if (relayType === 'inbox') {
-    // resubscribe to inbox relays
+  if (relayType === 'message') {
+    // resubscribe to message relays
     await context.chatController.subscribeToIncomingDms();
   }
 

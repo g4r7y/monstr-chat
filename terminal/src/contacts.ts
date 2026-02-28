@@ -50,7 +50,7 @@ async function viewContact(context: ViewContext) {
     terminal.yellow('About:            ');
     terminal.white(`${currentContact.profile.about}\n`);
   }
-  terminal.yellow('Inbox relays:     ');
+  terminal.yellow('DM relays:     ');
   terminal.white(`${currentContact.relays?.join('\n                  ') ?? 'unknown'}\n`);
   terminal('\n');
 

@@ -110,7 +110,7 @@ function ViewFriend() {
         {contact?.relays && contact.relays.length > 0 && (
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>
-              <Col xs={4}>Inbox relays:</Col>
+              <Col xs={4}>DM relays:</Col>
               <Col xs={8} className="truncate">
                 {contact.relays.map((r, i) => (
                   <div key={i}>

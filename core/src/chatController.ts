@@ -9,7 +9,7 @@ import { normalizeURL } from '@nostr/tools/utils';
 import { sendDm, type SendDmRecipient } from './nostrSendDm.js';
 import { receiveDms } from './nostrReceiveDm.js';
 import { getRelayListMetadata, publishRelayListMetadata, subscribeToRelayListMetadata } from './nostrRelayMetadata.js';
-import { extractReadRelaysFromNip65 } from './nostrRelayMetadata.js';
+import { extractDMRelaysFromEvent } from './nostrRelayMetadata.js';
 import { getUserMetadata, publishUserMetadata, subscribeToUserMetadata } from './nostrUserMetadata.js';
 import { extractContentFromUserMetadataEvent } from './nostrUserMetadata.js';
 import type { KeyStore } from './keyStore.js';
@@ -203,7 +203,7 @@ export class ChatControllerImpl implements ChatController {
     await this.#model.deleteContact(npub);
   }
 
-  // Send DM using the recipient's inbox relay(s).
+  // Send DM using the recipient's DM inbox relay(s).
   // Also sends a copy to ourself so our sent messages will persist on relay.
   async sendDmToContact(recipient: ChatContact, text: string) {
     if (!recipient?.relays?.length) {
@@ -215,9 +215,9 @@ export class ChatControllerImpl implements ChatController {
   }
 
   // Send DM to specified npub.
-  // If relays not given, tries to fetch the recipient's relay(s) from NIP65,
-  // then sends DM using the recipient's inbox relay(s).
-  // Throws if no read relays can be found.
+  // If relays not given, tries to get a kind 10050 event with their DM relay list.
+  // Then sends DM using the recipient's DM relay(s).
+  // Throws if no relays can be found.
   // Also sends a copy to ourself so our sent messages will persist on relay.
   async sendDmToNpub(recipientNpub: string, text: string, recipientRelays?: string[]) {
     const recipientPubKey = decode(recipientNpub).data as string;
@@ -226,11 +226,11 @@ export class ChatControllerImpl implements ChatController {
       const event = await getRelayListMetadata(recipientPubKey, this.#pool, this.#model.settings.generalRelays);
 
       if (!event) {
-        console.log(`Send: can't find NIP65 relaylist for ${recipientNpub}`);
+        console.log(`Send: can't find relaylist for ${recipientNpub}`);
         throw new Error('NoRelay');
       }
 
-      recipientRelays = extractReadRelaysFromNip65(event);
+      recipientRelays = extractDMRelaysFromEvent(event);
       if (!recipientRelays?.length) {
         console.log(`Send: relaylist for ${recipientNpub} is missing or empty`);
         throw new Error('NoRelay');
@@ -289,7 +289,7 @@ export class ChatControllerImpl implements ChatController {
     );
   }
 
-  // Broadcast our inbox relay list to the general discovery relays so that other people know how to send message to us
+  // Broadcast our DM inbox relay list to the general discovery relays so that other people know how to send message to us
   // Throws if cannot broadcast to any relays
   async broadcastRelayList() {
     await publishRelayListMetadata(
@@ -469,11 +469,11 @@ export class ChatControllerImpl implements ChatController {
     }
   }
 
-  // Callback for NIP65 relay list subscription.
-  // Called whenever a subscribed npub's relaylist changes.
+  // Callback for relay list subscription.
+  // Called whenever a subscribed npub's DM relaylist changes.
   // Checks if we have a corresponding contact and updates its relaylist.
   // May also be called for our own relaylist.
-  // Only does update if created_at time is newer than last update as we will get duplicate events
+  // Only updates contact if created_at time is newer than last update as we will get duplicate events
   // from multiple relays.
   async #onRelaylistMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey);
@@ -481,7 +481,7 @@ export class ChatControllerImpl implements ChatController {
 
     // if it is a known contact and event time is newer (in case there are duplicate events from several relays)
     if (contact && (!contact.relaysUpdatedAt || contact.relaysUpdatedAt < ev.created_at)) {
-      contact.relays = extractReadRelaysFromNip65(ev);
+      contact.relays = extractDMRelaysFromEvent(ev);
       contact.relaysUpdatedAt = ev.created_at;
       console.log(`Updating relaylist for contact: ${contact.name}`);
       await this.#model.setContact(contact);
@@ -489,17 +489,16 @@ export class ChatControllerImpl implements ChatController {
 
     // if we have received relay list for self (perhaps changed on another client)
     if (ev.pubkey === this.#pubKey) {
-      console.log(`Received relaylist for self`, ev.created_at, this.#model.settings.relaysUpdatedAt);
       // update local relay settings if event time is newer
       if (!this.#model.settings.relaysUpdatedAt || this.#model.settings.relaysUpdatedAt < ev.created_at) {
         const currentSettings = this.#model.settings;
-        const eventRelays = extractReadRelaysFromNip65(ev);
+        const eventRelays = extractDMRelaysFromEvent(ev);
         if (JSON.stringify(eventRelays) !== JSON.stringify(currentSettings.inboxRelays)) {
           console.log(`Updating relaylist for self`);
           currentSettings.inboxRelays = eventRelays;
           currentSettings.relaysUpdatedAt = ev.created_at;
           await this.#model.setSettings(currentSettings);
-          // resubscribe to the new inbox relays
+          // resubscribe to the new DM relays
           await this.subscribeToIncomingDms();
           this.#settingsListeners.forEach(l => l.notifySettingsChanged());
         }

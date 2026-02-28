@@ -28,7 +28,7 @@ function Relays() {
 
   return (
     <div>
-      <div className="row mb-2">Inbox relays:</div>
+      <div className="row mb-2">Message relays:</div>
       <ListGroup className="mb-3">
         {settings.inboxRelays.map((relay, i) => (
           <ListGroupItem key={i} className="list-group-item-secondary text-break">

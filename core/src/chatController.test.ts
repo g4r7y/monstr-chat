@@ -59,7 +59,7 @@ vi.mock('./nostrRelayMetadata.js', async importOriginal => {
     publishRelayListMetadata: vi.fn(),
     subscribeToRelayListMetadata: vi.fn(),
     getRelayListMetadata: vi.fn(),
-    extractReadRelaysFromNip65: (og as any).extractReadRelaysFromNip65 // eslint-disable-line @typescript-eslint/no-explicit-any
+    extractDMRelaysFromEvent: (og as any).extractDMRelaysFromEvent // eslint-disable-line @typescript-eslint/no-explicit-any
   };
 });
 
@@ -152,7 +152,7 @@ describe('chat controller', () => {
       expect(args[1]).toEqual(privateKey);
       expect(args[3]).toEqual(expectedRelaysForReceivingDm);
 
-      // should subscribe for relay list events for our key (nip65)
+      // should subscribe for relay list events for our key
       expect(subscribeToRelayListMetadata).toBeCalledTimes(1);
       args = (subscribeToRelayListMetadata as Mock).mock.calls[0];
       expect(args[0]).toEqual([pubkey]);
@@ -433,7 +433,7 @@ describe('chat controller', () => {
       expect(recipients[0].relays).toEqual(contact.relays);
     });
 
-    test('send to contact with missing relays, with successful nip65 relay lookup', async () => {
+    test('send to contact with missing relays, with successful DM relay lookup', async () => {
       const expectedRelaysForOtherEvents = controller.getSettings().generalRelays;
       const expectedRelaysForReceivingDm = controller.getSettings().inboxRelays;
 
@@ -445,17 +445,17 @@ describe('chat controller', () => {
         relaysUpdatedAt: null
       };
 
-      // simulate a nip65 event containing relay metadata
-      const nip65Event: EventTemplate = {
+      // simulate a relay list event containing relay metadata
+      const relayListEvent: EventTemplate = {
         created_at: Math.floor(Date.now() / 1000),
-        kind: 1002,
+        kind: 10050,
         tags: [
-          ['r', 'wss://read-me.lol'],
-          ['r', 'wss://read-relay.com']
+          ['relay', 'wss://read-me.lol'],
+          ['relay', 'wss://read-relay.com']
         ],
         content: ''
       };
-      (getRelayListMetadata as Mock).mockResolvedValue(nip65Event);
+      (getRelayListMetadata as Mock).mockResolvedValue(relayListEvent);
 
       await controller.sendDmToContact(contact, 'how now brown cow');
 
@@ -474,12 +474,12 @@ describe('chat controller', () => {
       const recipients = args[1];
       expect(recipients.length).toBe(2);
       expect(recipients[0].pubKey).toEqual(friendPubkey);
-      expect(recipients[0].relays).toEqual(['wss://read-me.lol', 'wss://read-relay.com']); // should have sent to the recipient relays from the nip65
+      expect(recipients[0].relays).toEqual(['wss://read-me.lol', 'wss://read-relay.com']); // should have sent to the recipient's DM relays
       expect(recipients[1].pubKey).toEqual(selfPublicKey);
       expect(recipients[1].relays).toEqual(expectedRelaysForReceivingDm);
     });
 
-    test('send to contact with missing relays, fails nip65 relay lookup', async () => {
+    test('send to contact with missing relays, fails relay list lookup', async () => {
       const contact: ChatContact = {
         name: 'Mystery man',
         npub: friendNpub,
@@ -824,13 +824,13 @@ describe('chat controller', () => {
       expect((subscribeToRelayListMetadata as Mock).mock.calls[0][0]).toEqual([pubkey]);
       expect(onRelayMetadataCallback).toBeDefined();
 
-      // simulate a nip65 event containing relay metadata for our key
+      // simulate a relay list event containing relay metadata for our key
       const event1 = {
         created_at: 1771370000,
-        kind: 1002,
+        kind: 10050,
         tags: [
-          ['r', 'wss://relay1.com'],
-          ['r', 'wss://relay111.lol']
+          ['relay', 'wss://relay1.com'],
+          ['relay', 'wss://relay111.lol']
         ],
         content: ''
       };
@@ -839,17 +839,17 @@ describe('chat controller', () => {
       expect(controller.getSettings().inboxRelays).toEqual(['wss://relay1.com', 'wss://relay111.lol']);
       expect(listener.notifySettingsChanged).toBeCalledTimes(1);
 
-      // another nip65 event containing same/older creation time
+      // another relay list event containing same/older creation time
       const event2 = {
         ...event1,
-        tags: [['r', 'wss://relay0.com']]
+        tags: [['relay', 'wss://relay0.com']]
       };
       await onRelayMetadataCallback(finalizeEvent(event2, privateKey));
       // should be ignored
       expect(controller.getSettings().inboxRelays).toEqual(['wss://relay1.com', 'wss://relay111.lol']);
       expect(listener.notifySettingsChanged).toBeCalledTimes(1);
 
-      // another nip65 event containing newer creation time, but unchanged relays
+      // another relay list event containing newer creation time, but unchanged relays
       const event3 = {
         ...event1,
         created_at: event1.created_at + 100
@@ -859,23 +859,23 @@ describe('chat controller', () => {
       expect(controller.getSettings().inboxRelays).toEqual(['wss://relay1.com', 'wss://relay111.lol']);
       expect(listener.notifySettingsChanged).toBeCalledTimes(1);
 
-      // another nip65 event containing newer creation time, and changed relays
+      // another relay list event containing newer creation time, and changed relays
       const event4 = {
         ...event1,
         created_at: event1.created_at + 100,
-        tags: [['r', 'wss://relay4.com']]
+        tags: [['relay', 'wss://relay4.com']]
       };
       await onRelayMetadataCallback(finalizeEvent(event4, privateKey));
       // settings should update and listener should be called again
       expect(controller.getSettings().inboxRelays).toEqual(['wss://relay4.com']);
       expect(listener.notifySettingsChanged).toBeCalledTimes(2);
 
-      // another changed nip65 event, but this time we remove listener
+      // another changed relay list event, but this time we remove listener
       controller.removeSettingsListener(listener);
       const event5 = {
         ...event4,
         created_at: event4.created_at + 100,
-        tags: [['r', 'wss://relay5.com']]
+        tags: [['relay', 'wss://relay5.com']]
       };
       await onRelayMetadataCallback(finalizeEvent(event5, privateKey));
       // settings should update but listener should not be called again
@@ -908,25 +908,25 @@ describe('chat controller', () => {
       expect((subscribeToRelayListMetadata as Mock).mock.calls[0][0]).toEqual([friendPubkey, pubkey]);
       expect(onRelayMetadataCallback).toBeDefined();
 
-      // simulate a nip65 event containing relay metadata for contact's key
+      // simulate a relay list event containing relay metadata for contact's key
       const event1 = {
         created_at: 1771370000,
-        kind: 1002,
+        kind: 10050,
         tags: [
-          ['r', 'wss://relay1.com'],
-          ['r', 'wss://relay111.lol']
+          ['relay', 'wss://relay1.com'],
+          ['relay', 'wss://relay111.lol']
         ],
         content: ''
       };
-      const nip65Event = finalizeEvent(event1, friendPrivateKey);
-      await onRelayMetadataCallback(nip65Event);
+      const relayListEvent = finalizeEvent(event1, friendPrivateKey);
+      await onRelayMetadataCallback(relayListEvent);
       // contact should update
       expect(controller.getContactByName('Steve')?.relays).toEqual(['wss://relay1.com', 'wss://relay111.lol']);
 
-      // another nip65 event containing same/older creation time
+      // another relay list event containing same/older creation time
       const event2 = {
         ...event1,
-        tags: [['r', 'wss://relay0.com']]
+        tags: [['relay', 'wss://relay0.com']]
       };
       await onRelayMetadataCallback(finalizeEvent(event2, friendPrivateKey));
       // should be ignored

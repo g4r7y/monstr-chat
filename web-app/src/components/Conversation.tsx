@@ -63,9 +63,10 @@ function Conversation() {
     handleSend();
   };
 
-  const handleSend = () => {
-    controller.sendDmToNpub(currentContactNpub, msgText);
+  const handleSend = async () => {
+    const msgToSend = msgText;
     setMsgText('');
+    await controller.sendDmToNpub(currentContactNpub, msgToSend);
   };
 
   return (
@@ -115,7 +116,7 @@ function Conversation() {
             />
           </Col>
           <Col xs="auto" className="ms-auto">
-            <Button variant="primary" onClick={handleSend}>
+            <Button variant="primary" onClick={handleSend} disabled={msgText.length === 0}>
               Send
             </Button>
           </Col>

@@ -30,9 +30,7 @@ const Welcome = () => {
     // re-initialise
     const initOk = await controller.init();
     if (initOk) {
-      const connected = await controller.connect();
-      console.log('Controller connect: ', connected);
-      console.log('Controller npub: ', controller.getNpub());
+      await controller.connect();
       switchView('main');
     } //TODO handle errors
   };

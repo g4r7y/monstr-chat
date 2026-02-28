@@ -26,8 +26,8 @@ const main = async () => {
   }
 
   if (initOk) {
-    const connected = await controller.connect();
-    await ui.go(connected ? 'main' : 'offline');
+    await controller.connect();
+    await ui.go('main');
   }
 
   controller.removeMessageListener(ui);

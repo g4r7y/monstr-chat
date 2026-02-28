@@ -1,8 +1,6 @@
-import tk from 'terminal-kit';
 import type { ChatController } from '@core/chatController.js';
 import type { MessageListener } from '@core/messageListener.js';
 import { type ChatMessage } from '@core/chatModel.js';
-import { showYesNoPrompt } from './terminalUi.js';
 import { welcome } from './welcome.js';
 import { mainMenu } from './mainMenu.js';
 import { refreshConversation, viewConversation } from './conversation.js';
@@ -17,8 +15,6 @@ import {
   settingsEditInboxRelays
 } from './settings.js';
 import { viewInbox } from './inbox.js';
-
-const { terminal } = tk;
 
 export type ViewContext = Readonly<{
   chatController: ChatController;
@@ -43,7 +39,6 @@ class ViewRouter implements MessageListener {
     while (this.#view.length > 0) {
       const views: Record<string, (context: ViewContext) => Promise<void>> = {
         welcome: welcome,
-        offline: offlinePrompt,
         main: mainMenu,
         inbox: viewInbox,
         viewConversation: viewConversation,
@@ -82,20 +77,6 @@ class ViewRouter implements MessageListener {
       view: this.#view,
       viewParams: this.#viewParams
     });
-  }
-}
-
-async function offlinePrompt(context: ViewContext) {
-  terminal.clear();
-  terminal.bgGreen('Offline\n\n');
-  terminal(
-    'Could not connect to one or more relays. Check your network connection.\nAlternatively, there could be a problem with the relay server.\nYou can check your current relay servers in Settings.\n\n'
-  );
-  const proceed = await showYesNoPrompt('Continue?');
-  console.log(context.view);
-  context.view.pop();
-  if (proceed) {
-    context.view.push('main');
   }
 }
 

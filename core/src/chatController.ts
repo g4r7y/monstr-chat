@@ -21,7 +21,7 @@ import type { SettingsListener } from './settingsListener.js';
 
 export interface ChatController {
   init(): Promise<boolean>;
-  connect(): Promise<boolean>;
+  connect(): Promise<void>;
   close(): void;
 
   addMessageListener(listener: MessageListener): void;
@@ -127,30 +127,9 @@ export class ChatControllerImpl implements ChatController {
     return true;
   }
 
-  async connect(): Promise<boolean> {
-    const subscribedOk = await this.#subscribeToRelays();
-
-    // allow time for inbox relays to start
-    const delay = async (milliseconds: number) => {
-      return new Promise(r => {
-        setTimeout(() => {
-          r(true);
-        }, milliseconds);
-      });
-    };
-    await delay(500);
-
+  async connect(): Promise<void> {
+    await this.#subscribeToRelays();
     this.#relayMonitor.start(this.#model.settings.inboxRelays, this.#onConnectionChange.bind(this));
-
-    // initial check in case all inbox relays are bad
-    const connError = this.checkConnectedRelays(this.#model.settings.inboxRelays).length === 0;
-
-    if (!subscribedOk || connError) {
-      this.#offline = true;
-      return false;
-    }
-
-    return true;
   }
 
   close() {

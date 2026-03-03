@@ -12,6 +12,7 @@ import AddFriend from './AddFriend';
 import ViewFriend from './ViewFriend.tsx';
 import FindFriend from './FindFriend.tsx';
 import EditProfile from './EditProfile.tsx';
+import EditRelays from './EditRelays.tsx';
 
 const MainAppView = () => {
   const appView = useAppView();
@@ -43,11 +44,14 @@ const MainAppView = () => {
       {appView.view === 'friends' && <MainMenu activeTab="friends" />}
       {appView.view === 'settings' && <MainMenu activeTab="settings" />}
       {appView.view === 'settings#profile' && <MainMenu activeTab="settings" activeSetting="profile" />}
+      {appView.view === 'settings#relays' && <MainMenu activeTab="settings" activeSetting="relays" />}
       {appView.view === 'conversation' && <Conversation />}
       {appView.view === 'add-friend' && <AddFriend />}
       {appView.view === 'view-friend' && <ViewFriend />}
       {appView.view === 'find-friend' && <FindFriend />}
       {appView.view === 'edit-profile' && <EditProfile />}
+      {appView.view === 'edit-message-relays' && <EditRelays relayType="message" />}
+      {appView.view === 'edit-general-relays' && <EditRelays relayType="general" />}
     </div>
   );
 };

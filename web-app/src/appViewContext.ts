@@ -7,11 +7,14 @@ export type AppViewNameType =
   | 'friends'
   | 'settings'
   | 'settings#profile'
+  | 'settings#relays'
   | 'conversation'
   | 'add-friend'
   | 'view-friend'
   | 'find-friend'
-  | 'edit-profile';
+  | 'edit-profile'
+  | 'edit-message-relays'
+  | 'edit-general-relays';
 
 // Define the type to be used with the context
 interface AppViewContextType {

@@ -1,13 +1,15 @@
 import React from 'react';
 import type { ChatSettings } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import type { SettingsListener } from '@core/settingsListener';
+import { useAppView } from '../appViewContext';
 
 function Relays() {
   const controller = useChatController();
   // memoise
   const controllerRef = React.useRef(controller);
+  const { switchView } = useAppView();
 
   const [settings, setSettings] = React.useState<ChatSettings>(controller.getSettings());
 
@@ -28,7 +30,9 @@ function Relays() {
 
   return (
     <div>
-      <div className="row mb-2">Message relays:</div>
+      <div className="row mb-3">
+        <b>Message relays:</b>
+      </div>
       <ListGroup className="mb-3">
         {settings.inboxRelays.map((relay, i) => (
           <ListGroupItem key={i} className="list-group-item-secondary text-break">
@@ -36,7 +40,10 @@ function Relays() {
           </ListGroupItem>
         ))}
       </ListGroup>
-      <div className="row mb-2">General relays:</div>
+      <Button onClick={() => switchView('edit-message-relays')}>Edit</Button>
+      <div className="row mb-3 mt-4">
+        <b>General relays:</b>
+      </div>
       <ListGroup className="mb-3">
         {settings.generalRelays.map((relay, i) => (
           <ListGroupItem key={i} className="list-group-item-secondary text-break">
@@ -44,6 +51,7 @@ function Relays() {
           </ListGroupItem>
         ))}
       </ListGroup>
+      <Button onClick={() => switchView('edit-general-relays')}>Edit</Button>
     </div>
   );
 }

@@ -133,6 +133,7 @@ export class ChatControllerImpl implements ChatController {
   }
 
   close() {
+    this.#relayMonitor.stop();
     this.#pool.destroy();
   }
 

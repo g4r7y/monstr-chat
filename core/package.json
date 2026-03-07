@@ -8,7 +8,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@nostr/tools": "npm:@jsr/nostr__tools@2.17.1",
+    "@nostr/tools": "npm:@jsr/nostr__tools@2.23.0",
     "@scure/bip39": "1.2.1"
   }
 }

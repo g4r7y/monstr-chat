@@ -52,11 +52,23 @@ function Friends() {
                     <div className="fw-bold">{c.name}</div>
                   </div>
                   <div className="ms-auto d-flex align-items-center">
-                    <Button onClick={handleViewFriend(c)} size="lg" variant="link" className="info-button text-info">
-                      <i className="fas fa-address-card"></i>
+                    <Button
+                      onClick={handleViewFriend(c)}
+                      size="lg"
+                      variant="link"
+                      className="info-button text-info"
+                      aria-label="Friend details"
+                    >
+                      <i className="fas fa-address-card" aria-hidden="true"></i>
                     </Button>
-                    <Button onClick={handleChat(c)} size="lg" variant="link" className="text-primary">
-                      <i className="fas fa-message"></i>
+                    <Button
+                      onClick={handleChat(c)}
+                      size="lg"
+                      variant="link"
+                      className="text-primary"
+                      aria-label="Chat with friend"
+                    >
+                      <i className="fas fa-message" aria-hidden="true"></i>
                     </Button>
                   </div>
                 </ListGroup.Item>

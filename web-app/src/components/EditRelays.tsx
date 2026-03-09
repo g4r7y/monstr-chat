@@ -23,8 +23,8 @@ const EditRelays = (props: EditRelaysProps) => {
   const [originalValue, setOriginalValue] = React.useState('');
   const [inputError, setInputError] = React.useState('');
 
-  type SaveState = 'ok' | 'saving' | 'failed';
-  const [saveState, setSaveState] = React.useState<SaveState>('ok');
+  type SaveState = 'none' | 'saving' | 'failed';
+  const [saveState, setSaveState] = React.useState<SaveState>('none');
 
   React.useEffect(() => {
     // move focus to corresponding input field when editing index changes
@@ -96,7 +96,7 @@ const EditRelays = (props: EditRelaysProps) => {
       await controller.broadcastUserMetadata();
     }
     switchView('settings#relays');
-    setSaveState('ok');
+    setSaveState('none');
   };
 
   const handleAddRelay = () => {
@@ -159,10 +159,12 @@ const EditRelays = (props: EditRelaysProps) => {
                   size="lg"
                   variant="link"
                   className="info-button text-primary"
+                  aria-label="Edit"
                 >
                   <i
                     className="fas fa-edit"
                     style={editingIndex === -1 ? {} : { opacity: 0, color: 'transparent' }}
+                    aria-hidden="true"
                   ></i>
                 </Button>
               )}
@@ -173,22 +175,36 @@ const EditRelays = (props: EditRelaysProps) => {
                   size="lg"
                   variant="link"
                   className="text-danger"
+                  aria-label="Delete"
                 >
                   <i
                     className="fas fa-trash"
                     style={editingIndex === -1 ? {} : { opacity: 0, color: 'transparent' }}
+                    aria-hidden="true"
                   ></i>
                 </Button>
               )}
 
               {editingIndex === i && (
-                <Button onClick={handleInputDone} size="lg" variant="link" className="info-button text-success">
-                  <i className="fas fa-check"></i>
+                <Button
+                  onClick={handleInputDone}
+                  size="lg"
+                  variant="link"
+                  className="info-button text-success"
+                  aria-label="Ok"
+                >
+                  <i className="fas fa-check" aria-hidden="true"></i>
                 </Button>
               )}
               {editingIndex === i && (
-                <Button onClick={handleInputCancel} size="lg" variant="link" className="info-button text-danger">
-                  <i className="fas fa-xmark"></i>
+                <Button
+                  onClick={handleInputCancel}
+                  size="lg"
+                  variant="link"
+                  className="info-button text-danger"
+                  aria-label="Cancel"
+                >
+                  <i className="fas fa-times" aria-hidden="true"></i>
                 </Button>
               )}
             </div>
@@ -203,7 +219,7 @@ const EditRelays = (props: EditRelaysProps) => {
           onClick={handleAddRelay}
           disabled={editingIndex !== -1 || saveState === 'saving'}
         >
-          <i className="fas fa-plus"></i>
+          <i className="fas fa-plus" aria-hidden="true"></i> Add
         </Button>
       </div>
       <div>

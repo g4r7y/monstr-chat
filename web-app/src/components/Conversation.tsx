@@ -83,8 +83,14 @@ function Conversation() {
               : 'Stranger'}
           </Navbar.Brand>
           {controller.getContactByNpub(currentContactNpub) !== null && (
-            <Button onClick={handleViewFriend} size="lg" variant="link" className="info-button text-info">
-              <i className="fas fa-address-card"></i>
+            <Button
+              onClick={handleViewFriend}
+              size="lg"
+              variant="link"
+              className="info-button text-info"
+              aria-label="Friend details"
+            >
+              <i className="fas fa-address-card" aria-hidden="true"></i>
             </Button>
           )}
         </div>

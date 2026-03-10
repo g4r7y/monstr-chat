@@ -76,7 +76,7 @@ function EditProfile() {
       </Navbar>
 
       <Form>
-        <div className="mb-3">
+        <div className="mt-3 mb-3">
           <Form.Label>Nickname:</Form.Label>
           <Form.Control
             type="text"

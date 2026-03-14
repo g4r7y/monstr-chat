@@ -20,8 +20,13 @@ This project gives you two apps for the price of one:
 
 Monstr chat uses the following [NIPs](https://github.com/nostr-protocol/nips):
 
-* NIP-17, NIP-44, NIP-59 - secure encypted private direct messages. DM events are sealed and giftwrapped to avoid leaking metadata.
-* NIP-05 - maps Nostr keys to DNS-based internet identifiers
+* NIP-01 - basic protocol, user metadata
+* NIP-05 - map Nostr keys to DNS-based internet identifiers
+* NIP-06 - derive keys from BIP39 mnemonic seed phrase
+* NIP-17 - private direct messages
+* NIP-19 - bech32-encoded entities
+* NIP-44 - encrypted payloads
+* NIP-59 - seal and giftwrap events to avoid metadata leakage
 
 
 ## Development

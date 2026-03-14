@@ -19,7 +19,7 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
     const pTags = plainEvent.tags.filter(tag => tag.length > 1 && tag[0] == 'p');
     const hasOtherRecipients = pTags.filter(pTag => pTag[1] !== pubkey).length > 0;
 
-    let msg = null;
+    let msg: ChatMessage;
     if (plainEvent.pubkey === pubkey && hasOtherRecipients) {
       // from self and not just to ourself
       // it's an outgoing message
@@ -70,7 +70,7 @@ const receiveDms = async (
     },
     {
       id: 'incoming-dm-sub-id', // always use fixed sub id
-      async onevent(event) {
+      async onevent(event: NostrEvent) {
         if (event.kind === 1059) {
           // possible giftwrapped NIP17 DM
           const msg = await onReceiveDm(pubkey, privateKey, event);

@@ -258,7 +258,7 @@ describe('chat controller', () => {
       await onReceiveMessageCallback!(msg2);
 
       // outgoing (sent) message from self
-      const msg3 = {
+      const msg3: ChatMessage = {
         id: 'id3',
         time: new Date(timestamp + 10000),
         text: 'my reply',
@@ -389,9 +389,7 @@ describe('chat controller', () => {
       const contact: ChatContact = {
         name: 'Steve',
         npub: friendNpub,
-        profile: null,
-        relays: ['wss://relay1', 'wss://relay2'],
-        relaysUpdatedAt: null
+        relays: ['wss://relay1', 'wss://relay2']
       };
 
       await controller.sendDmToContact(contact, 'how now brown cow');
@@ -414,9 +412,7 @@ describe('chat controller', () => {
       const contact: ChatContact = {
         name: 'myself',
         npub: npub,
-        profile: null,
-        relays: ['wss://relay1', 'wss://relay2'],
-        relaysUpdatedAt: null
+        relays: ['wss://relay1', 'wss://relay2']
       };
 
       await controller.sendDmToContact(contact, 'message to myself');
@@ -440,9 +436,7 @@ describe('chat controller', () => {
       const contact: ChatContact = {
         name: 'Mystery man',
         npub: friendNpub,
-        profile: null,
-        relays: [], //relays not defined
-        relaysUpdatedAt: null
+        relays: [] //relays not defined
       };
 
       // simulate a relay list event containing relay metadata
@@ -483,9 +477,7 @@ describe('chat controller', () => {
       const contact: ChatContact = {
         name: 'Mystery man',
         npub: friendNpub,
-        profile: null,
-        relays: [], //relays not defined
-        relaysUpdatedAt: null
+        relays: [] //relays not defined
       };
 
       (getRelayListMetadata as Mock).mockResolvedValue(undefined);
@@ -517,9 +509,7 @@ describe('chat controller', () => {
       const contact1: ChatContact = {
         name: 'Rod',
         npub: 'npub1qan5qactkzmn3g3ee88mknhkq3r8yvsthfqrchmxxfm43x36eptst3w8cv',
-        profile: null,
-        relays: [],
-        relaysUpdatedAt: null
+        relays: []
       };
       const contact2 = {
         ...contact1,
@@ -642,11 +632,8 @@ describe('chat controller', () => {
         content: JSON.stringify(profile)
       };
       await onUserMetadataCallback(finalizeEvent(event2, privateKey));
-      // profile settings should be updated, but nip05 is cleared; listener should be called again
-      expect(controller.getSettings().profile).toEqual({
-        ...profile,
-        nip05: null
-      });
+      // profile settings should be updated, but nip05 is removed; listener should be called again
+      expect(controller.getSettings().profile).toEqual({ name: profile.name, about: profile.about });
       expect(listener.notifySettingsChanged).toBeCalledTimes(2);
     });
 
@@ -659,9 +646,7 @@ describe('chat controller', () => {
       const contact: ChatContact = {
         name: 'Steve',
         npub: friendNpub,
-        profile: null,
-        relays: [],
-        relaysUpdatedAt: null
+        relays: []
       };
       controller.setContact(contact);
 
@@ -714,11 +699,8 @@ describe('chat controller', () => {
         content: JSON.stringify(profile)
       };
       await onUserMetadataCallback(finalizeEvent(event2, friendPrivateKey));
-      // contact's profile should be updated, but nip05 is cleared
-      expect(controller.getContactByName('Steve')!.profile).toEqual({
-        ...profile,
-        nip05: null
-      });
+      // contact's profile should be updated, but nip05 is removed
+      expect(controller.getContactByName('Steve')!.profile).toEqual({ name: profile.name, about: profile.about });
     });
 
     test("can broadcast user's profile", async () => {
@@ -773,10 +755,7 @@ describe('chat controller', () => {
       // lookup the remote user profile
       result = await controller.lookupUserProfile(friendNpub);
       // expect profile to be returned, but with null value for nip05
-      expect(result).toEqual({
-        ...profile,
-        nip05: null
-      });
+      expect(result).toEqual({ name: profile.name, about: profile.about });
     });
   });
 
@@ -892,9 +871,7 @@ describe('chat controller', () => {
       const contact: ChatContact = {
         name: 'Steve',
         npub: friendNpub,
-        profile: null,
-        relays: [],
-        relaysUpdatedAt: null
+        relays: []
       };
       controller.setContact(contact);
 

@@ -118,7 +118,7 @@ async function addContact(context: ViewContext) {
           if (!contactProfile?.nip05) {
             // create/overwrite contactProfile with the user-inputted nip05
             contactProfile = {
-              ...(contactProfile ?? { name: null, about: null, nip05: null }),
+              ...(contactProfile ?? {}),
               nip05
             };
           }
@@ -191,10 +191,9 @@ async function addContact(context: ViewContext) {
         const contact: ChatContact = {
           name: contactName,
           npub,
-          profile: contactProfile,
-          relays: [],
-          relaysUpdatedAt: null
+          relays: []
         };
+        if (contactProfile) contact.profile = contactProfile;
         await context.chatController.setContact(contact);
 
         // new contact, so update subscription so we can get contact's relaylist

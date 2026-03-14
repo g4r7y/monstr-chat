@@ -5,7 +5,8 @@
     "test": "npm run test --workspace=core && npm run test --workspace=terminal",
     "build": "npm run build --workspace=terminal && npm run build --workspace=web-app",
     "lint": "npm run lint --workspaces",
-    "prettier": "npm run prettier --workspaces"
+    "prettier": "npm run prettier --workspaces",
+    "check": "npm run prettier && npm run lint"
   },
   "workspaces": [
     "core",

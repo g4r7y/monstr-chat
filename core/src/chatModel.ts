@@ -1,31 +1,29 @@
 import type { DataStore } from './dataStore.js';
 
 export type UserProfile = {
-  name: string | null; //nickname
-  about: string | null;
-  nip05: string | null;
+  name?: string; // aka nickname
+  about?: string;
+  nip05?: string;
 };
 
 export type ChatSettings = {
   inboxRelays: string[];
   generalRelays: string[];
-  relaysUpdatedAt: number | null;
-  profile: UserProfile | null;
+  relaysUpdatedAt?: number;
+  profile?: UserProfile;
 };
 
 const defaultSettings: ChatSettings = {
   inboxRelays: ['wss://relay.damus.io'],
-  generalRelays: ['wss://nostr.wine', 'wss://relay.snort.social', 'wss://relay.damus.io', 'wss://relay.0xchat.com'],
-  relaysUpdatedAt: null,
-  profile: null
+  generalRelays: ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nostr.wine', 'wss://relay.snort.social', 'wss://relay.0xchat.com']
 };
 
 export type ChatContact = {
-  name: string; //local name
+  name: string;
   npub: string;
-  profile: UserProfile | null;
+  profile?: UserProfile;
   relays: string[];
-  relaysUpdatedAt: number | null;
+  relaysUpdatedAt?: number;
 };
 
 export type ChatMessage = {
@@ -34,7 +32,7 @@ export type ChatMessage = {
   text: string;
   sender: string;
   receiver: string;
-  state: string; // tx or rx
+  state: 'tx' | 'rx';
 };
 
 export type ChatAppData = {

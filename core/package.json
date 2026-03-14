@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "tsc --noEmit && vitest --run",
-    "lint": "eslint .",
+    "lint": "tsc --noEmit && eslint .",
     "prettier": "prettier --write ."
   },
   "type": "module",

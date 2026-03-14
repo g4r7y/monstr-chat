@@ -16,9 +16,7 @@ const fakeDataStore: DataStore = {
 
 const someSettings: ChatSettings = {
   inboxRelays: [],
-  generalRelays: [],
-  relaysUpdatedAt: null,
-  profile: null
+  generalRelays: []
 };
 
 let fakeAppData: ChatAppData | null = null;
@@ -34,8 +32,8 @@ describe('model', async () => {
     //has some default settings
     expect(model.settings.generalRelays.length >= 1);
     expect(model.settings.inboxRelays.length >= 1);
-    expect(model.settings.relaysUpdatedAt).toStrictEqual(null);
-    expect(model.settings.profile).toStrictEqual(null);
+    expect(model.settings.relaysUpdatedAt).toStrictEqual(undefined);
+    expect(model.settings.profile).toStrictEqual(undefined);
 
     expect(model.getMessageList().length).toBe(0);
     expect(model.getContactList().length).toBe(0);
@@ -86,30 +84,22 @@ describe('model', async () => {
   });
 
   test('load contacts', async () => {
-    const emptyContact = {
-      name: null,
-      npub: null,
-      profile: null,
-      relays: [],
-      relaysUpdatedAt: null
-    };
-
     fakeAppData = {
       contacts: [
         {
-          ...emptyContact,
           name: 'Rod',
-          npub: 'npub123'
+          npub: 'npub123',
+          relays: []
         },
         {
-          ...emptyContact,
           name: 'Freddy',
-          npub: 'npub456'
+          npub: 'npub456',
+          relays: []
         },
         {
-          ...emptyContact,
           name: 'Jane',
-          npub: 'npub789'
+          npub: 'npub789',
+          relays: []
         }
       ],
       settings: someSettings
@@ -121,26 +111,26 @@ describe('model', async () => {
     const contacts = model.getContactList();
     expect(contacts.length).toBe(3);
     expect(contacts[0]).toEqual({
-      ...emptyContact,
       name: 'Rod',
-      npub: 'npub123'
+      npub: 'npub123',
+      relays: []
     });
     expect(contacts[1]).toEqual({
-      ...emptyContact,
       name: 'Freddy',
-      npub: 'npub456'
+      npub: 'npub456',
+      relays: []
     });
     expect(contacts[2]).toEqual({
-      ...emptyContact,
       name: 'Jane',
-      npub: 'npub789'
+      npub: 'npub789',
+      relays: []
     });
 
     const foundContact = model.getContactByName('Freddy');
     expect(foundContact).toEqual({
-      ...emptyContact,
       name: 'Freddy',
-      npub: 'npub456'
+      npub: 'npub456',
+      relays: []
     });
     const notFoundContact = model.getContactByName('zippy');
     expect(notFoundContact).toBe(null);
@@ -206,9 +196,7 @@ describe('model', async () => {
     const c: ChatContact = {
       name: 'Fred',
       npub: 'npub456',
-      profile: null,
-      relays: [],
-      relaysUpdatedAt: null
+      relays: []
     };
     await model.setContact(c);
     expect(model.getContactList().length).toBe(1);
@@ -250,9 +238,7 @@ describe('model', async () => {
     const c2: ChatContact = {
       name: 'Pip',
       npub: 'npub789',
-      profile: null,
-      relays: [],
-      relaysUpdatedAt: null
+      relays: []
     };
     await model.setContact(c2);
     expect(model.getContactList().length).toBe(2);
@@ -274,7 +260,7 @@ describe('model', async () => {
     // defualt settings
     const s1 = model.settings as ChatSettingsMutant;
     expect(s1.inboxRelays.length).toBe(1);
-    expect(s1.generalRelays.length).toBe(4);
+    expect(s1.generalRelays.length).toBe(5);
 
     // settings object is immutable via getter
     s1.someNewThing = 123;

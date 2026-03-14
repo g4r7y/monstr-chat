@@ -308,11 +308,7 @@ export class ChatControllerImpl implements ChatController {
   // Throws if cannot broadcast to any relays
   async broadcastUserMetadata() {
     const settings = this.#model.settings;
-    const profile = settings.profile ?? {
-      name: null,
-      about: null,
-      nip05: null
-    };
+    const profile = settings.profile ?? {};
     await publishUserMetadata(this.#pubKey, this.#privateKey, this.#pool, this.#model.settings.generalRelays, profile);
   }
 
@@ -393,11 +389,10 @@ export class ChatControllerImpl implements ChatController {
         nip05 = content.nip05;
       }
     }
-    const profile: UserProfile = {
-      name: content?.name ?? null,
-      about: content?.about ?? null,
-      nip05
-    };
+    const profile: UserProfile = {};
+    if (content?.name) profile.name = content?.name;
+    if (content?.about) profile.about = content?.about;
+    if (nip05) profile.nip05 = nip05;
     return profile;
   }
 
@@ -493,13 +488,16 @@ export class ChatControllerImpl implements ChatController {
   async #onUserMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey);
 
-    const mergeProfile = async (localProfile: UserProfile | null, remoteProfile: UserProfile): Promise<UserProfile> => {
+    const mergeProfile = async (
+      localProfile: UserProfile | undefined,
+      remoteProfile: UserProfile
+    ): Promise<UserProfile> => {
       const merged = {
         ...remoteProfile
       };
       if (remoteProfile.nip05 !== localProfile?.nip05) {
-        // default to overriding local value with null
-        merged.nip05 = null;
+        // default to no nip05
+        delete merged.nip05;
         if (remoteProfile.nip05) {
           // new nip05, so verify it before we save it
           const nip05Npub = await this.lookupNip05Address(remoteProfile.nip05);
@@ -512,7 +510,7 @@ export class ChatControllerImpl implements ChatController {
       return merged;
     };
 
-    // TODO only update if event time is newer than last update?
+    // TODO ignore if event time is older than last update
     const userProfile = extractContentFromUserMetadataEvent(ev);
     if (userProfile) {
       // update user metadata for contact

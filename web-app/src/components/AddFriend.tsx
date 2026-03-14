@@ -35,10 +35,9 @@ function AddFriend() {
       const contact: ChatContact = {
         name: contactName,
         npub: currentContactNpub,
-        profile: contactProfile,
-        relays: [],
-        relaysUpdatedAt: null
+        relays: []
       };
+      if (contactProfile) contact.profile = contactProfile;
       await chatController.setContact(contact);
 
       // new contact, so update subscription so we can get contact's relaylist

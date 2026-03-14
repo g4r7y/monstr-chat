@@ -5,7 +5,7 @@
     "test": "vitest --run src/**",
     "build": "npx tsc && npx tsc-alias",
     "start": "node dist/terminal/src/main.js",
-    "lint": "eslint .",
+    "lint": "npx tsc --noemit && eslint .",
     "prettier": "prettier --ignore-path ../.gitignore --write ."
   },
   "bin": {

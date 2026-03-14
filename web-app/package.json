@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "npx tsc --noemit --project ./tsconfig.app.json && eslint .",
     "prettier": "prettier --ignore-path ../.gitignore --write .",
     "preview": "vite preview"
   },

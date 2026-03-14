@@ -107,7 +107,8 @@ async function settingsEditProfile(context: ViewContext) {
   }
 
   if (shouldUpdate) {
-    settings.profile = { name: profileName, about: profileAbout, nip05 };
+    settings.profile = { name: profileName, about: profileAbout };
+    if (nip05) settings.profile.nip05 = nip05;
     await context.chatController.setSettings(settings);
     await context.chatController.broadcastUserMetadata();
     await pressToContinue('Your Nostr profile has been updated');

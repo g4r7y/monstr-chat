@@ -32,7 +32,7 @@ describe('model', async () => {
     //has some default settings
     expect(model.settings.generalRelays.length >= 1);
     expect(model.settings.inboxRelays.length >= 1);
-    expect(model.settings.relaysUpdatedAt).toStrictEqual(undefined);
+    expect(model.settings.lastSeen).toStrictEqual(undefined);
     expect(model.settings.profile).toStrictEqual(undefined);
 
     expect(model.getMessageList().length).toBe(0);

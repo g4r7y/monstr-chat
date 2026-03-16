@@ -6,16 +6,33 @@ export type UserProfile = {
   nip05?: string;
 };
 
+// Map of relay URLs to timestamps
+export type RelayTimestampMap = Record<string, number>;
+
+// Timestamps of latest event for each of the event types we subscribe to.
+// For DM events we store the latest timestamp per source relay.
+export type LastSeenEventTimestamps = {
+  dm?: RelayTimestampMap;
+  relayMetadata?: number;
+  userMetadata?: number;
+};
+
 export type ChatSettings = {
   inboxRelays: string[];
   generalRelays: string[];
-  relaysUpdatedAt?: number;
+  lastSeen?: LastSeenEventTimestamps;
   profile?: UserProfile;
 };
 
 const defaultSettings: ChatSettings = {
   inboxRelays: ['wss://relay.damus.io'],
-  generalRelays: ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nostr.wine', 'wss://relay.snort.social', 'wss://relay.0xchat.com']
+  generalRelays: [
+    'wss://relay.damus.io',
+    'wss://relay.primal.net',
+    'wss://nostr.wine',
+    'wss://relay.snort.social',
+    'wss://relay.0xchat.com'
+  ]
 };
 
 export type ChatContact = {

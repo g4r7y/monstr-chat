@@ -244,7 +244,8 @@ async function settingsEditRelays(relayType: 'message' | 'general', context: Vie
       return;
     }
     const updateTimestampUtc = Date.now();
-    currentSettings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000);
+    const lastSeenEventTimestamp = Math.floor(updateTimestampUtc / 1000);
+    currentSettings.lastSeen = { ...currentSettings.lastSeen, relayMetadata: lastSeenEventTimestamp };
     currentSettings.inboxRelays = newInboxRelays;
   } else if (relayType === 'general') {
     terminal.yellow('\nDiscovery relays:\n\n');

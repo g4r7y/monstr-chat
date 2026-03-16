@@ -67,7 +67,8 @@ const EditRelays = (props: EditRelaysProps) => {
     const settings = controller.getSettings();
     if (relayType === 'message') {
       const updateTimestampUtc = Date.now();
-      settings.relaysUpdatedAt = Math.floor(updateTimestampUtc / 1000);
+      const timeStamp = Math.floor(updateTimestampUtc / 1000);
+      settings.lastSeen = { ...settings.lastSeen, relayMetadata: timeStamp };
       settings.inboxRelays = relays;
     } else {
       settings.generalRelays = relays;

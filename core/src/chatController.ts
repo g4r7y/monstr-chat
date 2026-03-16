@@ -465,13 +465,14 @@ export class ChatControllerImpl implements ChatController {
     // if we have received relay list for self (perhaps changed on another client)
     if (ev.pubkey === this.#pubKey) {
       // update local relay settings if event time is newer
-      if (!this.#model.settings.relaysUpdatedAt || this.#model.settings.relaysUpdatedAt < ev.created_at) {
+      const lastSeenTimeStamp: number | undefined = this.#model.settings.lastSeen?.relayMetadata;
+      if (!lastSeenTimeStamp || lastSeenTimeStamp < ev.created_at) {
         const currentSettings = this.#model.settings;
         const eventRelays = extractDMRelaysFromEvent(ev);
         if (JSON.stringify(eventRelays) !== JSON.stringify(currentSettings.inboxRelays)) {
           console.log(`Updating relaylist for self`);
           currentSettings.inboxRelays = eventRelays;
-          currentSettings.relaysUpdatedAt = ev.created_at;
+          currentSettings.lastSeen = { ...currentSettings.lastSeen, relayMetadata: ev.created_at };
           await this.#model.setSettings(currentSettings);
           // resubscribe to the new DM relays
           await this.subscribeToIncomingDms();

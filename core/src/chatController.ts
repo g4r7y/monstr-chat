@@ -26,7 +26,6 @@ export interface ChatController {
 
   addMessageListener(listener: MessageListener): void;
   removeMessageListener(listener: MessageListener): void;
-
   addSettingsListener(listener: SettingsListener): void;
   removeSettingsListener(listener: SettingsListener): void;
 
@@ -47,16 +46,18 @@ export interface ChatController {
   broadcastRelayList(): Promise<void>;
   subscribeToUserMetadata(): Promise<void>;
   broadcastUserMetadata(): Promise<void>;
+
   checkConnectedRelays(relayUrls: string[]): string[];
 
   getNpub(): string;
   getNsec(): string;
-  lookupNip05Address(nip05: string): Promise<string | null>;
 
   createNewKey(): Promise<string>;
   resetKey(nsec: string): Promise<void>;
   resetKeyFromSeedWords(bip39Mnemonic: string): Promise<void>;
+
   lookupUserProfile(npub: string): Promise<UserProfile | null>;
+  lookupNip05Address(nip05: string): Promise<string | null>;
 }
 
 export class ChatControllerImpl implements ChatController {
@@ -84,6 +85,7 @@ export class ChatControllerImpl implements ChatController {
       enableReconnect: true
     };
     this.#pool = new SimplePool(poolOptions);
+    this.#pool.trackRelays = true;
 
     this.#relayMonitor = createRelayMonitor(this.#pool);
     this.#offline = false;
@@ -137,8 +139,6 @@ export class ChatControllerImpl implements ChatController {
     this.#pool.destroy();
   }
 
-  // model
-
   getSettings(): ChatSettings {
     return this.#model.settings;
   }
@@ -151,8 +151,10 @@ export class ChatControllerImpl implements ChatController {
     return this.#model.getContactByNpub(contactNpub);
   }
 
-  // Get conversations
-  // @return Map of conversations, where key is the contact npub, value is list of messages
+  /**
+   * Get conversations
+   * @return Map of conversations, where key is the contact npub, value is list of messages
+   */
   getConversations(): Map<string, ChatMessage[]> {
     const convs = new Map<string, ChatMessage[]>();
     const sortedMessages = Array.from(this.#model.getMessageList());
@@ -183,8 +185,13 @@ export class ChatControllerImpl implements ChatController {
     await this.#model.deleteContact(npub);
   }
 
-  // Send DM using the recipient's DM inbox relay(s).
-  // Also sends a copy to ourself so our sent messages will persist on relay.
+  /**
+   * Send DM using the recipient's DM inbox relay(s).
+   * Also sends a copy to ourself so our sent messages will persist on relay.
+   * @param recipient - the contact to send the DM to.
+   * @param text - the message text to send.
+   * @throws NoRelay - if no relays can be found.
+   */
   async sendDmToContact(recipient: ChatContact, text: string) {
     if (!recipient?.relays?.length) {
       console.log(`Send: contact ${recipient.npub} doesn't have relay defined, trying to fetch relaylist first`);
@@ -194,11 +201,15 @@ export class ChatControllerImpl implements ChatController {
     }
   }
 
-  // Send DM to specified npub.
-  // If relays not given, tries to get a kind 10050 event with their DM relay list.
-  // Then sends DM using the recipient's DM relay(s).
-  // Throws if no relays can be found.
-  // Also sends a copy to ourself so our sent messages will persist on relay.
+  /**
+   * Send DM to specified npub.
+   * Also sends a copy to ourself so our sent messages will persist on relay.
+   * @param recipientNpub - the npub to send the DM to.
+   * @param text - the message text to send.
+   * @param recipientRelays - the recipient's DM relay(s) to send the message to. If relays
+   * not specified, it will try to get a kind 10050 event for the recipient to obtain their DM relay list.
+   * @throws NoRelay - if no relays can be found.
+   */
   async sendDmToNpub(recipientNpub: string, text: string, recipientRelays?: string[]) {
     const recipientPubKey = decode(recipientNpub).data as string;
 
@@ -234,21 +245,32 @@ export class ChatControllerImpl implements ChatController {
     await sendDm(this.#privateKey, recipientGroup, this.#pool, text);
   }
 
-  // Subscribe/re-subscribe to receive DMs from inbox relays
+  /**
+   * Subscribe/re-subscribe to receive DMs from our inbox relays
+   */
   async subscribeToIncomingDms() {
-    console.log(`Subscribing to receive DMs`);
+    // Get the inbox relays we want to subscribe to messages on.
+    // For each one we also provide the timestamp of the last received event,
+    // so we will only subscribe for newer events.
+    const relays = this.#model.settings.inboxRelays.map(normalizeURL).map(relayUrl => {
+      const timestamp = this.#model.settings.lastSeen?.dm?.[relayUrl];
+      return { url: relayUrl, lastSeenTimestamp: timestamp };
+    });
+
     await receiveDms(
       this.#pubKey,
       this.#privateKey,
       this.#pool,
-      this.#model.settings.inboxRelays,
-      async (msg: ChatMessage) => await this.#onNewMessage(msg)
+      relays,
+      async (msg: ChatMessage, relaysSeenOn: string[]) => await this.#onNewMessage(msg, relaysSeenOn)
     );
   }
 
-  // Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
-  // Also include our own npub in case relayslist is changed by another client.
-  // General (aka discovery) relays are used for the subscription
+  /**
+   * Subscribe/re-subscribe to receive relaylist metadata for all of our contacts.
+   * Also subscribes for our own npub in case relayslist is changed on another client.
+   * General (aka discovery) relays are used for the subscription.
+   */
   async subscribeToRelayMetadata() {
     // subscribing for all of our contacts
     const npubs = this.#model
@@ -269,8 +291,10 @@ export class ChatControllerImpl implements ChatController {
     );
   }
 
-  // Broadcast our DM inbox relay list to the general discovery relays so that other people know how to send message to us
-  // Throws if cannot broadcast to any relays
+  /**
+   * Broadcast our DM inbox relay list to the general discovery relays so that other people know how to send message to us.
+   * @throws if cannot broadcast to any relays.
+   */
   async broadcastRelayList() {
     await publishRelayListMetadata(
       this.#pubKey,
@@ -281,9 +305,11 @@ export class ChatControllerImpl implements ChatController {
     );
   }
 
-  // Subscribe/re-subscribe to receive user metadata for all of our contacts.
-  // Also include our own npub in case user metadata is changed by another client.
-  // General (aka discovery) relays are used for the subscription
+  /**
+   * Subscribe/re-subscribe to receive user metadata for all of our contacts.
+   * Also subscribes for our own npub in case user metadata is changed on another client.
+   * General (aka discovery) relays are used for the subscription.
+   */
   async subscribeToUserMetadata() {
     // subscribing for all of our contacts
     const pubkeys = this.#model
@@ -304,17 +330,21 @@ export class ChatControllerImpl implements ChatController {
     );
   }
 
-  // Broadcast our user metadata to the general discovery relays. This includes our nip05 address.
-  // Throws if cannot broadcast to any relays
+  /**
+   * Broadcast our user metadata to the general discovery relays. This includes our nip05 address.
+   * @throws if cannot broadcast to any relays.
+   */
   async broadcastUserMetadata() {
     const settings = this.#model.settings;
     const profile = settings.profile ?? {};
     await publishUserMetadata(this.#pubKey, this.#privateKey, this.#pool, this.#model.settings.generalRelays, profile);
   }
 
-  // Checks that the specified relay URLs are connected.
-  // @param  relayUrls Subset of relays in the pool that we want to check
-  // @return List of relay urls that are in the pool and connected
+  /**
+   * Checks that the specified relay URLs are connected.
+   * @param relayUrls - Subset of relays in the pool that we want to check.
+   * @return List of relay urls that are in the pool and connected.
+   */
   checkConnectedRelays(relayUrls: string[]): string[] {
     const allRelays = this.#pool.listConnectionStatus();
     const result: string[] = [];
@@ -341,8 +371,10 @@ export class ChatControllerImpl implements ChatController {
     return nsecEncode(this.#privateKey);
   }
 
-  // Create new key,
-  // @return string: bip39 word list
+  /**
+   * Create new key,
+   * @return {string} bip39 word list
+   */
   async createNewKey(): Promise<string> {
     const words = generateSeedWords();
     const { publicKey, privateKey } = accountFromSeedWords(words);
@@ -356,7 +388,6 @@ export class ChatControllerImpl implements ChatController {
     return words;
   }
 
-  // Reset key from nsec
   async resetKey(nsec: string) {
     this.#privateKey = decode(nsec).data as Uint8Array;
     this.#pubKey = getPublicKey(this.#privateKey);
@@ -364,7 +395,6 @@ export class ChatControllerImpl implements ChatController {
     // Note: we don't broadcast relays when switching to existing key - our subscription should receive key's existing relaylist
   }
 
-  // Reset key from bip39
   async resetKeyFromSeedWords(bip39Mnemonic: string) {
     const { publicKey, privateKey } = accountFromSeedWords(bip39Mnemonic);
     this.#privateKey = privateKey;
@@ -435,21 +465,44 @@ export class ChatControllerImpl implements ChatController {
     }
   }
 
-  // Callback for new DM. This could be an incoming message or also a sent DM.
-  // saves the message locally then notifies any subscribed listeners.
-  async #onNewMessage(msg: ChatMessage) {
+  /**
+   * Callback for new DM. Saves the message locally then notifies any subscribed listeners.
+   * @param msg - The received message. This could be an incoming message or also a sent DM.
+   * @param relaysSeenOn - A list of relay urls that have this message has been received on so far.
+   */
+  async #onNewMessage(msg: ChatMessage, relaysSeenOn: string[]) {
+    // Persist the lastSeen timestamps for the relays that we have received this message from.
+    if (relaysSeenOn.length > 0) {
+      const currentSettings = this.#model.settings;
+      if (!currentSettings.lastSeen?.dm) {
+        currentSettings.lastSeen = { ...currentSettings.lastSeen, dm: {} };
+      }
+      const relayTimestamps = currentSettings.lastSeen.dm!;
+      const timestamp = Math.floor(msg.time.valueOf() / 1000);
+      relaysSeenOn.forEach((relayUrl: string) => {
+        const latestTimestamp = relayTimestamps[relayUrl] as number | undefined;
+        if (latestTimestamp === undefined || timestamp > latestTimestamp) {
+          relayTimestamps[relayUrl] = timestamp;
+        }
+      });
+      this.#model.setSettings(currentSettings);
+    }
+
+    // If we haven't had this message already (from another relay)
     if (!this.#model.getMessage(msg.id)) {
       await this.#model.setMessage(msg.id, msg);
       this.#messageListeners.forEach(l => l.notifyMessage(msg));
     }
   }
 
-  // Callback for relay list subscription.
-  // Called whenever a subscribed npub's DM relaylist changes.
-  // Checks if we have a corresponding contact and updates its relaylist.
-  // May also be called for our own relaylist.
-  // Only updates contact if created_at time is newer than last update as we will get duplicate events
-  // from multiple relays.
+  /**
+   * Callback for relay list subscription.
+   * Called whenever a subscribed npub's DM relaylist changes.
+   * Checks if we have a corresponding contact and updates its relaylist.
+   * May also be called for our own relaylist.
+   * Only updates contact if created_at time is newer than last seen event as we will get
+   * duplicate events from multiple relays.
+   */
   async #onRelaylistMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey);
     const contact = this.#model.getContactByNpub(npub);
@@ -482,10 +535,12 @@ export class ChatControllerImpl implements ChatController {
     }
   }
 
-  // Callback for kind0 user metadata event subscription.
-  // Called whenever a subscribed npubs's user metadata changes.
-  // Checks if we have a corresponding contact and updates its details
-  // If npub is ourself, updates our own profile in settings.
+  /**
+   * Callback for kind0 user metadata event subscription.
+   * Called whenever a subscribed npubs's user metadata changes.
+   * Checks if we have a corresponding contact and updates its details
+   * If npub is ourself, updates our own profile in settings.
+   */
   async #onUserMetadata(ev: Event) {
     const npub = npubEncode(ev.pubkey);
 
@@ -511,7 +566,7 @@ export class ChatControllerImpl implements ChatController {
       return merged;
     };
 
-    // TODO ignore if event time is older than last update
+    // TODO ignore if event time is older than last seen event
     const userProfile = extractContentFromUserMetadataEvent(ev);
     if (userProfile) {
       // update user metadata for contact

@@ -1,8 +1,9 @@
 import { npubEncode } from '@nostr/tools/nip19';
 import { unwrapEvent } from '@nostr/tools/nip17';
-import { SimplePool, type SubCloser } from '@nostr/tools/pool';
-import type { NostrEvent, UnsignedEvent } from '@nostr/tools';
+import { SimplePool, type SubCloser, type SubscribeManyParams } from '@nostr/tools/pool';
+import type { Filter, NostrEvent, UnsignedEvent } from '@nostr/tools';
 import type { ChatMessage } from './chatModel.js';
+import { normalizeURL } from '@nostr/tools/utils';
 
 let subCloser: SubCloser;
 
@@ -43,7 +44,6 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
         receiver: npubEncode(pubkey)
       };
     }
-    // console.log('received DM', JSON.stringify(msg))
     return msg;
   } catch (err) {
     console.log('Failed to decrypt nip17 message', err);
@@ -55,32 +55,53 @@ const receiveDms = async (
   pubkey: string,
   privateKey: Uint8Array,
   pool: SimplePool,
-  relays: string[],
-  onMessage: (msg: ChatMessage) => Promise<void>
+  relays: { url: string; lastSeenTimestamp?: number }[],
+  onMessage: (msg: ChatMessage, relaysSeenOn: string[]) => Promise<void>
 ) => {
   if (subCloser) {
     subCloser.close();
   }
 
-  subCloser = pool.subscribe(
-    relays,
-    {
-      kinds: [1059], //nip17 giftwrapped
-      '#p': [pubkey]
-    },
-    {
-      id: 'incoming-dm-sub-id', // always use fixed sub id
-      async onevent(event: NostrEvent) {
-        if (event.kind === 1059) {
-          // possible giftwrapped NIP17 DM
-          const msg = await onReceiveDm(pubkey, privateKey, event);
-          if (msg) {
-            await onMessage(msg);
-          }
+  const baseFilter: Filter = {
+    kinds: [1059], //nip17 giftwrapped
+    '#p': [pubkey]
+  };
+  const params: SubscribeManyParams = {
+    id: 'incoming-dm-sub-id', // always use fixed sub id
+    async onevent(event: NostrEvent) {
+      if (event.kind === 1059) {
+        // possible giftwrapped NIP17 DM
+        const msg = await onReceiveDm(pubkey, privateKey, event);
+        if (msg) {
+          const set = pool.seenOn.get(event.id);
+          const seenOnRelays = set ? Array.from(set).map(r => r.url) : [];
+          await onMessage(msg, seenOnRelays);
         }
       }
     }
-  );
+  };
+
+  // create subscription request for each relay, ensuring no duplicate relay urls
+  const requests: { url: string; filter: Filter }[] = [];
+  for (const relay of relays) {
+    const url = normalizeURL(relay.url);
+    if (!requests.find(r => r.url === url)) {
+      const filter = { ...baseFilter };
+      // try to filter old messages that we have already received
+      if (relay.lastSeenTimestamp) {
+        // time of newly-received wrapped messages may actually appear to the relay to
+        // be up to 2 days old due to nip-59 timestamp masking
+        const twoDays = 48 * 60 * 60;
+        const currentMsgTime = Math.floor(new Date().valueOf() / 1000) - twoDays;
+        // set the 'since' time to whichever is the oldest
+        filter.since = Math.min(relay.lastSeenTimestamp, currentMsgTime);
+      }
+      console.log(`receiving dms from ${url} since ${filter.since}`);
+      requests.push({ url, filter: filter });
+    }
+  }
+
+  subCloser = pool.subscribeMap(requests, params);
 };
 
 export { receiveDms };

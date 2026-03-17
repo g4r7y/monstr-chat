@@ -1,7 +1,6 @@
 # TODO:
 
 * General things:
-  * avoid avalanche of old messages from relays on startup - persist 'last seen' timestamps for relays and use with 'since' filter on subscriptions.
   * group chat (using chat room part of nip-17)
   * conversation delete
   * reset option

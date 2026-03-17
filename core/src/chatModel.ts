@@ -6,7 +6,7 @@ export type UserProfile = {
   nip05?: string;
 };
 
-// Map of relay URLs to timestamps
+// Map of relays to timestamps, where key is relay's normalised url
 export type RelayTimestampMap = Record<string, number>;
 
 // Timestamps of latest event for each of the event types we subscribe to.

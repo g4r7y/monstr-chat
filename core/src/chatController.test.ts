@@ -14,6 +14,7 @@ import { receiveDms } from './nostrReceiveDm.js';
 import { sendDm } from './nostrSendDm.js';
 import { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata } from './nostrRelayMetadata.js';
 import { publishUserMetadata, subscribeToUserMetadata, getUserMetadata } from './nostrUserMetadata.js';
+import { normalizeURL } from '@nostr/tools/utils';
 
 class TestDataStore implements DataStore {
   #appData: ChatAppData | null;
@@ -150,8 +151,9 @@ describe('chat controller', () => {
       let args = (receiveDms as Mock).mock.calls[0];
       expect(args[0]).toEqual(pubkey);
       expect(args[1]).toEqual(privateKey);
-      expect(args[3]).toEqual(expectedRelaysForReceivingDm);
-
+      expect(args[3]).toEqual(
+        expectedRelaysForReceivingDm.map(r => ({ url: normalizeURL(r), lastSeenTimestamp: undefined }))
+      );
       // should subscribe for relay list events for our key
       expect(subscribeToRelayListMetadata).toBeCalledTimes(1);
       args = (subscribeToRelayListMetadata as Mock).mock.calls[0];
@@ -199,7 +201,9 @@ describe('chat controller', () => {
   describe('receive messages', () => {
     let controller: ChatController;
     let model: ChatModel;
-    let onReceiveMessageCallback: (msg: ChatMessage) => Promise<void>;
+    let onReceiveMessageCallback: (msg: ChatMessage, relaysSeenOn: string[]) => Promise<void>;
+
+    const defaultRelays = ['wss://relay.damus.io/'];
 
     const nsec = 'nsec1gex2hafvus99n06mut4ta6qt559ywy4yy6xyt3z6ye6z98zwyj4s90gft6';
     const selfPrivateKey = decode(nsec).data;
@@ -216,15 +220,7 @@ describe('chat controller', () => {
 
       // configure receiveDms mock to store the controller's onMessage callback
       (receiveDms as Mock).mockImplementation(
-        (
-          pubkey: string,
-          privateKey: Uint8Array,
-          pool: SimplePool,
-          relays: string[],
-          onMessage: (msg: ChatMessage) => Promise<void>
-        ) => {
-          expect(pubkey).toEqual(selfPublicKey);
-          expect(privateKey).toEqual(selfPrivateKey);
+        (pubkey, privateKey, pool, relays, onMessage: (msg: ChatMessage, relaysSeenOn: string[]) => Promise<void>) => {
           onReceiveMessageCallback = onMessage;
         }
       );
@@ -232,7 +228,12 @@ describe('chat controller', () => {
       await controller.init();
       await controller.connect();
 
-      // receiveDms should have been called now
+      // ChatController.receiveDms should have been called
+      expect((receiveDms as Mock).mock.calls.length).toBe(1);
+      const args = (receiveDms as Mock).mock.calls[0];
+      expect(args[0]).toEqual(selfPublicKey);
+      expect(args[1]).toEqual(selfPrivateKey);
+      expect(args[3]).toEqual(defaultRelays.map(r => ({ url: r, lastSeenTimestamp: undefined })));
       expect(onReceiveMessageCallback).toBeDefined();
     });
 
@@ -247,7 +248,7 @@ describe('chat controller', () => {
         receiver: npub,
         state: 'rx'
       };
-      await onReceiveMessageCallback!(msg1);
+      await onReceiveMessageCallback!(msg1, []);
 
       // incoming message
       const msg2: ChatMessage = {
@@ -255,7 +256,7 @@ describe('chat controller', () => {
         id: 'id2',
         time: new Date(timestamp - 10000) //oldest
       };
-      await onReceiveMessageCallback!(msg2);
+      await onReceiveMessageCallback!(msg2, []);
 
       // outgoing (sent) message from self
       const msg3: ChatMessage = {
@@ -266,14 +267,14 @@ describe('chat controller', () => {
         receiver: friendNpub,
         state: 'tx'
       };
-      await onReceiveMessageCallback!(msg3);
+      await onReceiveMessageCallback!(msg3, []);
 
       const msg4 = {
         ...msg1,
         id: 'id4',
         time: new Date(timestamp + 20000) //newest
       };
-      await onReceiveMessageCallback!(msg4);
+      await onReceiveMessageCallback!(msg4, []);
 
       // check message conversation can be retrieved from model
       const chats = controller.getConversations();
@@ -296,7 +297,7 @@ describe('chat controller', () => {
         receiver: npub,
         state: 'rx'
       };
-      await onReceiveMessageCallback!(dupeMsg);
+      await onReceiveMessageCallback!(dupeMsg, []);
 
       const chats = controller.getConversations();
       expect(chats.size).toBe(1);
@@ -314,7 +315,7 @@ describe('chat controller', () => {
         receiver: npub,
         state: 'rx'
       };
-      await onReceiveMessageCallback!(msg);
+      await onReceiveMessageCallback!(msg, []);
 
       // should now be 2 conversations
       const chats = controller.getConversations();
@@ -338,7 +339,7 @@ describe('chat controller', () => {
         receiver: npub,
         state: 'rx'
       };
-      await onReceiveMessageCallback!(msg);
+      await onReceiveMessageCallback!(msg, []);
 
       expect(listener.notifyMessage).toBeCalledTimes(1);
       expect(listener.notifyMessage).toBeCalledWith(msg);
@@ -350,9 +351,42 @@ describe('chat controller', () => {
         ...msg,
         id: 'id7'
       };
-      await onReceiveMessageCallback!(msg2);
+      await onReceiveMessageCallback!(msg2, []);
 
       expect(listener.notifyMessage).not.toBeCalled();
+    });
+
+    test('lastSeen time is updated when message is received', async () => {
+      const timestamp = 1771288888;
+      const msg: ChatMessage = {
+        id: 'id10',
+        time: new Date(timestamp * 1000),
+        text: 'the quick fox',
+        sender: friendNpub,
+        receiver: npub,
+        state: 'rx'
+      };
+
+      // initially lastSeen timestamps won't be set
+      expect(controller.getSettings().lastSeen).toBe(undefined);
+
+      // receive a message'
+      await onReceiveMessageCallback!(msg, [defaultRelays[0]]);
+
+      // now the lastseen timestamp should be set
+      const latestTimestamp = controller.getSettings().lastSeen!.dm![defaultRelays[0]];
+      expect(latestTimestamp).toEqual(timestamp);
+    });
+
+    test('lastSeen time from settings is used when subscribing', async () => {
+      controller.close();
+      controller.connect();
+
+      // ChatController.receiveDms should have been called again
+      expect((receiveDms as Mock).mock.calls.length).toBe(2);
+      const args = (receiveDms as Mock).mock.calls[1];
+      // except this time it should have been called with the lastseen event timestamp
+      expect(args[3]).toEqual(defaultRelays.map(r => ({ url: r, lastSeenTimestamp: 1771288888 })));
     });
   });
 

@@ -245,7 +245,7 @@ describe('chat controller', () => {
         time: new Date(timestamp),
         text: 'incoming message from friend',
         sender: friendNpub,
-        receiver: npub,
+        recipients: [npub],
         state: 'rx'
       };
       await onReceiveMessageCallback!(msg1, []);
@@ -264,7 +264,7 @@ describe('chat controller', () => {
         time: new Date(timestamp + 10000),
         text: 'my reply',
         sender: npub,
-        receiver: friendNpub,
+        recipients: [friendNpub],
         state: 'tx'
       };
       await onReceiveMessageCallback!(msg3, []);
@@ -294,7 +294,7 @@ describe('chat controller', () => {
         time: new Date(),
         text: 'has duplicate message id',
         sender: friendNpub,
-        receiver: npub,
+        recipients: [npub],
         state: 'rx'
       };
       await onReceiveMessageCallback!(dupeMsg, []);
@@ -312,7 +312,7 @@ describe('chat controller', () => {
         time: new Date(),
         text: 'some message',
         sender: friend2Npub,
-        receiver: npub,
+        recipients: [npub],
         state: 'rx'
       };
       await onReceiveMessageCallback!(msg, []);
@@ -336,7 +336,7 @@ describe('chat controller', () => {
         time: new Date(),
         text: 'the quick fox',
         sender: friendNpub,
-        receiver: npub,
+        recipients: [npub],
         state: 'rx'
       };
       await onReceiveMessageCallback!(msg, []);
@@ -363,7 +363,7 @@ describe('chat controller', () => {
         time: new Date(timestamp * 1000),
         text: 'the quick fox',
         sender: friendNpub,
-        receiver: npub,
+        recipients: [npub],
         state: 'rx'
       };
 

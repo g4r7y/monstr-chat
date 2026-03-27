@@ -51,7 +51,7 @@ function Chats() {
         {conversations.size === 0 && <ListGroup.Item>You have no messages.</ListGroup.Item>}
         {Array.from(conversations.values()).map((conv: ChatMessage[], i: number) => {
           const topMsg = conv[0];
-          const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender;
+          const contactNpub = topMsg.state === 'tx' ? topMsg.recipients[0] : topMsg.sender; //todo - recipients group
           return (
             <ListGroup.Item
               key={i}

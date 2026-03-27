@@ -48,7 +48,7 @@ export type ChatMessage = {
   time: Date;
   text: string;
   sender: string;
-  receiver: string;
+  recipients: string[];
   state: 'tx' | 'rx';
 };
 

@@ -36,7 +36,7 @@ function UserProfile() {
 
   return (
     <div>
-      {settings.profile === null && (
+      {!settings.profile && (
         <Card className="mb-3 d-inline-block">
           <Card.Body>
             <Card.Text>

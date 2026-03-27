@@ -15,7 +15,7 @@ async function viewInbox(context: ViewContext) {
   const convs = context.chatController.getConversations();
   convs.forEach((msgList: ChatMessage[]) => {
     const topMsg = msgList[0];
-    const contactNpub = topMsg.state === 'tx' ? topMsg.receiver : topMsg.sender;
+    const contactNpub = topMsg.state === 'tx' ? topMsg.recipients[0] : topMsg.sender; // TODO recipients group
     const label = `[${getDisplayableMessageContact(contactNpub, context)}] ${topMsg.text}`;
     menu.set(label, () => {
       context.view.push('viewConversation');

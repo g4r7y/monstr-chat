@@ -31,7 +31,7 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
         time: createdDate,
         id: plainEvent.id,
         state: 'tx',
-        receiver: npubEncode(firstReceiver)
+        recipients: [npubEncode(firstReceiver)]
       };
     } else {
       // it's an incoming message or a message to self
@@ -41,7 +41,7 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
         time: createdDate,
         id: plainEvent.id,
         state: 'rx',
-        receiver: npubEncode(pubkey)
+        recipients: [npubEncode(pubkey)]
       };
     }
     return msg;

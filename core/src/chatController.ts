@@ -161,7 +161,7 @@ export class ChatControllerImpl implements ChatController {
     // sort descending (i.e. head will be newest)
     sortedMessages.sort((a: ChatMessage, b: ChatMessage) => b.time.getTime() - a.time.getTime());
     for (const msg of sortedMessages) {
-      const key = msg.state === 'tx' ? msg.receiver : msg.sender;
+      const key = msg.state === 'tx' ? msg.recipients?.join(',') : msg.sender;
       const msgList = convs.has(key) ? convs.get(key)! : [];
       msgList.push(msg);
       convs.set(key, msgList);

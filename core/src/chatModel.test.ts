@@ -48,7 +48,7 @@ describe('model', async () => {
     fakeMessages = [
       {
         sender: 'myself',
-        receiver: 'npub1',
+        recipients: ['npub1'],
         text: 'conversation1 hello',
         time: new Date('2025-05-09T23:01:07.000Z'),
         id: 'msgId1',
@@ -56,7 +56,7 @@ describe('model', async () => {
       },
       {
         sender: 'npub1',
-        receiver: 'myself',
+        recipients: ['myself'],
         text: 'conversation1 middle',
         time: new Date('2025-05-09T23:11:07.000Z'),
         id: 'msgId2',
@@ -64,7 +64,7 @@ describe('model', async () => {
       },
       {
         sender: 'npub1',
-        receiver: 'myself',
+        recipients: ['myself'],
         text: 'conversation1 goodbye',
         time: new Date('2025-05-09T23:21:07.000Z'),
         id: 'msgId3',
@@ -147,7 +147,7 @@ describe('model', async () => {
       time: new Date(),
       text: 'Greetings',
       sender: 'npub456',
-      receiver: 'npub789',
+      recipients: ['npub789'],
       state: 'tx'
     };
     await model.setMessage(msg.id, msg);

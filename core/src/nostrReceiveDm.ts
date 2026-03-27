@@ -17,34 +17,30 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
     const createdDate = new Date(0);
     createdDate.setUTCSeconds(plainEvent.created_at);
 
-    const pTags = plainEvent.tags.filter(tag => tag.length > 1 && tag[0] == 'p');
-    const hasOtherRecipients = pTags.filter(pTag => pTag[1] !== pubkey).length > 0;
+    // get recipient pubkeys from p tags
+    const allRecipients = plainEvent.tags.filter(tag => tag.length > 1 && tag[0] == 'p').map(ptag => ptag[1]);
+    const recipientsExcludingSelf = allRecipients.filter(recPubKey => recPubKey !== pubkey);
 
-    let msg: ChatMessage;
-    if (plainEvent.pubkey === pubkey && hasOtherRecipients) {
-      // from self and not just to ourself
-      // it's an outgoing message
-      const firstReceiver = pTags.find(ptag => ptag[1] !== pubkey)![1];
-      msg = {
-        sender: npubEncode(pubkey),
-        text: plainEvent.content,
-        time: createdDate,
-        id: plainEvent.id,
-        state: 'tx',
-        recipients: [npubEncode(firstReceiver)]
-      };
+    let state: 'tx' | 'rx';
+    let recipients;
+    if (plainEvent.pubkey === pubkey && recipientsExcludingSelf.length > 0) {
+      // it's an outgoing message from self and not just to ourself
+      state = 'tx';
+      recipients = recipientsExcludingSelf.map(npubEncode);
     } else {
       // it's an incoming message or a message to self
-      msg = {
-        sender: npubEncode(plainEvent.pubkey),
-        text: plainEvent.content,
-        time: createdDate,
-        id: plainEvent.id,
-        state: 'rx',
-        recipients: [npubEncode(pubkey)]
-      };
+      state = 'rx';
+      recipients = allRecipients.map(npubEncode);
     }
-    return msg;
+
+    return {
+      sender: npubEncode(plainEvent.pubkey),
+      text: plainEvent.content,
+      time: createdDate,
+      id: plainEvent.id,
+      state,
+      recipients
+    };
   } catch (err) {
     console.log('Failed to decrypt nip17 message', err);
     return null;

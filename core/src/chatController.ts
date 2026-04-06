@@ -18,6 +18,7 @@ import { isValidNpub } from './validation.js';
 import createRelayMonitor, { type RelayMonitor } from './relayMonitor.js';
 import type { MessageListener } from './messageListener.js';
 import type { SettingsListener } from './settingsListener.js';
+import hash from './hash.js';
 
 export interface ChatController {
   init(): Promise<boolean>;
@@ -38,8 +39,7 @@ export interface ChatController {
   setContact(contact: ChatContact): Promise<void>;
   deleteContact(npub: string): Promise<void>;
 
-  sendDmToContact(recipient: ChatContact, text: string): Promise<void>;
-  sendDmToNpub(recipientNpub: string, text: string): Promise<void>;
+  sendDm(recipients: (ChatContact | string)[], text: string): Promise<void>;
 
   subscribeToIncomingDms(): Promise<void>;
   subscribeToRelayMetadata(): Promise<void>;
@@ -153,7 +153,7 @@ export class ChatControllerImpl implements ChatController {
 
   /**
    * Get conversations
-   * @return Map of conversations, where key is the contact npub, value is list of messages
+   * @return Map of conversations, where key is hash of the recipients' npubs, value is list of messages
    */
   getConversations(): Map<string, ChatMessage[]> {
     const convs = new Map<string, ChatMessage[]>();
@@ -161,7 +161,11 @@ export class ChatControllerImpl implements ChatController {
     // sort descending (i.e. head will be newest)
     sortedMessages.sort((a: ChatMessage, b: ChatMessage) => b.time.getTime() - a.time.getTime());
     for (const msg of sortedMessages) {
-      const key = msg.state === 'tx' ? msg.recipients?.join(',') : msg.sender;
+      const npubs =
+        msg.state === 'rx' && msg.recipients.length === 0
+          ? [msg.sender] // incoming message and not a group chat
+          : msg.recipients; // outgoing message, or any group chat
+      const key = hash(npubs);
       const msgList = convs.has(key) ? convs.get(key)! : [];
       msgList.push(msg);
       convs.set(key, msgList);
@@ -186,63 +190,28 @@ export class ChatControllerImpl implements ChatController {
   }
 
   /**
-   * Send DM using the recipient's DM inbox relay(s).
+   * Send DM to a group of recipients. Each recipient can be a known contact or an npub string.
+   * Will send via each recipient's DM inbox relay(s).
+   * If any recipients do not have relay list then it will attempt to discover their relays.
    * Also sends a copy to ourself so our sent messages will persist on relay.
-   * @param recipient - the contact to send the DM to.
+   * @param recipients - the contacts to send the DM to.
    * @param text - the message text to send.
-   * @throws NoRelay - if no relays can be found.
    */
-  async sendDmToContact(recipient: ChatContact, text: string) {
-    if (!recipient?.relays?.length) {
-      console.log(`Send: contact ${recipient.npub} doesn't have relay defined, trying to fetch relaylist first`);
-      await this.sendDmToNpub(recipient.npub, text);
-    } else {
-      await this.sendDmToNpub(recipient.npub, text, recipient.relays);
-    }
-  }
-
-  /**
-   * Send DM to specified npub.
-   * Also sends a copy to ourself so our sent messages will persist on relay.
-   * @param recipientNpub - the npub to send the DM to.
-   * @param text - the message text to send.
-   * @param recipientRelays - the recipient's DM relay(s) to send the message to. If relays
-   * not specified, it will try to get a kind 10050 event for the recipient to obtain their DM relay list.
-   * @throws NoRelay - if no relays can be found.
-   */
-  async sendDmToNpub(recipientNpub: string, text: string, recipientRelays?: string[]) {
-    const recipientPubKey = decode(recipientNpub).data as string;
-
-    if (!recipientRelays) {
-      const event = await getRelayListMetadata(recipientPubKey, this.#pool, this.#model.settings.generalRelays);
-
-      if (!event) {
-        console.log(`Send: can't find relaylist for ${recipientNpub}`);
-        throw new Error('NoRelay');
-      }
-
-      recipientRelays = extractDMRelaysFromEvent(event);
-      if (!recipientRelays?.length) {
-        console.log(`Send: relaylist for ${recipientNpub} is missing or empty`);
-        throw new Error('NoRelay');
-      }
-    }
-
-    const selfRelays = this.#model.settings.inboxRelays;
-    const recipientGroup: SendDmRecipient[] = [
-      {
-        pubKey: recipientPubKey,
-        relays: recipientRelays
-      }
-    ];
-    // if not a message to self, additionally include sender in recipient list
-    if (recipientPubKey !== this.#pubKey) {
-      recipientGroup.push({
-        pubKey: this.#pubKey,
-        relays: selfRelays
-      });
-    }
-    await sendDm(this.#privateKey, recipientGroup, this.#pool, text);
+  async sendDm(recipients: (ChatContact | string)[], text: string) {
+    const recipientGroup: SendDmRecipient[] = recipients.map(recipient => {
+      return typeof recipient === 'string'
+        ? // recipient is stranger npub
+          {
+            pubKey: decode(recipient).data as string,
+            relays: []
+          }
+        : // recipient is a known contact
+          {
+            pubKey: decode(recipient.npub).data as string,
+            relays: recipient.relays
+          };
+    });
+    await this.#sendGroupDm(recipientGroup, text);
   }
 
   /**
@@ -438,6 +407,45 @@ export class ChatControllerImpl implements ChatController {
 
   ///////////////////////////////////////////////////////////
   // private methods
+
+  // Send DM to recipients.
+  async #sendGroupDm(recipientGroup: SendDmRecipient[], text: string) {
+    if (recipientGroup.length < 1) {
+      return;
+    }
+
+    const getRelaysIfNeeded = async (recipient: SendDmRecipient) => {
+      if (recipient.relays.length === 0) {
+        console.log(`getRelaysIfNeeded - getting for ${npubEncode(recipient.pubKey)}...`);
+        const event = await getRelayListMetadata(recipient.pubKey, this.#pool, this.#model.settings.generalRelays);
+
+        if (!event) {
+          console.log(`Send: can't find relaylist for ${npubEncode(recipient.pubKey)}`);
+          throw new Error('NoRelay');
+        }
+
+        const recipientRelays = extractDMRelaysFromEvent(event);
+        if (!recipientRelays?.length) {
+          console.log(`Send: relaylist for ${npubEncode(recipient.pubKey)} is missing or empty`);
+          throw new Error('NoRelay');
+        }
+        recipient.relays = recipientRelays;
+      }
+    };
+
+    await Promise.all(recipientGroup.map(getRelaysIfNeeded));
+    // TODO currently throws if any send fails - use allSettled and handle errors more gracefully
+
+    // if not a message to self
+    if (recipientGroup[0].pubKey !== this.#pubKey || recipientGroup.length > 1) {
+      // additionally include self in recipient list
+      recipientGroup.push({
+        pubKey: this.#pubKey,
+        relays: this.#model.settings.inboxRelays
+      });
+    }
+    await sendDm(this.#privateKey, recipientGroup, this.#pool, text);
+  }
 
   async #subscribeToRelays(): Promise<boolean> {
     try {

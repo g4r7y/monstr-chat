@@ -13,6 +13,7 @@ import ViewFriend from './ViewFriend.tsx';
 import FindFriend from './FindFriend.tsx';
 import EditProfile from './EditProfile.tsx';
 import EditRelays from './EditRelays.tsx';
+import CreateGroup from './CreateGroup.tsx';
 
 const MainAppView = () => {
   const appView = useAppView();
@@ -49,6 +50,7 @@ const MainAppView = () => {
       {appView.view === 'add-friend' && <AddFriend />}
       {appView.view === 'view-friend' && <ViewFriend />}
       {appView.view === 'find-friend' && <FindFriend />}
+      {appView.view === 'create-group' && <CreateGroup />}
       {appView.view === 'edit-profile' && <EditProfile />}
       {appView.view === 'edit-message-relays' && <EditRelays relayType="message" />}
       {appView.view === 'edit-general-relays' && <EditRelays relayType="general" />}

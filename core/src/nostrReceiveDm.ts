@@ -23,14 +23,18 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
 
     let state: 'tx' | 'rx';
     let recipients;
-    if (plainEvent.pubkey === pubkey && recipientsExcludingSelf.length > 0) {
-      // it's an outgoing message from self and not just to ourself
+    if (plainEvent.pubkey === pubkey && recipientsExcludingSelf.length === 0) {
+      // it's an outgoing message to ourself
+      state = 'rx'; //TODO have a separate state for tx/rx self?
+      recipients = [npubEncode(pubkey)];
+    } else if (plainEvent.pubkey === pubkey) {
+      // it's a normal outgoing message to single or group
       state = 'tx';
       recipients = recipientsExcludingSelf.map(npubEncode);
     } else {
-      // it's an incoming message or a message to self
+      // it's an incoming message
       state = 'rx';
-      recipients = allRecipients.map(npubEncode);
+      recipients = recipientsExcludingSelf.map(npubEncode);
     }
 
     return {

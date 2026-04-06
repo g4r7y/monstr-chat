@@ -40,9 +40,9 @@ function Chats() {
     };
   }, []);
 
-  const { switchView } = useAppView();
-  const handleOpenConversation = (contactNpub: string) => {
-    switchView('conversation', contactNpub);
+  const { switchViewWithContacts } = useAppView();
+  const handleOpenConversation = (contactNpubs: string[]) => {
+    switchViewWithContacts('conversation', contactNpubs);
   };
 
   return (
@@ -51,17 +51,20 @@ function Chats() {
         {conversations.size === 0 && <ListGroup.Item>You have no messages.</ListGroup.Item>}
         {Array.from(conversations.values()).map((conv: ChatMessage[], i: number) => {
           const topMsg = conv[0];
-          const contactNpub = topMsg.state === 'tx' ? topMsg.recipients[0] : topMsg.sender; //todo - recipients group
+          const contactNpubs =
+            topMsg.state === 'rx' && topMsg.recipients.length < 1 ? [topMsg.sender] : topMsg.recipients; // group chat
           return (
             <ListGroup.Item
               key={i}
-              onClick={() => handleOpenConversation(contactNpub)}
+              onClick={() => handleOpenConversation(contactNpubs)}
               action
               as="li"
               className="align-items-start"
             >
               <div className="ms-2 me-auto">
-                <div className="fw-bold truncate">{getContactLabel(contactNpub, controller)}</div>
+                <div className="fw-bold truncate">
+                  {contactNpubs.map(c => getContactLabel(c, controller)).join(', ')}
+                </div>
                 <div className="truncate">{topMsg.text}</div>
               </div>
             </ListGroup.Item>

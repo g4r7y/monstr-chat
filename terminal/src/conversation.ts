@@ -69,12 +69,8 @@ async function viewConversation(context: ViewContext) {
       } else {
         // send message and remain in send state
         try {
-          const contact = context.chatController.getContactByNpub(contactNpub);
-          if (contact) {
-            await context.chatController.sendDmToContact(contact, msgToSend);
-          } else {
-            await context.chatController.sendDmToNpub(contactNpub, msgToSend);
-          }
+          const contact = context.chatController.getContactByNpub(contactNpub) ?? contactNpub;
+          await context.chatController.sendDm([contact], msgToSend);
           draftMessage = '';
         } catch (err) {
           const continueEditing = await handleSendError(err);

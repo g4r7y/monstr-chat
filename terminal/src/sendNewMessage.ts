@@ -23,11 +23,7 @@ async function sendNewMessage(context: ViewContext) {
       }
 
       try {
-        if (contact) {
-          await context.chatController.sendDmToContact(contact, text);
-        } else {
-          await context.chatController.sendDmToNpub(recipient, text);
-        }
+        await context.chatController.sendDm([contact ?? recipient], text);
       } catch (err) {
         editing = await handleSendError(err);
       }

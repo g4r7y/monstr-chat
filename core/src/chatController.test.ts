@@ -15,6 +15,7 @@ import { sendDm } from './nostrSendDm.js';
 import { publishRelayListMetadata, subscribeToRelayListMetadata, getRelayListMetadata } from './nostrRelayMetadata.js';
 import { publishUserMetadata, subscribeToUserMetadata, getUserMetadata } from './nostrUserMetadata.js';
 import { normalizeURL } from '@nostr/tools/utils';
+import hash from './hash.js';
 
 class TestDataStore implements DataStore {
   #appData: ChatAppData | null;
@@ -245,7 +246,7 @@ describe('chat controller', () => {
         time: new Date(timestamp),
         text: 'incoming message from friend',
         sender: friendNpub,
-        recipients: [npub],
+        recipients: [],
         state: 'rx'
       };
       await onReceiveMessageCallback!(msg1, []);
@@ -279,9 +280,10 @@ describe('chat controller', () => {
       // check message conversation can be retrieved from model
       const chats = controller.getConversations();
       expect(chats.size).toBe(1);
-      const chat = chats.get(friendNpub);
+      const key = hash([friendNpub]);
+      const chat = chats.get(key);
       expect(chat!.length).toBe(4);
-      // should be in chronological order, newest first
+      // messages should be in chronological order, newest first
       expect(chat![0]).toEqual(msg4);
       expect(chat![1]).toEqual(msg3);
       expect(chat![2]).toEqual(msg1);
@@ -294,14 +296,14 @@ describe('chat controller', () => {
         time: new Date(),
         text: 'has duplicate message id',
         sender: friendNpub,
-        recipients: [npub],
+        recipients: [],
         state: 'rx'
       };
       await onReceiveMessageCallback!(dupeMsg, []);
-
       const chats = controller.getConversations();
       expect(chats.size).toBe(1);
-      const chat = chats.get(friendNpub);
+      const key = hash([friendNpub]);
+      const chat = chats.get(key);
       expect(chat!.length).toBe(4); //same as previous test
     });
 
@@ -312,7 +314,7 @@ describe('chat controller', () => {
         time: new Date(),
         text: 'some message',
         sender: friend2Npub,
-        recipients: [npub],
+        recipients: [],
         state: 'rx'
       };
       await onReceiveMessageCallback!(msg, []);
@@ -320,7 +322,8 @@ describe('chat controller', () => {
       // should now be 2 conversations
       const chats = controller.getConversations();
       expect(chats.size).toBe(2);
-      const chat = chats.get(friend2Npub);
+      const key = hash([friend2Npub]);
+      const chat = chats.get(key);
       expect(chat!.length).toBe(1);
       expect(chat![0]).toEqual(msg);
     });
@@ -426,7 +429,7 @@ describe('chat controller', () => {
         relays: ['wss://relay1', 'wss://relay2']
       };
 
-      await controller.sendDmToContact(contact, 'how now brown cow');
+      await controller.sendDm([contact], 'how now brown cow');
 
       expect(sendDm).toBeCalledTimes(1);
       const args = (sendDm as Mock).mock.calls[0];
@@ -449,7 +452,7 @@ describe('chat controller', () => {
         relays: ['wss://relay1', 'wss://relay2']
       };
 
-      await controller.sendDmToContact(contact, 'message to myself');
+      await controller.sendDm([contact], 'message to myself');
 
       expect(sendDm).toBeCalledTimes(1);
       const args = (sendDm as Mock).mock.calls[0];
@@ -485,7 +488,7 @@ describe('chat controller', () => {
       };
       (getRelayListMetadata as Mock).mockResolvedValue(relayListEvent);
 
-      await controller.sendDmToContact(contact, 'how now brown cow');
+      await controller.sendDm([contact], 'how now brown cow');
 
       // relays are not defined for contact so getRelayListMetadata should be called to try and get them
       expect(getRelayListMetadata).toBeCalledTimes(1);
@@ -517,7 +520,7 @@ describe('chat controller', () => {
       (getRelayListMetadata as Mock).mockResolvedValue(undefined);
 
       // expect send to throw
-      await expect(controller.sendDmToContact(contact, 'hello')).rejects.toThrowError('NoRelay');
+      await expect(controller.sendDm([contact], 'hello')).rejects.toThrowError('NoRelay');
 
       expect(sendDm).not.toBeCalled();
     });

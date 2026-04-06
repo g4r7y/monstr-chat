@@ -9,10 +9,10 @@ import FriendProfile from './FriendProfile';
 function AddFriend() {
   const chatController = useChatController();
 
-  const { switchView, currentContactNpub } = useAppView();
+  const { switchViewWithContacts, currentContactNpub, currentContactGroup } = useAppView();
 
   const handleBack = () => {
-    switchView('conversation', currentContactNpub);
+    switchViewWithContacts('conversation', currentContactGroup);
   };
 
   const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);

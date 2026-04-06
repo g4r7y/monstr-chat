@@ -12,6 +12,7 @@ export type AppViewNameType =
   | 'add-friend'
   | 'view-friend'
   | 'find-friend'
+  | 'create-group'
   | 'edit-profile'
   | 'edit-message-relays'
   | 'edit-general-relays';
@@ -20,7 +21,9 @@ export type AppViewNameType =
 interface AppViewContextType {
   view: AppViewNameType;
   currentContactNpub: string;
-  switchView: (view: AppViewNameType, currentContactNpub?: string) => void;
+  currentContactGroup: string[];
+  switchView: (view: AppViewNameType) => void;
+  switchViewWithContacts: (view: AppViewNameType, contactNpubs: string[], current?: number) => void;
 }
 
 // The context object

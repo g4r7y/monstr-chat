@@ -85,7 +85,7 @@ describe('receive DMs', () => {
     const relaysSeenOn = messageReceivedCallback.mock.calls[0][1];
     expect(receivedMessage).not.toBe(null);
     expect(receivedMessage!.text).toBe('my message');
-    expect(receivedMessage!.recipients).toEqual([npubEncode(selfPubKey)]);
+    expect(receivedMessage!.recipients).toEqual([]);
     expect(receivedMessage!.sender).toBe(npubEncode(friendPubKey));
     expect(receivedMessage!.state).toBe('rx');
     expect(receivedMessage!.time).toEqual(new Date('2025-02-01T12:00:00.000Z'));

@@ -8,19 +8,23 @@ import { useAppView } from '../appViewContext';
 
 function Friends() {
   const chatController = useChatController();
-  const { switchView } = useAppView();
+  const { switchView, switchViewWithContacts } = useAppView();
   const [contacts] = React.useState(chatController.getContactList());
 
   const handleViewFriend = (contact: ChatContact) => () => {
-    switchView('view-friend', contact.npub);
+    switchViewWithContacts('view-friend', [contact.npub], 0);
   };
 
   const handleFindFriend = () => {
     switchView('find-friend');
   };
 
+  const handleCreateGroup = () => {
+    switchView('create-group');
+  };
+
   const handleChat = (contact: ChatContact) => () => {
-    switchView('conversation', contact.npub);
+    switchViewWithContacts('conversation', [contact.npub], 0);
   };
 
   return (
@@ -38,10 +42,14 @@ function Friends() {
           </Card.Body>
         </Card>
       )}
+
       {contacts.length > 0 && (
         <div>
           <Button onClick={handleFindFriend} className="mb-3" variant="primary">
             Find Friend
+          </Button>
+          <Button onClick={handleCreateGroup} className="mb-3 ms-3" variant="primary">
+            Create Group
           </Button>
 
           <ListGroup>

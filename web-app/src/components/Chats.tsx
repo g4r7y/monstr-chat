@@ -2,16 +2,11 @@ import React from 'react';
 import Container from 'react-bootstrap/Container';
 import ListGroup from 'react-bootstrap/ListGroup';
 
-import type { ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
-
-function getContactLabel(npub: string, controller: ChatController): string {
-  const contact = controller.getContactByNpub(npub);
-  return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`;
-}
+import { getContactLabel } from '../utils/getContactLabel';
 
 // The main inbox for all chats
 function Chats() {

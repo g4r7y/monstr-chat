@@ -14,6 +14,8 @@ const AppViewProvider: React.FunctionComponent<AppViewProviderProps> = ({ childr
   const [currentContactGroup, setCurrentContactGroup] = useState([] as string[]);
 
   const switchView = (newView: AppViewNameType) => {
+    setCurrentContactNpub('');
+    setCurrentContactGroup([]);
     setView(newView);
   };
 

@@ -10,7 +10,7 @@ import FriendProfile from './FriendProfile';
 function FindFriend() {
   const chatController = useChatController();
 
-  const { switchView } = useAppView();
+  const { switchView, currentContactNpub } = useAppView();
 
   const handleBack = () => {
     switchView('friends');
@@ -23,7 +23,7 @@ function FindFriend() {
   };
 
   // state for input fields
-  const [findNpubOrNip05, setFindNpubOrNip05] = React.useState('');
+  const [findNpubOrNip05, setFindNpubOrNip05] = React.useState(currentContactNpub);
   const [findInputError, setFindInputError] = React.useState('');
   const [contactName, setContactName] = React.useState('');
   const [contactNameInputError, setNameInputError] = React.useState('');
@@ -96,20 +96,22 @@ function FindFriend() {
           <Button className="me-3" onClick={handleBack} variant="outline-secondary">
             <i className="fas fa-chevron-left"></i> Back
           </Button>
-          <Navbar.Brand>Find friend</Navbar.Brand>
+          <Navbar.Brand>{currentContactNpub ? 'Lookup stranger' : 'Find friend'}</Navbar.Brand>
         </div>
       </Navbar>
 
       <Form onSubmit={handleSubmitFind}>
-        <div className="mt-3 mb-3 d-inline-block">
-          You can search for a user by their verified Nostr address.
-          <br />
-          This is sometimes called a NIP-05 address and looks something like: user@domain
-          <br />
-          Or you can enter their npub key.
-        </div>
+        {!currentContactNpub && (
+          <div className="mt-3 d-inline-block">
+            You can search for a user by their verified Nostr address.
+            <br />
+            This is sometimes called a NIP-05 address and looks something like: user@domain
+            <br />
+            Or you can enter their npub key.
+          </div>
+        )}
 
-        <div className="row mb-3">
+        <div className="row mt-3 mb-3">
           <Form.Label className="col-sm-2 col-form-label">Find user:</Form.Label>
           <div className="col-sm-10">
             <Form.Control

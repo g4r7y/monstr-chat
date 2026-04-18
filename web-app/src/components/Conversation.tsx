@@ -3,15 +3,10 @@ import { Button, Col, Container, Form, ListGroup, Navbar, Row, Card } from 'reac
 import TextareaAutosize from 'react-textarea-autosize';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
-import { type ChatController } from '@core/chatController';
 import type { MessageListener } from '@core/messageListener';
 import type { ChatContact, ChatMessage } from '@core/chatModel';
 import hash from '@core/hash';
-
-function getContactLabel(npub: string, controller: ChatController): string {
-  const contact = controller.getContactByNpub(npub);
-  return contact ? contact.name : `${npub.slice(0, 9)}..${npub.slice(-5)}`;
-}
+import { getContactLabel } from '../utils/getContactLabel';
 
 function getDisplayableMessageTimestamp(msg: ChatMessage): string {
   const hoursAgo = Math.floor((Date.now() - new Date(msg.time).getTime()) / 3600000);
@@ -58,7 +53,7 @@ function Conversation() {
     switchViewWithContacts('add-friend', currentContactGroup, 0);
   };
 
-  const handleViewFriend = (npub: string) => {
+  const handleViewFriend = (npub: string, isStranger: boolean) => {
     let index = null;
     for (let i = 0; i < currentContactGroup.length; i++) {
       if (currentContactGroup[i] === npub) {
@@ -67,7 +62,11 @@ function Conversation() {
       }
     }
     if (index !== null) {
-      switchViewWithContacts('view-friend', currentContactGroup, index);
+      if (isStranger) {
+        switchViewWithContacts('find-friend', [npub], 0);
+      } else {
+        switchViewWithContacts('view-friend', currentContactGroup, index);
+      }
     }
     //TODO - do something with stranger
   };
@@ -100,9 +99,9 @@ function Conversation() {
     const knownContacts = contacts.filter(c => typeof c !== 'string');
     const strangers = contacts.filter(c => typeof c === 'string');
 
-    const participants = knownContacts.map(c => ({ label: c.name, npub: c.npub, isStranger: false }));
+    const participants = knownContacts.map(c => ({ npub: c.npub, isStranger: false }));
     for (const s of strangers) {
-      participants.push({ label: 'stranger', npub: s, isStranger: true });
+      participants.push({ npub: s, isStranger: true });
     }
     return participants;
   };
@@ -124,7 +123,7 @@ function Conversation() {
 
           {currentContactGroup.length === 1 && controller.getContactByNpub(currentContactGroup[0]) !== null && (
             <Button
-              onClick={() => handleViewFriend(currentContactGroup[0])}
+              onClick={() => handleViewFriend(currentContactGroup[0], false)}
               size="lg"
               variant="link"
               className="info-button text-info"
@@ -158,9 +157,9 @@ function Conversation() {
               key={i}
               variant={p.isStranger ? 'danger' : 'info'}
               className="ms-2 d-inline-block btn-sm"
-              onClick={() => handleViewFriend(p.npub)}
+              onClick={() => handleViewFriend(p.npub, p.isStranger)}
             >
-              {p.label}
+              {getContactLabel(p.npub, controller)}
             </Button>
           ))}
         </div>

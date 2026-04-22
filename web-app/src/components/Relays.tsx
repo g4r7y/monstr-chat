@@ -18,7 +18,7 @@ function RelayList(props: RelayListProps) {
           {connectedRelays.has(relay) ? (
             <i className="fa-solid fa-circle-check text-success me-2" aria-label="Connected"></i>
           ) : (
-            <i className="fa-solid fa-triangle-exclamation text-warning me-2" aria-label="Disonnected"></i>
+            <i className="fa-solid fa-triangle-exclamation text-danger me-2" aria-label="Disonnected"></i>
           )}
           {relay}
         </ListGroupItem>

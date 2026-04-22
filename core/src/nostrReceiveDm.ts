@@ -21,14 +21,14 @@ const onReceiveDm = async (pubkey: string, privateKey: Uint8Array, event: NostrE
     const allRecipients = plainEvent.tags.filter(tag => tag.length > 1 && tag[0] == 'p').map(ptag => ptag[1]);
     const recipientsExcludingSelf = allRecipients.filter(recPubKey => recPubKey !== pubkey);
 
-    let state: 'tx' | 'rx';
+    let state: 'tx' | 'rx' | 'self';
     let recipients;
     if (plainEvent.pubkey === pubkey && recipientsExcludingSelf.length === 0) {
-      // it's an outgoing message to ourself
-      state = 'rx'; //TODO have a separate state for tx/rx self?
+      // it's a message to ourself
+      state = 'self';
       recipients = [npubEncode(pubkey)];
     } else if (plainEvent.pubkey === pubkey) {
-      // it's a normal outgoing message to single or group
+      // it's an outgoing message to single or group
       state = 'tx';
       recipients = recipientsExcludingSelf.map(npubEncode);
     } else {

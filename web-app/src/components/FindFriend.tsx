@@ -96,32 +96,39 @@ function FindFriend() {
           <Button className="me-3" onClick={handleBack} variant="outline-secondary">
             <i className="fas fa-chevron-left"></i> Back
           </Button>
-          <Navbar.Brand>{currentContactNpub ? 'Lookup stranger' : 'Find friend'}</Navbar.Brand>
+          <Navbar.Brand>Find friend</Navbar.Brand>
         </div>
       </Navbar>
 
       <Form onSubmit={handleSubmitFind}>
+        {currentContactNpub && (
+          <div className="mt-3 d-inline-block">
+            The selected user is not in your friends list.
+            <br />
+            Look up their profile and add them to your friends.
+          </div>
+        )}
         {!currentContactNpub && (
           <div className="mt-3 d-inline-block">
             You can search for a user by their verified Nostr address.
             <br />
             This is sometimes called a NIP-05 address and looks something like: user@domain
             <br />
-            Or you can enter their npub key.
+            Or you can search for their npub key.
           </div>
         )}
 
-        <div className="row mt-3 mb-3">
-          <Form.Label className="col-sm-2 col-form-label">Find user:</Form.Label>
+        <div className="row my-4">
           <div className="col-sm-10">
             <Form.Control
               type="text"
               value={findNpubOrNip05}
+              placeholder="Enter Nostr address or npub key"
               onChange={event => {
                 setFindNpubOrNip05(event.target.value);
                 setFindInputError('');
               }}
-              disabled={profileLookupDone}
+              disabled={profileLookupDone || !!currentContactNpub}
               isInvalid={!!findInputError}
             />
             <Form.Control.Feedback type="invalid">{findInputError}</Form.Control.Feedback>

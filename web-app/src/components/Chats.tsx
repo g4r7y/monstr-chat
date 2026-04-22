@@ -6,7 +6,7 @@ import type { MessageListener } from '@core/messageListener';
 import type { ChatMessage } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
-import { getContactLabel } from '../utils/getContactLabel';
+import { contactLabel } from '../utils/contactLabel';
 
 // The main inbox for all chats
 function Chats() {
@@ -41,7 +41,7 @@ function Chats() {
   };
 
   return (
-    <Container>
+    <Container className="px-0">
       <ListGroup>
         {conversations.size === 0 && <ListGroup.Item>You have no messages.</ListGroup.Item>}
         {Array.from(conversations.values()).map((conv: ChatMessage[], i: number) => {
@@ -57,9 +57,7 @@ function Chats() {
               className="align-items-start"
             >
               <div className="ms-2 me-auto">
-                <div className="fw-bold truncate">
-                  {contactNpubs.map(c => getContactLabel(c, controller)).join(', ')}
-                </div>
+                <div className="fw-bold truncate">{contactNpubs.map(c => contactLabel(c, controller)).join(', ')}</div>
                 <div className="truncate">{topMsg.text}</div>
               </div>
             </ListGroup.Item>

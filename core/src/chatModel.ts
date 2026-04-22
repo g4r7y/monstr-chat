@@ -49,7 +49,7 @@ export type ChatMessage = {
   text: string;
   sender: string;
   recipients: string[];
-  state: 'tx' | 'rx';
+  state: 'tx' | 'rx' | 'self';
 };
 
 export type ChatAppData = {

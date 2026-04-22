@@ -28,7 +28,7 @@ function Friends() {
   };
 
   return (
-    <Container>
+    <Container className="px-0">
       {contacts.length === 0 && (
         <Card className="mb-3 d-inline-block">
           <Card.Body>

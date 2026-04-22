@@ -6,14 +6,8 @@ import { useAppView } from '../appViewContext';
 import type { MessageListener } from '@core/messageListener';
 import type { ChatContact, ChatMessage } from '@core/chatModel';
 import hash from '@core/hash';
-import { getContactLabel } from '../utils/getContactLabel';
-
-function getDisplayableMessageTimestamp(msg: ChatMessage): string {
-  const hoursAgo = Math.floor((Date.now() - new Date(msg.time).getTime()) / 3600000);
-  const msgTime = `${msg.time.getHours()}:${String(msg.time.getMinutes()).padStart(2, '0')}`;
-  const msgDay = `${msg.time.toLocaleDateString()}`;
-  return hoursAgo > 12 ? `${msgDay} ${msgTime}` : `${msgTime}`;
-}
+import { contactLabel } from '../utils/contactLabel';
+import { messageTimestampLabel } from '../utils/timestampLabel';
 
 // The conversation view component
 function Conversation() {
@@ -68,7 +62,6 @@ function Conversation() {
         switchViewWithContacts('view-friend', currentContactGroup, index);
       }
     }
-    //TODO - do something with stranger
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -117,7 +110,7 @@ function Conversation() {
             {currentContactGroup.length > 1
               ? 'Group chat'
               : 'Chat with ' + controller.getContactByNpub(currentContactGroup[0])
-                ? getContactLabel(currentContactGroup[0], controller)
+                ? contactLabel(currentContactGroup[0], controller)
                 : 'Stranger'}
           </Navbar.Brand>
 
@@ -155,11 +148,11 @@ function Conversation() {
           {getParticipants().map((p, i) => (
             <Button
               key={i}
-              variant={p.isStranger ? 'danger' : 'info'}
-              className="ms-2 d-inline-block btn-sm"
+              variant={p.isStranger ? 'warning' : 'info'}
+              className="m-1 d-inline-block btn-sm"
               onClick={() => handleViewFriend(p.npub, p.isStranger)}
             >
-              {getContactLabel(p.npub, controller)}
+              {contactLabel(p.npub, controller)}
             </Button>
           ))}
         </div>
@@ -183,16 +176,32 @@ function Conversation() {
           </Col>
         </Row>
       </Form>
+
       <ListGroup>
         {conversation?.map((msg: ChatMessage, i: number) => {
-          const contactLabel = msg.state === 'tx' ? 'You' : getContactLabel(msg.sender, controller);
           return (
-            <ListGroup.Item key={i} action as="li" className="d-flex justify-content-between align-items-start">
-              <div className="ms-2 me-auto">
-                <div>{getDisplayableMessageTimestamp(msg)}</div>
-                <div className="fw-bold">{contactLabel}</div>
-                <div>{msg.text}</div>
-              </div>
+            <ListGroup.Item key={i} className="px-0 border-0">
+              {(msg.state === 'tx' || msg.state === 'self') && (
+                <Card className="rounded-4 float-end m-0" style={{ width: 'fit-content', maxWidth: '60%' }}>
+                  <Card.Body className="rounded-4 bg-primary bg-opacity-10 border-0 py-2">
+                    <div className="">{msg.text}</div>
+                    <div className="mt-1 fst-italic text-end" style={{ fontSize: '0.7rem' }}>
+                      {messageTimestampLabel(msg)}
+                    </div>
+                  </Card.Body>
+                </Card>
+              )}
+              {msg.state === 'rx' && (
+                <Card className="rounded-4" style={{ width: 'fit-content', maxWidth: '60%' }}>
+                  <Card.Body className="rounded-4 bg-light border-0 py-2">
+                    <div className="fw-bold">{contactLabel(msg.sender, controller)}</div>
+                    <div className="">{msg.text}</div>
+                    <div className="mt-1 fst-italic text-end" style={{ fontSize: '0.7rem' }}>
+                      {messageTimestampLabel(msg)}
+                    </div>
+                  </Card.Body>
+                </Card>
+              )}
             </ListGroup.Item>
           );
         })}

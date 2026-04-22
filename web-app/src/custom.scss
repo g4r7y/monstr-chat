@@ -1,6 +1,8 @@
 // Override bootstrap theme colours
 $primary: #b040b0;
-$info: #d0ce50;
+$info: #6fbd6f;
+$danger: #e85060;
+$warning: #fae469;
 
 // then import Bootstrap
 @import '../../node_modules/bootstrap/scss/bootstrap';

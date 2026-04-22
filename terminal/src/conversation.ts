@@ -108,7 +108,7 @@ function updateConversationView(context: ViewContext) {
       const timestamp = getDisplayableMessageTimestamp(msg);
       let msgColour;
       let contactName;
-      if (msg.state === 'tx') {
+      if (msg.state === 'tx' || msg.state === 'self') {
         contactName = 'You';
         msgColour = 'y';
       } else {

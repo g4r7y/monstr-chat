@@ -11,19 +11,23 @@ import { messageTimestampLabel } from '../utils/timestampLabel';
 
 // The conversation view component
 function Conversation() {
-  const { switchView, switchViewWithContacts, currentContactGroup } = useAppView();
+  const { pushView, popView, currentView } = useAppView();
+  const { contactGroup } = currentView();
+  if (!contactGroup) {
+    throw 'Conversation view launched without contactGroup state';
+  }
 
   const controller = useChatController();
   // memoise controller
   const controllerRef = React.useRef(controller);
 
-  const [conversation, setConversation] = React.useState(controller.getConversations().get(hash(currentContactGroup)));
+  const [conversation, setConversation] = React.useState(controller.getConversations().get(hash(contactGroup)));
   const [msgText, setMsgText] = React.useState('');
 
   React.useEffect(() => {
     const myListener = new (class implements MessageListener {
       notifyMessage(msg: ChatMessage) {
-        const groupHash = hash(currentContactGroup);
+        const groupHash = hash(contactGroup);
         if (hash(msg.recipients) === groupHash) {
           // incoming message was part of conversation, so update conversation
           setConversation(controllerRef.current.getConversations().get(groupHash));
@@ -37,29 +41,29 @@ function Conversation() {
     return () => {
       curController.removeMessageListener(myListener);
     };
-  }, [currentContactGroup]);
+  }, [contactGroup]);
 
   const handleBack = () => {
-    switchView('main');
+    popView();
   };
 
-  const handleAddFriend = () => {
-    switchViewWithContacts('add-friend', currentContactGroup, 0);
+  const handleAddFriend = (npub: string) => {
+    pushView('add-friend', [npub], 0);
   };
 
   const handleViewFriend = (npub: string, isStranger: boolean) => {
     let index = null;
-    for (let i = 0; i < currentContactGroup.length; i++) {
-      if (currentContactGroup[i] === npub) {
+    for (let i = 0; i < contactGroup.length; i++) {
+      if (contactGroup[i] === npub) {
         index = i;
         break;
       }
     }
     if (index !== null) {
       if (isStranger) {
-        switchViewWithContacts('find-friend', [npub], 0);
+        pushView('find-friend', [npub], 0);
       } else {
-        switchViewWithContacts('view-friend', currentContactGroup, index);
+        pushView('view-friend', contactGroup, index);
       }
     }
   };
@@ -73,9 +77,7 @@ function Conversation() {
     try {
       const msgToSend = msgText;
       setMsgText('');
-      const contacts: (ChatContact | string)[] = currentContactGroup.map(
-        npub => controller.getContactByNpub(npub) ?? npub
-      );
+      const contacts: (ChatContact | string)[] = contactGroup.map(npub => controller.getContactByNpub(npub) ?? npub);
       if (contacts.length) {
         await controller.sendDm(contacts, msgToSend);
       }
@@ -86,9 +88,7 @@ function Conversation() {
   };
 
   const getParticipants = () => {
-    const contacts: (ChatContact | string)[] = currentContactGroup.map(
-      npub => controller.getContactByNpub(npub) ?? npub
-    );
+    const contacts: (ChatContact | string)[] = contactGroup.map(npub => controller.getContactByNpub(npub) ?? npub);
     const knownContacts = contacts.filter(c => typeof c !== 'string');
     const strangers = contacts.filter(c => typeof c === 'string');
 
@@ -107,16 +107,16 @@ function Conversation() {
             <i className="fas fa-chevron-left"></i> Back
           </Button>
           <Navbar.Brand>
-            {currentContactGroup.length > 1
+            {contactGroup.length > 1
               ? 'Group chat'
-              : 'Chat with ' + controller.getContactByNpub(currentContactGroup[0])
-                ? contactLabel(currentContactGroup[0], controller)
+              : 'Chat with ' + controller.getContactByNpub(contactGroup[0])
+                ? contactLabel(contactGroup[0], controller)
                 : 'Stranger'}
           </Navbar.Brand>
 
-          {currentContactGroup.length === 1 && controller.getContactByNpub(currentContactGroup[0]) !== null && (
+          {contactGroup.length === 1 && controller.getContactByNpub(contactGroup[0]) !== null && (
             <Button
-              onClick={() => handleViewFriend(currentContactGroup[0], false)}
+              onClick={() => handleViewFriend(contactGroup[0], false)}
               size="lg"
               variant="link"
               className="info-button text-info"
@@ -128,21 +128,21 @@ function Conversation() {
         </div>
       </Navbar>
 
-      {currentContactGroup.length === 1 && controller.getContactByNpub(currentContactGroup[0]) === null && (
+      {contactGroup.length === 1 && controller.getContactByNpub(contactGroup[0]) === null && (
         <Card className="mb-3 d-inline-block">
           <Card.Body>
             <Card.Text>
               This contact is not in your friends list.
               <br /> Add to friends?
             </Card.Text>
-            <Button onClick={handleAddFriend} variant="primary">
+            <Button onClick={() => handleAddFriend(contactGroup[0])} variant="primary">
               Add
             </Button>
           </Card.Body>
         </Card>
       )}
 
-      {currentContactGroup.length > 1 && (
+      {contactGroup.length > 1 && (
         <div className="mb-3 d-inline-block">
           Group:{' '}
           {getParticipants().map((p, i) => (

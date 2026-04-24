@@ -8,23 +8,23 @@ import { useAppView } from '../appViewContext';
 
 function Friends() {
   const chatController = useChatController();
-  const { switchView, switchViewWithContacts } = useAppView();
+  const { pushView } = useAppView();
   const [contacts] = React.useState(chatController.getContactList());
 
   const handleViewFriend = (contact: ChatContact) => () => {
-    switchViewWithContacts('view-friend', [contact.npub], 0);
+    pushView('view-friend', [contact.npub], 0);
   };
 
   const handleFindFriend = () => {
-    switchView('find-friend');
+    pushView('find-friend');
   };
 
   const handleCreateGroup = () => {
-    switchView('create-group');
+    pushView('create-group');
   };
 
   const handleChat = (contact: ChatContact) => () => {
-    switchViewWithContacts('conversation', [contact.npub], 0);
+    pushView('conversation', [contact.npub], 0);
   };
 
   return (

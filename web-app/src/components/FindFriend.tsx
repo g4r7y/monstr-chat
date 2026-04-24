@@ -10,10 +10,12 @@ import FriendProfile from './FriendProfile';
 function FindFriend() {
   const chatController = useChatController();
 
-  const { switchView, currentContactNpub } = useAppView();
+  const { popView, currentView } = useAppView();
+
+  const selectedContactNpub = currentView().selectedContactNpub ?? '';
 
   const handleBack = () => {
-    switchView('friends');
+    popView();
   };
 
   const handleTryAgain = () => {
@@ -23,7 +25,7 @@ function FindFriend() {
   };
 
   // state for input fields
-  const [findNpubOrNip05, setFindNpubOrNip05] = React.useState(currentContactNpub);
+  const [findNpubOrNip05, setFindNpubOrNip05] = React.useState(selectedContactNpub);
   const [findInputError, setFindInputError] = React.useState('');
   const [contactName, setContactName] = React.useState('');
   const [contactNameInputError, setNameInputError] = React.useState('');
@@ -101,14 +103,14 @@ function FindFriend() {
       </Navbar>
 
       <Form onSubmit={handleSubmitFind}>
-        {currentContactNpub && (
+        {selectedContactNpub && (
           <div className="mt-3 d-inline-block">
             The selected user is not in your friends list.
             <br />
             Look up their profile and add them to your friends.
           </div>
         )}
-        {!currentContactNpub && (
+        {!selectedContactNpub && (
           <div className="mt-3 d-inline-block">
             You can search for a user by their verified Nostr address.
             <br />
@@ -128,7 +130,7 @@ function FindFriend() {
                 setFindNpubOrNip05(event.target.value);
                 setFindInputError('');
               }}
-              disabled={profileLookupDone || !!currentContactNpub}
+              disabled={profileLookupDone || !!selectedContactNpub}
               isInvalid={!!findInputError}
             />
             <Form.Control.Feedback type="invalid">{findInputError}</Form.Control.Feedback>

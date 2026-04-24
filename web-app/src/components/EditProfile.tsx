@@ -10,10 +10,10 @@ import { isValidNip05Address } from '@core/validation';
 function EditProfile() {
   const controller = useChatController();
 
-  const { switchView } = useAppView();
+  const { popView } = useAppView();
 
   const handleBack = () => {
-    switchView('settings#profile');
+    popView();
   };
 
   const [profileName, setProfileName] = React.useState(controller.getSettings().profile?.name ?? '');

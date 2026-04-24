@@ -9,10 +9,15 @@ import FriendProfile from './FriendProfile';
 function AddFriend() {
   const chatController = useChatController();
 
-  const { switchViewWithContacts, currentContactNpub, currentContactGroup } = useAppView();
+  const { popView, currentView } = useAppView();
+
+  const { selectedContactNpub } = currentView();
+  if (!selectedContactNpub) {
+    throw 'AddFriend view launched without selectedContact state';
+  }
 
   const handleBack = () => {
-    switchViewWithContacts('conversation', currentContactGroup);
+    popView();
   };
 
   const [contactProfile, setContactProfile] = React.useState<UserProfile | null>(null);
@@ -34,7 +39,7 @@ function AddFriend() {
     } else {
       const contact: ChatContact = {
         name: contactName,
-        npub: currentContactNpub,
+        npub: selectedContactNpub,
         relays: []
       };
       if (contactProfile) contact.profile = contactProfile;
@@ -63,12 +68,12 @@ function AddFriend() {
         <div className="row mt-3 mb-3">
           <Form.Label className="col-sm-2 col-form-label">Npub:</Form.Label>
           <div className="col-sm-10">
-            <Form.Control className="truncate" type="text" value={currentContactNpub} disabled readOnly />
+            <Form.Control className="truncate" type="text" value={selectedContactNpub} disabled readOnly />
           </div>
         </div>
 
         <div className="mb-4">
-          <FriendProfile contactToLookup={currentContactNpub} onLookupDone={handleContactLookupDone} />
+          <FriendProfile contactToLookup={selectedContactNpub} onLookupDone={handleContactLookupDone} />
         </div>
         {profileLookupComplete && (
           <div>

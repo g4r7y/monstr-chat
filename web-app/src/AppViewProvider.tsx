@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AppViewContext, type AppViewNameType } from './appViewContext';
+import { AppViewContext, type AppViewNameType, type AppViewType } from './appViewContext';
 
 const initialView: AppViewNameType = 'start';
 
@@ -9,30 +9,52 @@ interface AppViewProviderProps {
 }
 
 const AppViewProvider: React.FunctionComponent<AppViewProviderProps> = ({ children }) => {
-  const [view, setView] = useState(initialView as AppViewNameType);
-  const [currentContactNpub, setCurrentContactNpub] = useState('');
-  const [currentContactGroup, setCurrentContactGroup] = useState([] as string[]);
+  const [viewStack, setViewStack] = useState<AppViewType[]>([{ name: initialView }]);
 
-  const switchView = (newView: AppViewNameType) => {
-    setCurrentContactNpub('');
-    setCurrentContactGroup([]);
-    setView(newView);
+  const currentView = (): AppViewType => {
+    return viewStack[viewStack.length - 1];
   };
 
-  const switchViewWithContacts = (newView: AppViewNameType, contactNpubs: string[], current?: number) => {
-    setCurrentContactGroup(contactNpubs);
-    if (current !== undefined) {
-      setCurrentContactNpub(contactNpubs[current]);
+  /**
+   * Switch view, resetting the stack. Use this when navigating to top level view.
+   * @param viewName
+   */
+  const switchView = (viewName: AppViewNameType) => {
+    setViewStack([{ name: viewName }]);
+  };
+
+  /**
+   * Push a new view to the stack. Use this to go to a new view, so that subsequent back journey can return to previous view.
+   * @param viewName - Id of the view to push
+   * @param contacts - Optional list of npubs which represent the current contact or contact group
+   * @param selectedContactIndex - Optional index of the the currently selected contact
+   */
+  const pushView = (viewName: AppViewNameType, contacts?: string[], selectedContactIndex?: number) => {
+    const newView: AppViewType = {
+      name: viewName,
+      contactGroup: contacts ?? undefined,
+      selectedContactNpub:
+        contacts &&
+        selectedContactIndex !== undefined &&
+        selectedContactIndex >= 0 &&
+        selectedContactIndex < contacts.length
+          ? contacts[selectedContactIndex]
+          : undefined
+    };
+    setViewStack(prevViewStack => [...prevViewStack, newView]);
+  };
+
+  /**
+   * Pop the view from the stack. Use this to go back to previous view.
+   */
+  const popView = () => {
+    if (viewStack.length > 0) {
+      setViewStack(prevViewStack => prevViewStack.slice(0, -1));
     }
-    setView(newView);
   };
 
   return (
-    <AppViewContext.Provider
-      value={{ view, currentContactNpub, currentContactGroup, switchView, switchViewWithContacts }}
-    >
-      {children}
-    </AppViewContext.Provider>
+    <AppViewContext.Provider value={{ currentView, switchView, pushView, popView }}>{children}</AppViewContext.Provider>
   );
 };
 

@@ -35,9 +35,9 @@ function Chats() {
     };
   }, []);
 
-  const { switchViewWithContacts } = useAppView();
+  const { pushView } = useAppView();
   const handleOpenConversation = (contactNpubs: string[]) => {
-    switchViewWithContacts('conversation', contactNpubs);
+    pushView('conversation', contactNpubs);
   };
 
   return (

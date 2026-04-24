@@ -27,7 +27,7 @@ const MainAppView = () => {
       if (initOk) {
         console.log('init ok');
         await controller.connect();
-        appView.switchView('main');
+        appView.switchView('chats');
       } else {
         // no key, first laucnh
         appView.switchView('welcome');
@@ -39,21 +39,22 @@ const MainAppView = () => {
 
   return (
     <div>
-      {appView.view === 'start' && <Start />}
-      {appView.view === 'welcome' && <Welcome />}
-      {appView.view === 'main' && <MainMenu activeTab="chats" />}
-      {appView.view === 'friends' && <MainMenu activeTab="friends" />}
-      {appView.view === 'settings' && <MainMenu activeTab="settings" />}
-      {appView.view === 'settings#profile' && <MainMenu activeTab="settings" activeSetting="profile" />}
-      {appView.view === 'settings#relays' && <MainMenu activeTab="settings" activeSetting="relays" />}
-      {appView.view === 'conversation' && <Conversation />}
-      {appView.view === 'add-friend' && <AddFriend />}
-      {appView.view === 'view-friend' && <ViewFriend />}
-      {appView.view === 'find-friend' && <FindFriend />}
-      {appView.view === 'create-group' && <CreateGroup />}
-      {appView.view === 'edit-profile' && <EditProfile />}
-      {appView.view === 'edit-message-relays' && <EditRelays relayType="message" />}
-      {appView.view === 'edit-general-relays' && <EditRelays relayType="general" />}
+      {appView.currentView().name === 'start' && <Start />}
+      {appView.currentView().name === 'welcome' && <Welcome />}
+      {appView.currentView().name === 'chats' && <MainMenu activeTab="chats" />}
+      {appView.currentView().name === 'friends' && <MainMenu activeTab="friends" />}
+      {appView.currentView().name === 'settings' && <MainMenu activeTab="settings" />}
+      {appView.currentView().name === 'settings#profile' && <MainMenu activeTab="settings" activeSetting="profile" />}
+      {appView.currentView().name === 'settings#relays' && <MainMenu activeTab="settings" activeSetting="relays" />}
+      {appView.currentView().name === 'settings#keys' && <MainMenu activeTab="settings" activeSetting="keys" />}
+      {appView.currentView().name === 'conversation' && <Conversation />}
+      {appView.currentView().name === 'add-friend' && <AddFriend />}
+      {appView.currentView().name === 'view-friend' && <ViewFriend />}
+      {appView.currentView().name === 'find-friend' && <FindFriend />}
+      {appView.currentView().name === 'create-group' && <CreateGroup />}
+      {appView.currentView().name === 'edit-profile' && <EditProfile />}
+      {appView.currentView().name === 'edit-message-relays' && <EditRelays relayType="message" />}
+      {appView.currentView().name === 'edit-general-relays' && <EditRelays relayType="general" />}
     </div>
   );
 };

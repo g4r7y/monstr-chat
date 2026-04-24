@@ -3,11 +3,12 @@ import { createContext, useContext } from 'react';
 export type AppViewNameType =
   | 'start'
   | 'welcome'
-  | 'main'
+  | 'chats'
   | 'friends'
   | 'settings'
   | 'settings#profile'
   | 'settings#relays'
+  | 'settings#keys'
   | 'conversation'
   | 'add-friend'
   | 'view-friend'
@@ -17,13 +18,19 @@ export type AppViewNameType =
   | 'edit-message-relays'
   | 'edit-general-relays';
 
+// Represents a view and its state
+export type AppViewType = {
+  name: AppViewNameType;
+  contactGroup?: string[];
+  selectedContactNpub?: string;
+};
+
 // Define the type to be used with the context
 interface AppViewContextType {
-  view: AppViewNameType;
-  currentContactNpub: string;
-  currentContactGroup: string[];
-  switchView: (view: AppViewNameType) => void;
-  switchViewWithContacts: (view: AppViewNameType, contactNpubs: string[], current?: number) => void;
+  currentView: () => AppViewType;
+  switchView: (viewName: AppViewNameType) => void;
+  pushView: (viewName: AppViewNameType, contacts?: string[], selectedContactIndex?: number) => void;
+  popView: () => void;
 }
 
 // The context object

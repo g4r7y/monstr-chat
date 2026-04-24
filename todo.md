@@ -7,7 +7,6 @@
 
 * Web app:
   * improve error handling e.g. on send
-  * fix back journeys (use a stack)
   * password encode secret key when saving it to IndexedDB (nip-49)
   * new message notification
 

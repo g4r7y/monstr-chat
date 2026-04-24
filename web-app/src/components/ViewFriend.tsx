@@ -12,12 +12,17 @@ function ViewFriend() {
   // memoise
   const controllerRef = React.useRef(controller);
 
-  const { switchView, currentContactNpub } = useAppView();
+  const { popView, currentView } = useAppView();
+
+  const { selectedContactNpub } = currentView();
+  if (!selectedContactNpub) {
+    throw 'ViewFriend view launched without selectedContact state';
+  }
   // memoise current contact (only changes when view changes)
-  const currentContactNpubRef = React.useRef(currentContactNpub);
+  const selectedContactNpubRef = React.useRef(selectedContactNpub);
 
   const handleBack = () => {
-    switchView('friends');
+    popView();
   };
 
   const [contact, setContact] = React.useState<ChatContact | null>(null);
@@ -27,7 +32,7 @@ function ViewFriend() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = React.useState(false);
 
   React.useEffect(() => {
-    const c = controllerRef.current.getContactByNpub(currentContactNpubRef.current);
+    const c = controllerRef.current.getContactByNpub(selectedContactNpubRef.current);
     if (c) {
       setContact(c);
       setFriendName(c.name);
@@ -53,7 +58,7 @@ function ViewFriend() {
   };
 
   const handleDelete = async () => {
-    await controller.deleteContact(currentContactNpub);
+    await controller.deleteContact(selectedContactNpub);
     handleBack();
   };
 
@@ -72,7 +77,7 @@ function ViewFriend() {
         <ListGroupItem className="list-group-item-secondary text-break">
           <Row>
             <Col xs={4}>Npub:</Col>
-            <Col xs={8}>{currentContactNpub}</Col>
+            <Col xs={8}>{selectedContactNpub}</Col>
           </Row>
         </ListGroupItem>
 
@@ -81,7 +86,7 @@ function ViewFriend() {
             <Row>
               <Col xs={4}>NIP-05 address:</Col>
               <Col xs={8} className="truncate">
-                <Nip05Address npub={currentContactNpub} nip05={contact.profile.nip05} />
+                <Nip05Address npub={selectedContactNpub} nip05={contact.profile.nip05} />
               </Col>
             </Row>
           </ListGroupItem>

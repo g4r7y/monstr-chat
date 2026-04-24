@@ -31,7 +31,7 @@ const Welcome = () => {
     const initOk = await controller.init();
     if (initOk) {
       await controller.connect();
-      switchView('main');
+      switchView('chats');
     } //TODO handle errors
   };
 

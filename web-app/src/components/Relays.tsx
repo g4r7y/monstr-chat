@@ -31,7 +31,7 @@ function Relays() {
   const controller = useChatController();
   // memoise
   const controllerRef = React.useRef(controller);
-  const { switchView } = useAppView();
+  const { pushView } = useAppView();
 
   const [settings, setSettings] = React.useState<ChatSettings>(controller.getSettings());
   const [connectedRelays, setConnectedRelays] = React.useState<Set<string>>(new Set());
@@ -76,12 +76,12 @@ function Relays() {
         <b>Message relays:</b>
       </div>
       <RelayList relays={settings.inboxRelays} connectedRelays={connectedRelays} />
-      <Button onClick={() => switchView('edit-message-relays')}>Edit</Button>
+      <Button onClick={() => pushView('edit-message-relays')}>Edit</Button>
       <div className="row mb-3 mt-4">
         <b>General relays:</b>
       </div>
       <RelayList relays={settings.generalRelays} connectedRelays={connectedRelays} />
-      <Button onClick={() => switchView('edit-general-relays')}>Edit</Button>
+      <Button onClick={() => pushView('edit-general-relays')}>Edit</Button>
     </div>
   );
 }

@@ -16,14 +16,15 @@ function CreateGroup() {
 
   const [contacts, setContacts] = useState(contactCheckList);
 
-  const { switchView, switchViewWithContacts } = useAppView();
+  const { pushView, popView } = useAppView();
 
   const handleBack = () => {
-    switchView('friends');
+    popView();
   };
 
   const handleDone = () => {
-    switchViewWithContacts(
+    popView();
+    pushView(
       'conversation',
       contacts.filter(c => c.checked).map(c => c.npub)
     );

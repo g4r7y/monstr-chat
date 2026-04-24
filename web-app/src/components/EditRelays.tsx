@@ -12,9 +12,7 @@ const EditRelays = (props: EditRelaysProps) => {
   const { relayType } = props;
 
   const controller = useChatController();
-  // // memoise
-  // const controllerRef = React.useRef(controller);
-  const { switchView } = useAppView();
+  const { popView } = useAppView();
 
   const relaySettings =
     relayType === 'general' ? controller.getSettings().generalRelays : controller.getSettings().inboxRelays;
@@ -59,7 +57,7 @@ const EditRelays = (props: EditRelaysProps) => {
   };
 
   const handleBack = () => {
-    switchView('settings#relays');
+    popView();
   };
 
   const handleSave = async () => {
@@ -96,7 +94,7 @@ const EditRelays = (props: EditRelaysProps) => {
       // broadcast kind0 user metadata to the potentially new general relays
       await controller.broadcastUserMetadata();
     }
-    switchView('settings#relays');
+    handleBack();
     setSaveState('none');
   };
 

@@ -13,7 +13,7 @@ function UserProfile() {
 
   const [settings, setSettings] = React.useState<ChatSettings>(controller.getSettings());
 
-  const { switchView } = useAppView();
+  const { pushView } = useAppView();
 
   React.useEffect(() => {
     const listener = new (class implements SettingsListener {
@@ -31,7 +31,7 @@ function UserProfile() {
   }, []);
 
   const editProfile = () => {
-    switchView('edit-profile');
+    pushView('edit-profile');
   };
 
   return (

@@ -12,6 +12,7 @@ type WelcomeState =
   | 'created'
   | 'showMnemonic'
   | 'showMnemonicConfirm'
+  | 'notifications'
   | 'tips'
   | 'restore'
   | 'restoreNsec'
@@ -161,11 +162,46 @@ const Welcome = () => {
                     {' '}
                     Have you written down your recovery phrase? You won't be able to see it again!
                   </div>
-                  <Button className="mt-3 me-3" onClick={() => setWelcomeState('tips')}>
+                  <Button className="mt-3 me-3" onClick={() => setWelcomeState('notifications')}>
                     Continue
                   </Button>
                 </div>
               )}
+            </Card.Body>
+          </Card>
+        </div>
+      )}
+
+      {welcomeState === 'notifications' && (
+        <div>
+          <h3 className="mt-3 text-primary">Welcome!</h3>
+          <Card className="mt-3">
+            <Card.Header>Notifications</Card.Header>
+            <Card.Body>
+              <Card.Text>
+                Enable notifications to keep updated when you receive new messages.
+                <br />
+                <br />
+                If you enable notifications, your browser will ask for permission to show notifications from this site.
+              </Card.Text>
+              <Button
+                className="mt-3 me-3"
+                onClick={async () => {
+                  const permission = await Notification.requestPermission();
+                  if (permission === 'granted') {
+                    await controller.setSettings({
+                      ...controller.getSettings(),
+                      notificationsEnabled: true
+                    });
+                  }
+                  setWelcomeState('tips');
+                }}
+              >
+                Enable Notifications
+              </Button>
+              <Button className="mt-3 me-3" variant="secondary" onClick={() => setWelcomeState('tips')}>
+                Skip
+              </Button>
             </Card.Body>
           </Card>
         </div>

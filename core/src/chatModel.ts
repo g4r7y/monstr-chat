@@ -22,6 +22,7 @@ export type ChatSettings = {
   generalRelays: string[];
   lastSeen?: LastSeenEventTimestamps;
   profile?: UserProfile;
+  notificationsEnabled?: boolean;
 };
 
 const defaultSettings: ChatSettings = {

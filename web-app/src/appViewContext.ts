@@ -8,6 +8,7 @@ export type AppViewNameType =
   | 'settings'
   | 'settings#profile'
   | 'settings#relays'
+  | 'settings#notifications'
   | 'settings#keys'
   | 'conversation'
   | 'add-friend'

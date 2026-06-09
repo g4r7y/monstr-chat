@@ -2,6 +2,7 @@ import { Accordion, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { useChatController } from '../chatControllerContext';
 import UserProfile from './UserProfile';
 import Relays from './Relays';
+import NotificationSettings from './NotificationSettings';
 import React from 'react';
 import type { AccordionEventKey } from 'react-bootstrap/esm/AccordionContext';
 import { useAppView, type AppViewNameType } from '../appViewContext';
@@ -46,6 +47,12 @@ function Settings(props: SettingsProps) {
               <ListGroupItem className="list-group-item-secondary text-break">{controller.getNpub()}</ListGroupItem>
             </ListGroup>
           </div>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="notifications">
+        <Accordion.Header>Notifications</Accordion.Header>
+        <Accordion.Body>
+          <NotificationSettings />
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

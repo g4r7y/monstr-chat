@@ -4,6 +4,7 @@ import { Container } from 'react-bootstrap';
 import { AppViewProvider } from '../AppViewProvider';
 import { useChatController } from '../chatControllerContext.ts';
 import { useAppView } from '../appViewContext';
+import { NewMessageNotifier } from '../newMessageNotifier.ts';
 import Start from './Start.tsx';
 import Welcome from './Welcome.tsx';
 import MainMenu from './MainMenu';
@@ -37,6 +38,15 @@ const MainAppView = () => {
 
   initialise();
 
+  React.useEffect(() => {
+    const newMessageNotifier = new NewMessageNotifier(controller);
+    controller.addMessageListener(newMessageNotifier);
+
+    return () => {
+      controller.removeMessageListener(newMessageNotifier);
+    };
+  }, [controller]);
+
   return (
     <div>
       {appView.currentView().name === 'start' && <Start />}
@@ -46,6 +56,9 @@ const MainAppView = () => {
       {appView.currentView().name === 'settings' && <MainMenu activeTab="settings" />}
       {appView.currentView().name === 'settings#profile' && <MainMenu activeTab="settings" activeSetting="profile" />}
       {appView.currentView().name === 'settings#relays' && <MainMenu activeTab="settings" activeSetting="relays" />}
+      {appView.currentView().name === 'settings#notifications' && (
+        <MainMenu activeTab="settings" activeSetting="notifications" />
+      )}
       {appView.currentView().name === 'settings#keys' && <MainMenu activeTab="settings" activeSetting="keys" />}
       {appView.currentView().name === 'conversation' && <Conversation />}
       {appView.currentView().name === 'add-friend' && <AddFriend />}

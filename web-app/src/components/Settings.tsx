@@ -1,4 +1,4 @@
-import { Accordion, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Accordion, Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { useChatController } from '../chatControllerContext';
 import UserProfile from './UserProfile';
 import Relays from './Relays';
@@ -15,6 +15,7 @@ function Settings(props: SettingsProps) {
   const controller = useChatController();
 
   const [activeKey, setActiveKey] = React.useState<AccordionEventKey>(props.activeKey);
+  const [showNsec, setShowNsec] = React.useState(false);
   const { switchView } = useAppView();
 
   const handleSwitchAccordion = (key: AccordionEventKey) => {
@@ -22,6 +23,10 @@ function Settings(props: SettingsProps) {
     if (key) {
       switchView(`settings#${key}` as AppViewNameType);
     }
+  };
+
+  const handleToggleNsec = () => {
+    setShowNsec((prev) => !prev);
   };
 
   return (
@@ -42,9 +47,27 @@ function Settings(props: SettingsProps) {
         <Accordion.Header>Keys</Accordion.Header>
         <Accordion.Body>
           <div>
-            <div className="row mb-2">Your public key (npub):</div>
+            <div className="row mb-2">Your public key:</div>
             <ListGroup className="mb-3">
               <ListGroupItem className="list-group-item-secondary text-break">{controller.getNpub()}</ListGroupItem>
+            </ListGroup>
+          </div>
+          <div>
+            <div className="row mb-2 d-flex align-items-center justify-content-between gx-0">Your secret key:</div>
+            <ListGroup className="mb-3">
+              <ListGroupItem className="list-group-item-secondary d-flex align-items-center justify-content-between gap-2">
+                <div className="text-break">{showNsec ? controller.getNsec() : '*'.repeat(controller.getNsec().length)}</div>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0 text-decoration-none"
+                  onClick={handleToggleNsec}
+                  aria-label={showNsec ? 'Hide secret key' : 'Show secret key'}
+                  aria-pressed={showNsec}
+                >
+                  <i className={`fas ${showNsec ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true"></i>
+                </Button>
+              </ListGroupItem>
             </ListGroup>
           </div>
         </Accordion.Body>

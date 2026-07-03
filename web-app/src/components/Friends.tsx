@@ -11,7 +11,9 @@ function Friends() {
   const { pushView } = useAppView();
   const [contacts] = React.useState(chatController.getContactList());
 
-  const handleViewFriend = (contact: ChatContact) => () => {
+  const handleViewFriend = (contact: ChatContact) => (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     pushView('view-friend', [contact.npub], 0);
   };
 
@@ -55,7 +57,7 @@ function Friends() {
           <ListGroup>
             {contacts.map((c: ChatContact, i: number) => {
               return (
-                <ListGroup.Item key={i} action as="li" className="d-flex align-items-start">
+                <ListGroup.Item onClick={handleChat(c)} aria-label="Chat with friend" key={i} action as="li" className="d-flex align-items-start">
                   <div className="ms-2 me-auto">
                     <div className="fw-bold">{c.name}</div>
                   </div>
@@ -68,15 +70,6 @@ function Friends() {
                       aria-label="Friend details"
                     >
                       <i className="fas fa-address-card" aria-hidden="true"></i>
-                    </Button>
-                    <Button
-                      onClick={handleChat(c)}
-                      size="lg"
-                      variant="link"
-                      className="text-primary"
-                      aria-label="Chat with friend"
-                    >
-                      <i className="fas fa-message" aria-hidden="true"></i>
                     </Button>
                   </div>
                 </ListGroup.Item>

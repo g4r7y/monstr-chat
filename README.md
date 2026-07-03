@@ -13,7 +13,7 @@ With Nostr, your crytographic key pair is your identity, and you can use it with
 Also, because Monstr Chat uses standard Nostr protocols it is inter-operable with other Nostr clients that support the same direct messaging protocols.
 
 This project gives you two apps for the price of one:
-* web-app - is a responsive single page app. Local copies of your conversations and other metadata are stored in the browser (using IndexedDB). Try it out here: [monstr-chat](https://monstr-chat.vercel.app/)
+* web-app - is a responsive single page app. Local copies of your conversations and other metadata are stored in the browser (using IndexedDB). Try it out here: [monstr-chat](https://monstr.me)
 * terminal app - provides the same functionality but on the command line, storing local data in your home directory. Follow the instructions lower down to build and run it locally.
 
 ### Nostr protocol

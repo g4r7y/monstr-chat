@@ -19,7 +19,8 @@ describe('user metadata', () => {
     const profile = {
       name: 'fred',
       about: null,
-      nip05: 'fred@lol.com'
+      nip05: 'fred@lol.com',
+      website: 'https://fred.lol.com'
     };
     const ev = createEvent(JSON.stringify(profile));
     const content = extractContentFromUserMetadataEvent(ev);
@@ -44,7 +45,8 @@ describe('user metadata', () => {
     expect(content).toEqual({
       name: null,
       about: '',
-      nip05: null
+      nip05: null,
+      website: null
     });
   });
 });

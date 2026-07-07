@@ -112,6 +112,15 @@ function ViewFriend() {
           </ListGroupItem>
         )}
 
+        {contact?.profile?.website && (
+          <ListGroupItem className="list-group-item-secondary text-break">
+            <Row>
+              <Col xs={4}>Website:</Col>
+              <Col xs={8}>{contact.profile.website}</Col>
+            </Row>
+          </ListGroupItem>
+        )}
+
         {contact?.relays && contact.relays.length > 0 && (
           <ListGroupItem className="list-group-item-secondary text-break">
             <Row>

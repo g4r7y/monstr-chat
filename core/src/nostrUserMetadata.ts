@@ -87,7 +87,8 @@ const extractContentFromUserMetadataEvent = (event: Event): UserProfile | null =
     const profile: UserProfile = {
       name: content.name ?? null,
       about: content.about ?? null,
-      nip05: content.nip05 ?? null
+      nip05: content.nip05 ?? null,
+      website: content.website ?? null
     };
     return profile;
   } catch (_) {

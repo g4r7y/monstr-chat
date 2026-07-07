@@ -12,6 +12,7 @@ import Conversation from './Conversation';
 import AddFriend from './AddFriend';
 import ViewFriend from './ViewFriend.tsx';
 import FindFriend from './FindFriend.tsx';
+import EditAddress from './EditAddress.tsx';
 import EditProfile from './EditProfile.tsx';
 import EditRelays from './EditRelays.tsx';
 import CreateGroup from './CreateGroup.tsx';
@@ -54,6 +55,7 @@ const MainAppView = () => {
       {appView.currentView().name === 'chats' && <MainMenu activeTab="chats" />}
       {appView.currentView().name === 'friends' && <MainMenu activeTab="friends" />}
       {appView.currentView().name === 'settings' && <MainMenu activeTab="settings" />}
+      {appView.currentView().name === 'settings#address' && <MainMenu activeTab="settings" activeSetting="address" />}
       {appView.currentView().name === 'settings#profile' && <MainMenu activeTab="settings" activeSetting="profile" />}
       {appView.currentView().name === 'settings#relays' && <MainMenu activeTab="settings" activeSetting="relays" />}
       {appView.currentView().name === 'settings#notifications' && (
@@ -65,6 +67,7 @@ const MainAppView = () => {
       {appView.currentView().name === 'view-friend' && <ViewFriend />}
       {appView.currentView().name === 'find-friend' && <FindFriend />}
       {appView.currentView().name === 'create-group' && <CreateGroup />}
+      {appView.currentView().name === 'edit-address' && <EditAddress />}
       {appView.currentView().name === 'edit-profile' && <EditProfile />}
       {appView.currentView().name === 'edit-message-relays' && <EditRelays relayType="message" />}
       {appView.currentView().name === 'edit-general-relays' && <EditRelays relayType="general" />}

@@ -645,7 +645,8 @@ describe('chat controller', () => {
       let profile = {
         name: 'Bugs bunny',
         about: 'Rabbit',
-        nip05: 'bugs@lol.com'
+        nip05: 'bugs@bunny.com',
+        website: 'https://www.example.com'
       };
       const event1 = {
         ...baseEvent,
@@ -661,7 +662,8 @@ describe('chat controller', () => {
       profile = {
         name: 'Bugs bunny',
         about: 'Bad Rabbit',
-        nip05: 'bad_address@lol.com'
+        nip05: 'bad_address@lol.com',
+        website: 'https://www.example.com'
       };
       // simulate user metadata event
       const event2 = {
@@ -670,7 +672,11 @@ describe('chat controller', () => {
       };
       await onUserMetadataCallback(finalizeEvent(event2, privateKey));
       // profile settings should be updated, but nip05 is removed; listener should be called again
-      expect(controller.getSettings().profile).toEqual({ name: profile.name, about: profile.about });
+      expect(controller.getSettings().profile).toEqual({
+        name: profile.name,
+        about: profile.about,
+        website: profile.website
+      });
       expect(listener.notifySettingsChanged).toBeCalledTimes(2);
     });
 
@@ -711,7 +717,8 @@ describe('chat controller', () => {
       let profile = {
         name: 'My name is Steve',
         about: 'I like cheese',
-        nip05: 'steve@lol.com'
+        nip05: 'steve@lol.com',
+        website: 'https://example.com'
       };
       const event1 = {
         ...baseEvent,
@@ -729,7 +736,8 @@ describe('chat controller', () => {
       profile = {
         name: 'I am Steve',
         about: 'I like cheese',
-        nip05: 'bad_address@lol.com'
+        nip05: 'bad_address@lol.com',
+        website: 'https://example.com'
       };
       const event2 = {
         ...baseEvent,
@@ -737,7 +745,11 @@ describe('chat controller', () => {
       };
       await onUserMetadataCallback(finalizeEvent(event2, friendPrivateKey));
       // contact's profile should be updated, but nip05 is removed
-      expect(controller.getContactByName('Steve')!.profile).toEqual({ name: profile.name, about: profile.about });
+      expect(controller.getContactByName('Steve')!.profile).toEqual({
+        name: profile.name,
+        about: profile.about,
+        website: profile.website
+      });
     });
 
     test("can broadcast user's profile", async () => {

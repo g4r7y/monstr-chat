@@ -3,7 +3,6 @@ import { Button, Card, Col, ListGroup, ListGroupItem, Row } from 'react-bootstra
 import type { ChatSettings } from '@core/chatModel';
 import type { SettingsListener } from '@core/settingsListener';
 import { useChatController } from '../chatControllerContext';
-import Nip05Address from './Nip05Address';
 import { useAppView } from '../appViewContext';
 
 function UserProfile() {
@@ -34,15 +33,17 @@ function UserProfile() {
     pushView('edit-profile');
   };
 
+  const hasProfile = () => settings.profile?.name || settings.profile?.about || settings.profile?.website;
+
   return (
     <div>
-      {!settings.profile && (
+      {!hasProfile() && (
         <Card className="mb-3 d-inline-block">
           <Card.Body>
             <Card.Text>
-              A public profile helps other Nostr users discover you.
+              A public profile helps other Nostr users find out about you.
               <br />
-              Would you like to set one up?
+              Would you like to enter your profile information?
             </Card.Text>
             <Button onClick={editProfile} variant="primary">
               Add profile
@@ -51,7 +52,7 @@ function UserProfile() {
         </Card>
       )}
 
-      {settings.profile && (
+      {hasProfile() && (
         <div>
           <ListGroup>
             <ListGroupItem className="list-group-item-secondary text-break">
@@ -68,10 +69,8 @@ function UserProfile() {
             </ListGroupItem>
             <ListGroupItem className="list-group-item-secondary text-break">
               <Row>
-                <Col xs={4}>NIP-05 address:</Col>
-                <Col xs={8}>
-                  <Nip05Address npub={controller.getNpub()} nip05={settings.profile?.nip05 ?? ''} />
-                </Col>
+                <Col xs={4}>Website:</Col>
+                <Col xs={8}>{settings?.profile?.website ?? ''}</Col>
               </Row>
             </ListGroupItem>
           </ListGroup>

@@ -57,7 +57,14 @@ function Friends() {
           <ListGroup>
             {contacts.map((c: ChatContact, i: number) => {
               return (
-                <ListGroup.Item onClick={handleChat(c)} aria-label="Chat with friend" key={i} action as="li" className="d-flex align-items-start">
+                <ListGroup.Item
+                  onClick={handleChat(c)}
+                  aria-label="Chat with friend"
+                  key={i}
+                  action
+                  as="li"
+                  className="d-flex align-items-start"
+                >
                   <div className="ms-2 me-auto">
                     <div className="fw-bold">{c.name}</div>
                   </div>

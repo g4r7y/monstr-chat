@@ -3,6 +3,7 @@ import type { DataStore } from './dataStore.js';
 export type UserProfile = {
   name?: string; // aka nickname
   about?: string;
+  website?: string;
   nip05?: string;
 };
 

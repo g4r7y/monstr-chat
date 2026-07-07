@@ -50,7 +50,11 @@ async function viewContact(context: ViewContext) {
     terminal.yellow('About:            ');
     terminal.white(`${currentContact.profile.about}\n`);
   }
-  terminal.yellow('DM relays:     ');
+  if (currentContact.profile?.website) {
+    terminal.yellow('Website:          ');
+    terminal.white(`${currentContact.profile.website}\n`);
+  }
+  terminal.yellow('DM relays:        ');
   terminal.white(`${currentContact.relays?.join('\n                  ') ?? 'unknown'}\n`);
   terminal('\n');
 
@@ -152,6 +156,10 @@ async function addContact(context: ViewContext) {
       if (contactProfile?.about) {
         terminal('About:         ');
         terminal.yellow(`${contactProfile.about}\n`);
+      }
+      if (contactProfile?.website) {
+        terminal('Website:       ');
+        terminal.yellow(`${contactProfile.website}\n`);
       }
       terminal('Npub: ');
       terminal.yellow(`${npub}\n\n`);

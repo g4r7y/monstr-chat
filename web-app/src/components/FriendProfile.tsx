@@ -113,6 +113,15 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
                 </Row>
               </ListGroupItem>
             )}
+
+            {contactProfile?.website && (
+              <ListGroupItem className="list-group-item-secondary text-break">
+                <Row>
+                  <Col xs={4}>Website:</Col>
+                  <Col xs={8}>{contactProfile.website}</Col>
+                </Row>
+              </ListGroupItem>
+            )}
           </ListGroup>
         </div>
       )}

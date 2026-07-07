@@ -391,6 +391,7 @@ export class ChatControllerImpl implements ChatController {
     const profile: UserProfile = {};
     if (content?.name) profile.name = content?.name;
     if (content?.about) profile.about = content?.about;
+    if (content?.website) profile.website = content?.website;
     if (nip05) profile.nip05 = nip05;
     return profile;
   }

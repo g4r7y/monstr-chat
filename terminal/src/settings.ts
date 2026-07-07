@@ -25,6 +25,9 @@ async function settingsProfile(context: ViewContext) {
   terminal.yellow('About you:     ');
   terminal.white(settings.profile?.about ?? '');
   terminal('\n');
+  terminal.yellow('Website:       ');
+  terminal.white(settings.profile?.website ?? '');
+  terminal('\n');
   terminal.yellow('Nostr address (NIP-05): ');
   terminal.white(settings.profile?.nip05 ? `${settings.profile?.nip05} ` : '');
   let verified = false;
@@ -68,6 +71,12 @@ async function settingsEditProfile(context: ViewContext) {
     // escape
     return;
   }
+  initialText = settings.profile?.website ?? '';
+  const profileWebsite = await showPrompt('Website: ', initialText);
+  if (profileWebsite === null) {
+    // escape
+    return;
+  }
 
   initialText = settings.profile?.nip05 ?? '';
   let editing = true;
@@ -107,7 +116,7 @@ async function settingsEditProfile(context: ViewContext) {
   }
 
   if (shouldUpdate) {
-    settings.profile = { name: profileName, about: profileAbout };
+    settings.profile = { name: profileName, about: profileAbout, website: profileWebsite };
     if (nip05) settings.profile.nip05 = nip05;
     await context.chatController.setSettings(settings);
     await context.chatController.broadcastUserMetadata();

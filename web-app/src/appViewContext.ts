@@ -6,6 +6,7 @@ export type AppViewNameType =
   | 'chats'
   | 'friends'
   | 'settings'
+  | 'settings#address'
   | 'settings#profile'
   | 'settings#relays'
   | 'settings#notifications'
@@ -15,6 +16,7 @@ export type AppViewNameType =
   | 'view-friend'
   | 'find-friend'
   | 'create-group'
+  | 'edit-address'
   | 'edit-profile'
   | 'edit-message-relays'
   | 'edit-general-relays';

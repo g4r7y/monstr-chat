@@ -3,9 +3,9 @@ import { Button, Form, Navbar } from 'react-bootstrap';
 import Container from 'react-bootstrap/Container';
 
 import type { ChatSettings, UserProfile } from '@core/chatModel';
+import { isValidUrl } from '@core/validation';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
-import { isValidNip05Address } from '@core/validation';
 
 function EditProfile() {
   const controller = useChatController();
@@ -18,50 +18,30 @@ function EditProfile() {
 
   const [profileName, setProfileName] = React.useState(controller.getSettings().profile?.name ?? '');
   const [profileAbout, setProfileAbout] = React.useState(controller.getSettings().profile?.about ?? '');
-  const [profileNip05, setProfileNip05] = React.useState(controller.getSettings().profile?.nip05 ?? '');
+  const [profileWebsite, setProfileWebsite] = React.useState(controller.getSettings().profile?.website ?? '');
   const [nameInputError, setNameInputError] = React.useState('');
   const [aboutInputError, setAboutInputError] = React.useState('');
-  const [nip05InputError, setNip05InputError] = React.useState('');
-  const [verifying, setVerifying] = React.useState(false);
-
-  const verifyNip05 = async () => {
-    if (!isValidNip05Address(profileNip05)) {
-      setNip05InputError('Invalid address. It should look something like: user@domain');
-      return false;
-    }
-
-    let verified = true;
-    setVerifying(true);
-    const npub = await controller.lookupNip05Address(profileNip05);
-    try {
-      if (!npub) {
-        setNip05InputError('Address not found');
-        verified = false;
-      } else if (npub !== controller.getNpub()) {
-        setNip05InputError('Address does not match your key');
-        verified = false;
-      }
-    } catch {
-      setNip05InputError('Could not check address due to connection error');
-      verified = false;
-    } finally {
-      setVerifying(false);
-    }
-    return verified;
-  };
+  const [websiteInputError, setWebsiteInputError] = React.useState('');
 
   const handleSave = async () => {
-    const ok = profileNip05 === '' || (await verifyNip05());
-    if (ok) {
-      const profile: UserProfile = { name: profileName ?? '', about: profileAbout ?? '', nip05: profileNip05 ?? '' };
-      const settings: ChatSettings = controller.getSettings();
-      await controller.setSettings({
-        ...settings,
-        profile
-      });
-      await controller.broadcastUserMetadata();
-      handleBack();
+    if (profileWebsite && !isValidUrl(profileWebsite, ['http', 'https'])) {
+      setWebsiteInputError('Please enter a valid URL, e.g. https://example.com');
+      return;
     }
+
+    const settings: ChatSettings = controller.getSettings();
+    const profile: UserProfile = {
+      ...settings.profile,
+      name: profileName ?? '',
+      about: profileAbout ?? '',
+      website: profileWebsite ?? ''
+    };
+    await controller.setSettings({
+      ...settings,
+      profile
+    });
+    await controller.broadcastUserMetadata();
+    handleBack();
   };
 
   return (
@@ -105,22 +85,21 @@ function EditProfile() {
         </div>
 
         <div className="mb-3">
-          <Form.Label>NIP-05 address::</Form.Label>
+          <Form.Label>Website:</Form.Label>
           <Form.Control
             type="text"
-            value={profileNip05}
+            value={profileWebsite}
             onChange={event => {
-              setProfileNip05(event.target.value);
-              setNip05InputError('');
+              setProfileWebsite(event.target.value);
+              setWebsiteInputError('');
             }}
-            isInvalid={!!nip05InputError}
+            isInvalid={!!websiteInputError}
           />
-          <Form.Control.Feedback type="invalid">{nip05InputError}</Form.Control.Feedback>
+          <Form.Control.Feedback type="invalid">{websiteInputError}</Form.Control.Feedback>
         </div>
       </Form>
 
-      <div>{verifying ? 'Verifying NIP-05 address...' : ''}</div>
-      <Button className="mt-3 me-3" variant="primary" onClick={handleSave} disabled={!!verifying}>
+      <Button className="mt-3 me-3" variant="primary" onClick={handleSave}>
         Save
       </Button>
     </Container>

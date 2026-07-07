@@ -10,6 +10,13 @@ export default defineConfig({
   server: {
     fs: {
       allow: [path.resolve(__dirname, '..')]
+    },
+    proxy: {
+      '/register': {
+        target: 'https://monstr.me',
+        changeOrigin: true,
+        secure: true
+      }
     }
   }
 });

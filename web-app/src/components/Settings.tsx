@@ -1,5 +1,6 @@
 import { Accordion, Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { useChatController } from '../chatControllerContext';
+import UserAddress from './UserAddress';
 import UserProfile from './UserProfile';
 import Relays from './Relays';
 import NotificationSettings from './NotificationSettings';
@@ -26,11 +27,17 @@ function Settings(props: SettingsProps) {
   };
 
   const handleToggleNsec = () => {
-    setShowNsec((prev) => !prev);
+    setShowNsec(prev => !prev);
   };
 
   return (
     <Accordion activeKey={activeKey} onSelect={handleSwitchAccordion}>
+      <Accordion.Item eventKey="address">
+        <Accordion.Header>Nostr Address</Accordion.Header>
+        <Accordion.Body>
+          <UserAddress />
+        </Accordion.Body>
+      </Accordion.Item>
       <Accordion.Item eventKey="profile">
         <Accordion.Header>Profile</Accordion.Header>
         <Accordion.Body>
@@ -56,7 +63,9 @@ function Settings(props: SettingsProps) {
             <div className="row mb-2 d-flex align-items-center justify-content-between gx-0">Your secret key:</div>
             <ListGroup className="mb-3">
               <ListGroupItem className="list-group-item-secondary d-flex align-items-center justify-content-between gap-2">
-                <div className="text-break">{showNsec ? controller.getNsec() : '*'.repeat(controller.getNsec().length)}</div>
+                <div className="text-break">
+                  {showNsec ? controller.getNsec() : '*'.repeat(controller.getNsec().length)}
+                </div>
                 <Button
                   variant="link"
                   size="sm"

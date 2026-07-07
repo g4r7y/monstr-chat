@@ -1,10 +1,11 @@
-import { Accordion, Button, Card, Container, Form, Navbar } from 'react-bootstrap';
+import { Accordion, Button, Card, Container, Form, Navbar, OverlayTrigger, Popover } from 'react-bootstrap';
 
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
 import type { ChatController } from '@core/chatController';
 import React from 'react';
 import { isValidBip39Phrase, isValidNsec } from '@core/validation';
+import RegisterAddress from './RegisterAddress';
 
 // todo enum
 type WelcomeState =
@@ -12,6 +13,7 @@ type WelcomeState =
   | 'created'
   | 'showMnemonic'
   | 'showMnemonicConfirm'
+  | 'registerNip05'
   | 'notifications'
   | 'tips'
   | 'restore'
@@ -162,11 +164,55 @@ const Welcome = () => {
                     {' '}
                     Have you written down your recovery phrase? You won't be able to see it again!
                   </div>
-                  <Button className="mt-3 me-3" onClick={() => setWelcomeState('notifications')}>
+                  <Button className="mt-3 me-3" onClick={() => setWelcomeState('registerNip05')}>
                     Continue
                   </Button>
                 </div>
               )}
+            </Card.Body>
+          </Card>
+        </div>
+      )}
+
+      {welcomeState === 'registerNip05' && (
+        <div>
+          <h3 className="mt-3 text-primary">Welcome!</h3>
+          <Card className="mt-3">
+            <Card.Header>Nostr address</Card.Header>
+            <Card.Body>
+              <Card.Text>
+                A{' '}
+                <OverlayTrigger
+                  trigger="click"
+                  rootClose
+                  placement="bottom"
+                  overlay={
+                    <Popover id="nip05-info-popover">
+                      <Popover.Body>
+                        This is also called a NIP-05 address. It links your public key to an internet domain name, and
+                        looks like an email address. A NIP-05 address makes it easier to share your identity with your
+                        friends. Nostr apps show a blue tick for verified NIP-05 addresses.
+                      </Popover.Body>
+                    </Popover>
+                  }
+                >
+                  <a
+                    href="#"
+                    className="info-link"
+                    onClick={event => event.preventDefault()}
+                    aria-label="Information about Nostr addresses"
+                  >
+                    Nostr address
+                  </a>
+                </OverlayTrigger>{' '}
+                makes it easy for other users to find and identify you.
+                <br />
+                <br />
+                You can create your own <b className="text-green">monstr.me</b> Nostr address now, or you can set one up
+                later in Settings.
+                <br />
+              </Card.Text>
+              <RegisterAddress onDone={() => setWelcomeState('notifications')} showSkipButton={true} />
             </Card.Body>
           </Card>
         </div>
@@ -231,18 +277,17 @@ const Welcome = () => {
                   </Accordion.Body>
                 </Accordion.Item>
                 <Accordion.Item eventKey="2">
-                  <Accordion.Header>Get a verified address</Accordion.Header>
+                  <Accordion.Header>Your Nostr address</Accordion.Header>
                   <Accordion.Body>
-                    It is recommended to create a verified Nostr address for yourself. This is called a NIP-05 address
-                    and looks a bit like an email address. It links your public key to an internet domain name.
+                    It is recommended to create a Nostr address for yourself. This is called a NIP-05 address.
+                    It links your public key to an internet domain name, and looks like an email address.
                     <br />
-                    A NIP-05 address makes it easier to share your identity with other users, as it is much shorter than
-                    your public key. A verified NIP-05 address appears with a blue check mark so that other users can
-                    trust who you are.
+                    A NIP-05 address is human-readable, so makes it easy to share your identity with your friends. 
+                    Nostr apps check that a NIP-05 address matches its key, showing a blue tick when it is verified.
                     <br />
-                    There are several free services where you can get{' '}
-                    <a href="https://nostr.how/en/guides/get-verified">NIP-05 verified</a>. Once you have a NIP-05
-                    address just add it to your profile in Settings.
+                    Monstr Chat lets you register your own monstr.me NIP-05 address. 
+                    Or you can use another <a href="https://nostr.how/en/guides/get-verified">Nostr registration service</a> to get a NIP-05 address. 
+                    Either way, go to Settings to pair it up with your key.
                     <br />
                   </Accordion.Body>
                 </Accordion.Item>
@@ -351,7 +396,7 @@ const Welcome = () => {
             <Card.Header>Restore your key</Card.Header>
             <Card.Body>
               <Card.Text>Your key has been successfully restored.</Card.Text>
-              <Button className="mt-3 me-3" onClick={() => setWelcomeState('tips')}>
+              <Button className="mt-3 me-3" onClick={() => setWelcomeState('registerNip05')}>
                 Continue
               </Button>
             </Card.Body>

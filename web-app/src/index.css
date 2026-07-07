@@ -34,3 +34,18 @@ navbar {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.info-link {
+  text-decoration: none;
+  border-radius: 0.25rem;
+  padding: 0 0.15rem;
+  transition: background-color 0.1s ease;
+}
+
+.info-link:hover {
+  background-color: rgba(176, 64, 176, 0.15);
+}
+
+.text-green {
+  color: #2a8e18;
+}

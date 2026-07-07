@@ -33,7 +33,7 @@ function Settings(props: SettingsProps) {
   return (
     <Accordion activeKey={activeKey} onSelect={handleSwitchAccordion}>
       <Accordion.Item eventKey="address">
-        <Accordion.Header>Nostr Address</Accordion.Header>
+        <Accordion.Header>Nostr address</Accordion.Header>
         <Accordion.Body>
           <UserAddress />
         </Accordion.Body>

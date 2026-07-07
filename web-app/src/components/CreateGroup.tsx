@@ -51,7 +51,7 @@ function CreateGroup() {
           <Navbar.Brand>Create chat group</Navbar.Brand>
         </div>
       </Navbar>
-      <div className="mt-3 mb-3 d-inline-block">Select some friends to create a chat group.</div>
+      <div className="mt-3 mb-3 d-inline-block">{contacts.length > 0 ? 'Select some friends to create a chat group.' : 'You have no friends.'}</div>
       <ListGroup>
         {contacts.map((contact, index) => (
           <ListGroup.Item key={index} action as="li" className="align-items-start">
@@ -60,7 +60,7 @@ function CreateGroup() {
         ))}
       </ListGroup>
 
-      <Button onClick={handleDone} className="my-3" variant="primary">
+      <Button onClick={handleDone} className="my-3" variant="primary" disabled={contacts.length===0}>
         Next
       </Button>
     </Container>

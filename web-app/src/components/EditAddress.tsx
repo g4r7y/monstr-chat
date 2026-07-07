@@ -1,13 +1,12 @@
 import React from 'react';
-import { Button, Form, InputGroup, Navbar, OverlayTrigger, Popover } from 'react-bootstrap';
+import { Button, Form, Navbar, OverlayTrigger, Popover } from 'react-bootstrap';
 import Container from 'react-bootstrap/Container';
-
-import { decode } from '@nostr/tools/nip19';
 
 import type { ChatSettings, UserProfile } from '@core/chatModel';
 import { useChatController } from '../chatControllerContext';
 import { useAppView } from '../appViewContext';
 import { isValidNip05Address } from '@core/validation';
+import RegisterAddress from './RegisterAddress';
 
 function EditAddress() {
   const controller = useChatController();
@@ -19,11 +18,11 @@ function EditAddress() {
   };
 
   type EditState = 'choose' | 'register' | 'edit';
-  const [editState, setEditState] = React.useState<EditState>(controller.getSettings().profile?.nip05 ? 'edit' : 'choose');
+  const [editState, setEditState] = React.useState<EditState>(
+    controller.getSettings().profile?.nip05 ? 'edit' : 'choose'
+  );
   const [profileNip05, setProfileNip05] = React.useState(controller.getSettings().profile?.nip05 ?? '');
-  const [nameToRegister, setNameToRegister] = React.useState('');
   const [inputError, setInputError] = React.useState('');
-  const [registering, setRegistering] = React.useState(false);
   const [verifying, setVerifying] = React.useState(false);
 
   const verifyNip05 = async () => {
@@ -50,48 +49,6 @@ function EditAddress() {
       setVerifying(false);
     }
     return verified;
-  };
-
-  const handleRegister = async () => {
-    const name = nameToRegister.toLowerCase();
-    const nip05 = `${name}@monstr.me`;
-    if (!isValidNip05Address(nip05)) {
-      setInputError('Name can only contain lowercase letters, numbers, hyphens, underscores or periods');
-      return;
-    }
-
-    const pubkey = decode(controller.getNpub()).data as string;
-
-    setRegistering(true);
-    try {
-      const response = await fetch('/register', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, pubkey })
-      });
-
-      if (response.ok) {
-        setProfileNip05(nip05);
-        const settings: ChatSettings = controller.getSettings();
-        const profile: UserProfile = { ...settings.profile, nip05 };
-        await controller.setSettings({
-          ...settings,
-          profile
-        });
-        await controller.broadcastUserMetadata();
-        handleBack();
-      } else if (response.status === 409) {
-        setInputError('Name is not available');
-      } else if (response.status >= 400 && response.status < 500) {
-        setInputError('Name could not be registered');
-      } else {
-        setInputError('Could not register due to a server error');
-      }
-    } catch {
-      setInputError('Could not register due to a connection error');
-    } finally {
-      setRegistering(false);
-    }
   };
 
   const handleSave = async () => {
@@ -121,7 +78,7 @@ function EditAddress() {
 
       {editState === 'choose' && (
         <div className="mt-3">
-          A Nostr address makes it easy for other users to find and identify you.
+          A{' '}
           <OverlayTrigger
             trigger="click"
             rootClose
@@ -129,20 +86,26 @@ function EditAddress() {
             overlay={
               <Popover id="nip05-info-popover">
                 <Popover.Body>
-                  Your Nostr address links your public key to an internet domain name. 
-                  Also called a NIP-05 address, it looks like an email address, for example, bob@monstr.me. 
-                  A blue check-mark is shown for a verified NIP-05 address so that others can trust that it identifies the owner's key.
+                  This is also called a NIP-05 address. It links your public key to an internet domain name, and looks
+                  like an email address. A NIP-05 address makes it easier to share your identity with your friends.
+                  Nostr apps show a blue tick for verified NIP-05 addresses.
                 </Popover.Body>
               </Popover>
             }
           >
-            <Button variant="link" className="p-0 ms-2 align-baseline" aria-label="More information about Nostr addresses">
-              <i className="fas fa-circle-info"></i>
-            </Button>
-          </OverlayTrigger>
+            <a
+              href="#"
+              className="info-link"
+              onClick={event => event.preventDefault()}
+              aria-label="Information about Nostr addresses"
+            >
+              Nostr address
+            </a>
+          </OverlayTrigger>{' '}
+          makes it easy for other users to find and identify you.
           <br />
           <br />
-          Would you like to create your own Nostr address at monstr.me?
+          Would you like to create your own <b className="text-green">monstr.me</b> Nostr address?
           <br />
           <br />
           <Button className="mt-3 me-3" variant="primary" onClick={() => setEditState('register')}>
@@ -154,38 +117,16 @@ function EditAddress() {
         </div>
       )}
 
-      {editState === 'register' && (
-        <div>
-          <Form>
-            <div className="mt-3">
-              <Form.Label>Choose a name:</Form.Label>
-              <InputGroup hasValidation>
-                <Form.Control
-                  type="text"
-                  maxLength={24}
-                  value={nameToRegister}
-                  onChange={event => {
-                    setNameToRegister(event.target.value);
-                    setInputError('');
-                  }}
-                  isInvalid={!!inputError}
-                />
-                <InputGroup.Text>@monstr.me</InputGroup.Text>
-                <Form.Control.Feedback type="invalid">{inputError}</Form.Control.Feedback>
-              </InputGroup>
-            </div>
-          </Form>
-
-          <div>{registering ? 'Registering NIP-05 address...' : ''}</div>
-          <Button className="mt-3 me-3" variant="primary" onClick={handleRegister} disabled={!!registering}>
-            Register
-          </Button>
-        </div>
-      )}
+      {editState === 'register' && <RegisterAddress onDone={handleBack} showSkipButton={false} />}
 
       {editState === 'edit' && (
         <div>
-          <Form>
+          <Form
+            onSubmit={event => {
+              event.preventDefault();
+              handleSave();
+            }}
+          >
             <div className="mt-3">
               <Form.Label>NIP-05 address:</Form.Label>
               <Form.Control

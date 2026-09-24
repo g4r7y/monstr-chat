@@ -44,7 +44,7 @@ const FriendProfile: React.FunctionComponent<ContactProfileProps> = ({ contactTo
         setLoading(false);
         setContactLookupDone(true);
       } else if (isValidNip05Address(contactToLookup)) {
-        const nip05 = contactToLookup;
+        const nip05 = contactToLookup.toLowerCase();
         setLoading(true);
         const foundNpub = await controllerRef.current.lookupNip05Address(nip05);
         const profile = foundNpub ? await controllerRef.current.lookupUserProfile(foundNpub) : null;
